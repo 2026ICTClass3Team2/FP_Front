@@ -16,7 +16,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the image using the Dockerfile we just made
                     sh "docker build -t ${DOCKER_IMAGE}:latest ."
                 }
             }
@@ -25,15 +24,26 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    // 1. Stop and remove the old container if it exists
                     sh "docker stop ${CONTAINER_NAME} || true"
                     sh "docker rm ${CONTAINER_NAME} || true"
-                    
-                    // 2. Run the new container on Port 3000 
-                    // (Nginx on the EC2 host will point to this port)
                     sh "docker run -d --name ${CONTAINER_NAME} -p 3000:80 ${DOCKER_IMAGE}:latest"
                 }
             }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh "docker image prune -f"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Successfully deployed! Site should be live at your EC2 IP."
+        }
+        failure {
+            echo "Deployment failed. Check the Docker build logs above."
         }
     }
 }

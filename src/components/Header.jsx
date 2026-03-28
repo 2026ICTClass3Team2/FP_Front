@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 
 const Header = () => {
   return (
-    <div>
-      <ul>
+    <div className="header">
+      <ul className= "tag-group">
         <li><Link to="/">Dev community</Link></li>
         <li><Link to="/board">커뮤니티</Link></li>
         <li><Link to="/mypage">마이페이지</Link></li>

@@ -103,9 +103,63 @@
   background-color: var(--brand-hover);
 }
 
-.post-title {
-  color: var(--text-main); 
+
+/*게시판*/
+.post-item{
+  margin-bottom: 20px;
 }
+
+.post-header{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.point-badge {
+  background-color: #fff7ed;
+  color: #f97316;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* 해결됨 배지 */
+.status-badge {
+  background-color: #f0fdf4;
+  color: #22c55e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+/* 기술 태그 (React, TypeScript 등) */
+.tag-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tag {
+  background-color: #eff6ff;
+  color: #3b82f6;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* 포스트 하단 정보 (조회수, 좋아요 등) */
+.post-footer {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+
 .write-btn {
   background-color: var(--primary); 
   color: var(--text-white);         

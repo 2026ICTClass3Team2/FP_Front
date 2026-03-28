@@ -1,112 +1,68 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #f8f4f4;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* 메인 컬러: 보라색 계열 */
+  --primary: #7c4dff;
+  --primary-hover:#651fff;
+  --primary-light:#f3efff;
+  
+  /*브랜드/포인컬러 (로그인 버튼, 글쓰기 버튼 등)*/
+  --brand-color:#3b82f6; /*메인 블루*/
+  --brand-hover:#2563ed;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/*소셜로그인*/
+  --kakao-yellow: #FEE500;
+  --github-black:#24292e;
+  --google-border:#e5e7eb;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /*배경색*/
+  --bg-main:#f9fafb; /*전체 배경*/
+  --bg-card:#ffffff; /*게시글 로그인 카드 배경*/
+  --bg-white: #ffffff;
+  --text-dark: #2d2d2d;
+  --text-sub: #6c757d;
+  --border: #e9ecef;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /*글자색*/
+  --text-main:#111827; /*아주 진한 제목/ 본문*/
+  --text-sub:#6b7280; /*연한 설명/날짜*/
+  --text-white:#ffffff; /*버튼위 글자*/
+
+
+  /*테두리*/
+  --border-light: #e5e7eb;
+  --border-medium: #dee2e6;
+
+  /*상태표시 ()*/
+  --point-orange: #ff9100;
+  --status-green: #2ecc71;
+
+    /*레이아웃 사이즈*/
+  --max-width: 1200px;
+
+ 
 }
+  /*기초공사 (reset)*/
+ * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+ }
+   body {
+      font-family:'Pretendard', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+   }
+  
+   a{
+    text-all:none;
+    color: inherit;
+   }
+   ul{
+    list-style: none;
+   }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #151618;
-    /* --bg: #16171d; */
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
-
+   button{
+    cursor: pointer;
+    border: none;
+    background: none;
+   }
+  

@@ -35,12 +35,18 @@
   min-width: 0;
 }
 
-.sidedar{
+.sidebar{
   flex: 1;
   min-width: 300px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+.sidebar-card {
+  background-color: var(--bg-white);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--border);
 }
 
 .card {
@@ -50,6 +56,24 @@
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
+/*챗봇*/
+.chatbot-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+
+
+
 /*인증 페이지 전용 (로그인 회원가입)*/
 .auth-wrapper{
   display: flex;
@@ -63,7 +87,28 @@
   max-width: 480px;
   padding: 48px;
  }
+.auth-btn-main{
+  width: 100%;
+  padding: 14px;
+  background-color:  var(--bran-color);
+  color: var(--text-white);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  margin-top: 20px;
+  transition: background 0.2s;
+}
 
+.auth-btn-main:hover{
+  background-color: var(--brand-hover);
+}
 
+.post-title {
+  color: var(--text-main); 
+}
+.write-btn {
+  background-color: var(--primary); 
+  color: var(--text-white);         
+}
 
 

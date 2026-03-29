@@ -11,9 +11,20 @@ const MainLayout = () => {
             <main className="main-content">
                 <Outlet />
             </main>  
-            <aside className="sidebar">
-                  
-            </aside>
+            <side className="sidebar">
+                  <div className="sidebar-card">
+                    <h3>공지사항</h3>
+                      <ul>
+                        <li></li>
+                      </ul>
+                  </div>
+                  <div className="sidebar-card">
+                      <h3>인기 게시글</h3>
+                      <ul>
+                        <li></li>
+                      </ul>
+                  </div>
+            </side>
           </div>  
         <Footer />
     </div>

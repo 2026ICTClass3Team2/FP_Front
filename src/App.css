@@ -6,6 +6,8 @@
   flex-direction: column;
   min-height: 100vh;
 }
+
+/*상단*/
 .header{
   height: 64px;
   background-color: var(--bg-white);
@@ -35,6 +37,7 @@
   min-width: 0;
 }
 
+/*사이드바*/
 .sidebar{
   flex: 1;
   min-width: 300px;
@@ -135,19 +138,33 @@
   margin-left: auto;
 }
 
+.main-text{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  
+}
+
+
 /* 기술 태그 (React, TypeScript 등) */
 .tag-group {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin-top: 12px;
 }
 
 .tag {
-  background-color: #eff6ff;
-  color: #3b82f6;
-  padding: 4px 10px;
+  background-color: var(--brand-color);
+  padding: 5px 20px;
   border-radius: 6px;
-  font-size: 13px;
+  color: var(--text-main);
+  font-size: 19px;
+}
+
+.tag:hover{
+  background-color: var(--brand-hover);
+  color: var(--text-white);
 }
 
 /* 포스트 하단 정보 (조회수, 좋아요 등) */
@@ -159,10 +176,21 @@
   font-size: 14px;
 }
 
-
+/*기타 버튼*/
 .write-btn {
+  display: flex;
+ 
+  justify-content: flex-end;
+  align-items: center;
+  grid-template-columns: 0em;
+  border-radius: 6px;
+  gap: 6px;        
+  padding: 11px 18px;
+  height: 44px;
+
   background-color: var(--primary); 
-  color: var(--text-white);         
+  color: var(--text-white); 
+  
 }
 
 

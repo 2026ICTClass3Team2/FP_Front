@@ -21,14 +21,31 @@
   z-index:100;
 
   }
+
+  /*관리와 유저 헤드*/
+.header-user .admin-only {
+  display: none;
+}
+
+.header-user .user-only {
+  display: none;
+}
+
+
   
 .content-wrapper{
   display: flex;
   width: 100%;
-  max-width: 1200px;
+  max-width: var(--max-width);
   margin: 0 auto;
   padding: 24px 20px;
   gap: 24px;    
+}
+
+
+.main-content{
+  flex: 3;
+  min-width: 0;
 }
 
 
@@ -40,11 +57,8 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/*왼쪽 게시판*/
-.main-content{
-  flex: 3;
-  min-width: 0;
-}
+
+
 
 /*사이드바*/
 .sidebar{
@@ -62,84 +76,34 @@
 }
 
 
-/*챗봇*/
-.chatbot-button {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: var(--primary);
+
+
+
+
+
+
+/*기타 버튼*/
+.write-btn {
   display: flex;
+ 
+  justify-content: flex-end;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  
+  border-radius: 6px;
+  gap: 6px;        
+  padding: 11px 18px;
+  height: 44px;
+
+  background-color: var(--brand-write); 
+  color: var(--text-white);  
+}
+.write-btn:hover{
+background-color: var(--brand-write-hover);
 }
 
 
 
 
-/*인증 페이지 전용 (로그인 회원가입)*/
-.auth-wrapper{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex:1;
-  background-color: var(--bg-main);
-}
- .auth-card{
-  width: 100%;
-  max-width: 480px;
-  padding: 48px;
- }
-.auth-btn-main{
-  width: 100%;
-  padding: 14px;
-  background-color:  var(--bran-color);
-  color: var(--text-white);
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
-  margin-top: 20px;
-  transition: background 0.2s;
-}
-
-.auth-btn-main:hover{
-  background-color: var(--brand-hover);
-}
-
-
-/*게시판*/
-.post-item{
-  margin-bottom: 20px;
-}
-
-.post-header{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.point-badge {
-  background-color: #fff7ed;
-  color: #f97316;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-/* 해결됨 배지 */
-.status-badge {
-  background-color: #f0fdf4;
-  color: #22c55e;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-left: auto;
-}
 
 .main-text{
   display: flex;
@@ -170,7 +134,7 @@
   color: var(--text-white);
 }
 
-
+/*기슬 태그*/
 .tags-grup{
   
 }
@@ -179,32 +143,9 @@
 
 
 
-/* 포스트 하단 정보 (조회수, 좋아요 등) */
-.post-footer {
-  display: flex;
-  gap: 15px;
-  margin-top: 15px;
-  color: var(--text-sub);
-  font-size: 14px;
-}
 
-/*기타 버튼*/
-.write-btn {
-  display: flex;
- 
-  justify-content: flex-end;
-  align-items: center;
-  
-  border-radius: 6px;
-  gap: 6px;        
-  padding: 11px 18px;
-  height: 44px;
 
-  background-color: var(--brand-write); 
-  color: var(--text-white);  
-}
-.write-btn:hover{
-background-color: var(--brand-write-hover);
-}
+
+
 
 

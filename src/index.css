@@ -1,5 +1,5 @@
 :root {
-  /* 메인 컬러: 보라색 계열 */
+  /* 홈 버튼 컬러: 보라색 계열 */
   --primary: #7c4dff;
   --primary-hover:#651fff;
   --primary-light:#f3efff;
@@ -8,6 +8,8 @@
   --brand-color:#dbd4d4e3; 
   --brand-hover:#2563ed;
 
+  --brand-write:#2563ed;
+  --brand-write-hover:#1f58d1;
 /*소셜로그인*/
   --kakao-yellow: #FEE500;
   --github-black:#24292e;

@@ -31,6 +31,15 @@
   gap: 24px;    
 }
 
+
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
 /*왼쪽 게시판*/
 .main-content{
   flex: 3;
@@ -52,13 +61,7 @@
   border: 1px solid var(--border);
 }
 
-.card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
+
 /*챗봇*/
 .chatbot-button {
   position: fixed;
@@ -147,7 +150,7 @@
 }
 
 
-/* 기술 태그 (React, TypeScript 등) */
+/* 메인페이지 게시판, 공지사항, 스터디*/
 .tag-group {
   display: flex;
   gap: 10px;
@@ -167,6 +170,15 @@
   color: var(--text-white);
 }
 
+
+.tags-grup{
+  
+}
+
+
+
+
+
 /* 포스트 하단 정보 (조회수, 좋아요 등) */
 .post-footer {
   display: flex;
@@ -182,15 +194,17 @@
  
   justify-content: flex-end;
   align-items: center;
-  grid-template-columns: 0em;
+  
   border-radius: 6px;
   gap: 6px;        
   padding: 11px 18px;
   height: 44px;
 
-  background-color: var(--primary); 
-  color: var(--text-white); 
-  
+  background-color: var(--brand-write); 
+  color: var(--text-white);  
+}
+.write-btn:hover{
+background-color: var(--brand-write-hover);
 }
 
 

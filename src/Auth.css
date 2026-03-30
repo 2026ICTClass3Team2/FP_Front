@@ -1,0 +1,28 @@
+/*auth.css 인증 페이지 전용 (로그인 회원가입)*/
+.auth-wrapper{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex:1;
+  background-color: var(--bg-main);
+}
+ .auth-card{
+  width: 100%;
+  max-width: 480px;
+  padding: 48px;
+ }
+.auth-btn-main{
+  width: 100%;
+  padding: 14px;
+  background-color:  var(--bran-color);
+  color: var(--text-white);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  margin-top: 20px;
+  transition: background 0.2s;
+}
+
+.auth-btn-main:hover{
+  background-color: var(--brand-hover);
+}

@@ -2,7 +2,11 @@ import React from 'react'
 
 const PostList = () => {
   return (
-    <div>PostList</div>
+    <div>
+      <h2>게시판</h2>
+      
+
+    </div>
   )
 }
 

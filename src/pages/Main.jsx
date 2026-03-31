@@ -4,7 +4,8 @@ const Main = () => {
   return (
     <div>
       <div className="main-text">
-        <h1>게시판</h1>
+        <h1>노션 <a href='https://www.notion.so/2-314d832c94ec81159f43dfe2b4b65376?source=copy_link'>link</a></h1>
+      
         <button className="write-btn">글쓰기</button>
       </div>
       

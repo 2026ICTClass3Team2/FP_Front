@@ -20,7 +20,7 @@ const Header = () => {
           <nav>
             <ul className='nav-menu'>
               <li><Link to="/">커뮤니티</Link></li>
-              <li><Link to="/study">학습</Link></li>
+              <li><Link to="/edu">학습</Link></li>
             </ul>
           </nav>
 

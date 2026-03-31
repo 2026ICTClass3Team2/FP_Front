@@ -28,7 +28,7 @@
   }
 
   
-/*커뮤니티 이름, 메뉴*/
+/*상당 왼쪽 로고 밑 커뮤니티, 학습 버튼*/
 .header-left{
     display: flex;
     align-items: center;
@@ -50,7 +50,7 @@
 }  
 
 .nav-menu li a{
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 500;
   color: var(--text-main);
   text-decoration: none;
@@ -88,7 +88,7 @@
   box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.1);
 }
 
-/* 오른쪽 인증 메뉴 */
+/* 상단 오른쪽 로그인 회원가입 버튼/ 로그인 후 계정 이름과 아이콘이 나오는 곳 */
 .header-right {
   display: flex;  
   /* align-items: center; */
@@ -152,7 +152,7 @@
 }
 
 
-  
+/*메인 레이아웃*/  
 .content-wrapper{
   display: flex;
   width: 100%;
@@ -303,6 +303,9 @@
 background-color: var(--brand-write-hover);
 }
 
+
+
+/*챗봇*/
 .chatbot-btn {
   position:fixed; bottom:30px; right:30px; width:60px; height:60px;
   background:var(--primary); color:white; border-radius:50%; 

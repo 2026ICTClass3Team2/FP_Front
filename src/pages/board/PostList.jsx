@@ -4,7 +4,7 @@ const PostList = () => {
   return (
     <div>
       <h2>게시판</h2>
-      
+      http://3.34.146.24/
 
     </div>
   )

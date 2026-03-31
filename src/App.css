@@ -243,7 +243,7 @@
 
 .notice-item .date{
   font-size: 13px;
-  color: var(test-sub);
+  color: var(--test-sub);
 }
 
 /*사이드바 인기글*/

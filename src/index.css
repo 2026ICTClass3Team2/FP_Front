@@ -21,7 +21,7 @@
   --bg-white: #ffffff;
   --text-dark: #2d2d2d;
   --text-sub: #6c757d;
-  --border: #e9ecef;
+  --border: #e5e7eb;
 
   /*글자색*/
   --text-main:#111827; /*아주 진한 제목/ 본문*/
@@ -39,6 +39,9 @@
 
     /*레이아웃 사이즈*/
   --max-width: 1200px;
+
+
+/*인기 게시판 컬러*/
 
  
 }
@@ -67,9 +70,11 @@
     border: none;
     background: none;
 
-      
+
 
 
 
    }
+
+
   

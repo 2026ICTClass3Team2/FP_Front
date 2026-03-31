@@ -1,10 +1,10 @@
 import React, { useState } from 'react';  //useState 추가 안하니까 테스트 할 때 화면송출이 안되어서 넣었음
 import { Link } from 'react-router-dom'
-import '../Modal.css'
-import '../Auth.css'
+import '../assets/css/Modal.css'
+import '../assets/css/Auth.css'
 const Header = () => {
   /*로그인 후 css 테스용*/ 
-  const [loggedIn, setLoggedIn] = useState(true);   // true = 로그인 상태 (테스트용) 깃 올릴 땐 false로 두라고 함
+  const [loggedIn, setLoggedIn] = useState(false);   // true = 로그인 상태 (테스트용) 깃 올릴 땐 false로 두라고 함
   const [showMenu, setShowMenu] = useState(false);
 
   const toggleMenu = () => setShowMenu(!showMenu); //계정 이름 클릭시 드롭다운 모달창 나옴

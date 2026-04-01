@@ -6,6 +6,7 @@ import PostWrite from '../pages/board/PostWrite'
 import MyPage from '../pages/mypage/MyPage'
 import AdminDashboard from '../pages/admin/AdminDashboard'
 import Main from '../pages/Main'
+import edu from '../pages/edu/edu'
 
 const AppRouter = () => {
   return (
@@ -22,6 +23,10 @@ const AppRouter = () => {
                   <Route path=':id' element={<PostDetail />}/>
                   <Route path='write' element={<PostWrite />}/>
                 </Route>
+
+               <Route path='edu'>
+                      <Route index element={<edu/>} />
+                </Route> 
 
                 {/* 마이페이지 영역 */}
                 <Route path='mypage'>

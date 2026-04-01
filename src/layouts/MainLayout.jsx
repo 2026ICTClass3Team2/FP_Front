@@ -11,7 +11,7 @@ const MainLayout = () => {
             <main className="main-content">
                 <Outlet />
             </main>  
-            <side className="sidebar">
+            <aside className="sidebar">
                   <div className="sidebar-card">
                     <h3>공지사항</h3>
                       <ul>
@@ -24,7 +24,7 @@ const MainLayout = () => {
                         <li></li>
                       </ul>
                   </div>
-            </side>
+            </aside>
           </div>  
         <Footer />
     </div>

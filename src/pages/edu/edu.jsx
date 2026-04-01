@@ -2,7 +2,7 @@ import React from 'react'
 
 const edu = () => {
   return (
-    <div>edu    
+    <div>edu 
     </div>
   )
 }

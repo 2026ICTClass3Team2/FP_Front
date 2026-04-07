@@ -1,80 +1,216 @@
-:root {
-  /* 홈 버튼 컬러: 보라색 계열 */
-  --primary: #7c4dff;
-  --primary-hover:#651fff;
-  --primary-light:#f3efff;
-  
-  /*브랜드/포인컬러 (로그인 버튼, 글쓰기 버튼 등)*/
-  --brand-color:#f1eaeaf8; 
-  --brand-hover:#2563ed;
+@import "tailwindcss";
 
-  --brand-write:#2563ed;
-  --brand-write-hover:#1f58d1;
-/*소셜로그인*/
-  --kakao-yellow: #FEE500;
-  --github-black:#24292e;
-  --google-border:#e5e7eb;
+@theme {
+  /* ============================================= */
+  /* Semantic Color System - Exact match to image  */
+  /* ============================================= */
 
-  /*배경색*/
-  --bg-main:#f9fafb; /*전체 배경*/
-  --bg-card:#ffffff; /*게시글 로그인 카드 배경*/
-  --bg-white: #ffffff;
-  --text-dark: #2d2d2d;
-  --text-sub: #6c757d;
-  --border: #e5e7eb;
+  /* Main light area (feed + right sidebar) */
+  --color-background: #ffffff; /* Main feed + right announcements white background */
 
-  /*글자색*/
-  --text-main:#111827; /*아주 진한 제목/ 본문*/
-  --text-sub:#6b7280; /*연한 설명/날짜*/
-  --text-white:#ffffff; /*버튼위 글자*/
+  /* Primary text in light area */
+  --color-foreground: #111827; /* Main dark text (exact match to post titles and body) */
 
+  /* Muted / secondary text */
+  --color-muted: #64748b; /* Subtle gray text for timestamps, counts, descriptions */
+  --color-muted-foreground: #64748b;
 
-  /*테두리*/
-  --border-light: #e5e7eb;
-  --border-medium: #dee2e6;
+  /* Light borders & dividers */
+  --color-border: #e2e8f0; /* Subtle card borders in feed and announcements */
 
-  /*상태표시 ()*/
-  --point-orange: #ff9100;
-  --status-green: #2ecc71;
+  /* Input / search bar border */
+  --color-input: #e2e8f0;
 
-    /*레이아웃 사이즈*/
-  --max-width: 1200px;
+  /* Focus rings */
+  --color-ring: #0ea5e9; /* Primary blue ring */
 
+  /* Primary blue - exact match to "새 게시물" button and floating chat button */
+  --color-primary: #0ea5e9; /* #0ea5e9 - bright sky blue used everywhere for CTAs */
+  --color-primary-foreground: #ffffff; /* White text on primary buttons */
 
-/*인기 게시판 컬러*/
+  /* Left sidebar - 진한 다크 모드 (exact slate-950 계열) */
+  --color-sidebar: #020617; /* Left sidebar background - deep dark slate-950 */
+  --color-sidebar-foreground: #f8fafc; /* Almost white text in sidebar */
+  --color-sidebar-muted: #64748b; /* Muted text in sidebar navigation */
+  --color-sidebar-border: #334155; /* Dark divider lines in sidebar */
 
- 
+  /* Right announcement cards - exact pastel colors from image */
+  --color-announcement-blue: #e0f2fe;   /* Light blue - top "Dead Bug 커뮤니티에 오신 것을..." card */
+  --color-announcement-purple: #f3e8ff; /* Light purple - "새로운 학습 그룹 개설" card */
+  --color-announcement-green: #ecfdf5;  /* Light green - "커뮤니티 가이드라인 업데이트" card */
+  --color-announcement-orange: #fff7ed; /* Light orange - "주간 챌린지 공지" card */
+  --color-announcement-pink: #fdf4ff;   /* Light pink - "유지보수 일정" card */
+
+  /* ============================================= */
+  /* Radius - clean modern rounded corners */
+  /* ============================================= */
+  --radius-sm: 0.5rem;
+  --radius: 0.75rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem; /* Used for cards and buttons - matches image's rounded-xl feel */
+
+  /* ============================================= */
+  /* Shadows - subtle professional depth */
+  /* ============================================= */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 25px 50px -12px rgb(0 0 0 / 0.12); /* Stronger shadow for floating button */
+
+  /* ============================================= */
+  /* Typography - clean, modern sans (system stack) */
+  /* ============================================= */
+  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans KR", sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
 }
-  /*기초공사 (reset)*/
- * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
- }
-   body {
-      font-family:'Pretendard', sans-serif;
-      background-color: var(--bg-main);
-      color: var(--text-main);
-   }
+
+/* ============================================= */
+/* Base layer - global resets & defaults */
+/* ============================================= */
+@layer base {
+  :root {
+    font-family: var(--font-family-sans);
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Top navbar & left sidebar use dark theme */
+  .navbar,
+  .sidebar {
+    background-color: var(--color-sidebar);
+    color: var(--color-sidebar-foreground);
+  }
+
+  /* Make sure sidebar links have correct muted color */
+  .sidebar a,
+  .sidebar button {
+    color: var(--color-sidebar-foreground);
+  }
+}
+
+/* ============================================= */
+/* Components layer - reusable UI pieces that match the exact image */
+/* ============================================= */
+@layer components {
+  /* Primary button (e.g. "새 게시물", "채널 만들기") */
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+    border-radius: var(--radius-xl);
+    font-weight: var(--font-weight-medium);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary:hover {
+    background-color: #0284c8; /* Natural hover darken of #0ea5e9 - matches image hover state */
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    background-color: #0369a1;
+  }
+
+  /* Feed cards (post cards in main area) */
+  .feed-card {
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .feed-card:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Announcement cards on the right (different pastel backgrounds) */
+  .announcement-card {
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+    transition: transform 0.2s ease;
+  }
+
+  .announcement-card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Floating global chat button - bottom right (exact spec from the left panel description) */
+  .global-chat-btn {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+    border-radius: 9999px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Always on top of feed */
+  }
+
+  .global-chat-btn:hover {
+    transform: scale(1.08);
+    background-color: #0284c8; /* Slight darken on hover - matches the described "darkens when you hover over it" */
+    box-shadow: var(--shadow-xl);
+  }
+
+  .global-chat-btn:active {
+    transform: scale(0.95);
+  }
+
+  /* Left sidebar navigation items */
+  .sidebar-link {
+    border-radius: var(--radius);
+    transition: background-color 0.2s ease;
+  }
+
+  .sidebar-link:hover {
+    background-color: #1e2937; /* Subtle hover in dark sidebar */
+  }
+
+  /* Search bar in header */
+  .search-input {
+    background-color: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    transition: all 0.2s ease;
+  }
+
+  .search-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgb(14 165 233 / 0.2);
+  }
+}
+
+/* ============================================= */
+/* Utilities layer - any extra one-off helpers */
+/* ============================================= */
+@layer utilities {
+  /* High z-index utility for floating elements */
+  .z-floating {
+    z-index: 50;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
   
-   a{
-    text-decoration:none;
-    color: inherit;
-   }
-   ul{
-    list-style: none;
-   }
-
-   button{
-    cursor: pointer;
-    border: none;
-    background: none;
-
-
-
-
-
-   }
-
-
-  
+}

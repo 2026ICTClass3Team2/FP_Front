@@ -7,11 +7,12 @@ const NavBar = () => {
         <aside>
             {/* 1. 상단 프로필 구역 */}
             <div>
+                <Link to='/MyProfile'>
                 <div>
                     <span>닉네임</span>
                     <span>@사용자명</span>
                 </div>
-
+                </Link>
 
                  {/*포인트 버튼 + 코인 아이콘 */}   
                 <button>
@@ -24,7 +25,7 @@ const NavBar = () => {
                         <span>홈</span>
                     </Link>
                         
-                    <Link to='/'>
+                    <Link to='/question'>
                         <span>질문게시판</span>
                     </Link>
                         

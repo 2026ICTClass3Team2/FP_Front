@@ -18,7 +18,7 @@ const MainFeed = () => {
                 <article>
 
                     <div>
-                        <Link to='/'>
+                        <Link to='/user/paul'>
                             <span>프로필 이미지</span>
                             <span>닉네임</span>
                             <span>@사용자명</span>

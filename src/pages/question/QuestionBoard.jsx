@@ -1,8 +1,8 @@
 import React from 'react'
 import Modal from '../../components/common/Modal';
-import QuesionCard from '../../components/quesion/QuesionCard';
+import QuesionCard from '../../components/question/QuestionCard';
 
-const QuesionBoard = () => {
+const QuestionBoard = () => {
   return (
     <section>
       {/* 1. 상단 타이틀 영역 */}
@@ -81,7 +81,7 @@ const QuesionBoard = () => {
       </main>
 
       {/* 5. 작성 모달 (상태에 따라 렌더링) */}
-      {isModalOpen && (
+      { (
         <Modal title="질문 작성">
            {/* FeedCard에 닫기 기능을 전달 */}
           <QuesionCard />
@@ -91,4 +91,4 @@ const QuesionBoard = () => {
   );
 };
 
-export default QuesionBoard
+export default QuestionBoard

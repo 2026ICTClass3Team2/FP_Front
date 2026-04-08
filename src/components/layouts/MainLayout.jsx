@@ -1,32 +1,21 @@
-import Header from '../components/Header'
-import Footer from '../components/Footer'
-
+import React from 'react'
+import Header from './Header'
 import { Outlet } from 'react-router-dom'
-import '../assets/css/App.css';
-const MainLayout = () => {
+import Footer from './Footer'
+import NavBar from '../sidebar/NavBar'
+import NoticeBar from '../sidebar/NoticeBar'
+function MainLayout() {
   return (
-    <div className="app-container">
-        <Header />
-          <div className="content-wrapper">
-            <main className="main-content">
-                <Outlet />
-            </main>  
-            <side className="sidebar">
-                  <div className="sidebar-card">
-                    <h3>공지사항</h3>
-                      <ul>
-                        <li></li>
-                      </ul>
-                  </div>
-                  <div className="sidebar-card">
-                      <h3>인기 게시글</h3>
-                      <ul>
-                        <li></li>
-                      </ul>
-                  </div>
-            </side>
-          </div>  
-        <Footer />
+    <div>
+      <NavBar/>
+      <div>
+      <Header/>
+        <main>
+          <Outlet/>
+          <Footer/>
+        </main>
+      </div>
+      <NoticeBar/>
     </div>
   )
 }

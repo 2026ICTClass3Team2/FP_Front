@@ -16,6 +16,9 @@ function MainLayout() {
         </main>
       </div>
       <NoticeBar/>
+      <button>
+        <span>챗봇</span>
+        </button>
     </div>
   )
 }

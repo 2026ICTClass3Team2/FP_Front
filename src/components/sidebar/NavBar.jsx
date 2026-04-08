@@ -28,7 +28,7 @@ const NavBar = () => {
                         <span>질문게시판</span>
                     </Link>
                         
-                    <Link to='/'>
+                    <Link to='/study'>
                         <span>학습</span>
                     </Link>
                     

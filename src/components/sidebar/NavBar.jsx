@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 
 const NavBar = () => {
     return (
-        <aside>NavBar
+        <aside>
             {/* 1. 상단 프로필 구역 */}
             <div>
                 <div>

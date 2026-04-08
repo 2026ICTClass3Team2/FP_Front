@@ -1,17 +1,23 @@
 import React from 'react'
 
-const FeedCard = () => {
+const QuestionCard = () => {
   return (
-    <div>
+ <div>
       <div>
-       <h2>새 개시물 작성</h2>
+       <h2>질문 작성</h2>
         
       </div>
 
       <div>
-        <label>제목(선택 사항)</label>
+        <label>제목</label>
         <input type="text" placeholder="제목을 입력하세요 (최대 250자)" />
       </div>
+
+        <div>
+        <label>채택 포인트</label>
+        <span></span>
+      </div>
+
 
       <div>
         <label>내용</label>
@@ -48,11 +54,12 @@ const FeedCard = () => {
 
       <div>
         <button onClick={onCancel}>취소</button>
-        <button>작성</button>
+        <button>작성완료</button>
       </div>
     </div>
 
   )
 }
 
-export default FeedCard
+
+export default QuestionCard

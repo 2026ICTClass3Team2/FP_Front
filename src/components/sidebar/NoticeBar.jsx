@@ -2,7 +2,12 @@ import React from 'react'
 
 const NoticeBar = () => {
   return (
-    <div>NoticeBar</div>
+    <aside>
+        <div>
+            <h2>공지사항</h2>
+        </div>
+        
+    </aside>
   )
 }
 

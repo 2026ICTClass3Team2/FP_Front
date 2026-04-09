@@ -20,7 +20,7 @@ const AppRouter = () => {
 
 
           {/* 질문게시판 - 여기서 연결 */}
-          <Route path="question" element={<QuesionBoard />} />
+          <Route path="qna" element={<QuesionBoard />} />
 
           {/* 학습 페이지 - 여기서 연결 */}
           <Route path="study" element={<StudyPage />} />
@@ -29,7 +29,7 @@ const AppRouter = () => {
 
           <Route element={<MyPageLayout />}>
             {/* 마이페이지 영역 */}
-            <Route path='MyProfile'>
+            <Route path='profile'>
               <Route index element={<MyProfile />} />
             </Route>
 

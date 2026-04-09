@@ -6,40 +6,39 @@
   /* ============================================= */
 
   /* Main light area (feed + right sidebar) */
-  --color-background: #ffffff; /* Main feed + right announcements white background */
+  --color-background: #e5e5e5; /* Main feed + right announcements background */
 
   /* Primary text in light area */
-  --color-foreground: #111827; /* Main dark text (exact match to post titles and body) */
+  --color-foreground: #0a0a0a; /* Main dark text */
 
-  /* Muted / secondary text */
-  --color-muted: #64748b; /* Subtle gray text for timestamps, counts, descriptions */
-  --color-muted-foreground: #64748b;
+  /* Surface - cards and input backgrounds (slightly lighter than background) */
+  --color-surface: #f5f5f5; /* Card backgrounds, text input areas */
+  --color-surface-foreground: #0a0a0a;
+
+  /* Secondary - hover states (slightly darker than background) */
+  --color-secondary: #d4d4d4; /* Hover backgrounds */
+  --color-secondary-foreground: #0a0a0a;
+
+  /* Muted / additional text */
+  --color-muted: #d4d4d4; /* Subtle gray text for timestamps, counts, descriptions */
+  --color-muted-foreground: #525252;
 
   /* Light borders & dividers */
-  --color-border: #e2e8f0; /* Subtle card borders in feed and announcements */
-
-  /* Input / search bar border */
-  --color-input: #e2e8f0;
+  --color-border: #a3a3a3; /* Subtle card borders */
 
   /* Focus rings */
-  --color-ring: #0ea5e9; /* Primary blue ring */
+  --color-ring: #0a0a0a; /* Primary ring */
 
-  /* Primary blue - exact match to "새 게시물" button and floating chat button */
-  --color-primary: #0ea5e9; /* #0ea5e9 - bright sky blue used everywhere for CTAs */
+  /* Primary button - black background with white text */
+  --color-primary: #0a0a0a; /* Primary button background */
   --color-primary-foreground: #ffffff; /* White text on primary buttons */
+  --color-primary-hover: #262626; /* Hover state for primary button */
 
   /* Left sidebar - 진한 다크 모드 (exact slate-950 계열) */
   --color-sidebar: #020617; /* Left sidebar background - deep dark slate-950 */
   --color-sidebar-foreground: #f8fafc; /* Almost white text in sidebar */
   --color-sidebar-muted: #64748b; /* Muted text in sidebar navigation */
   --color-sidebar-border: #334155; /* Dark divider lines in sidebar */
-
-  /* Right announcement cards - exact pastel colors from image */
-  --color-announcement-blue: #e0f2fe;   /* Light blue - top "Dead Bug 커뮤니티에 오신 것을..." card */
-  --color-announcement-purple: #f3e8ff; /* Light purple - "새로운 학습 그룹 개설" card */
-  --color-announcement-green: #ecfdf5;  /* Light green - "커뮤니티 가이드라인 업데이트" card */
-  --color-announcement-orange: #fff7ed; /* Light orange - "주간 챌린지 공지" card */
-  --color-announcement-pink: #fdf4ff;   /* Light pink - "유지보수 일정" card */
 
   /* ============================================= */
   /* Radius - clean modern rounded corners */
@@ -111,17 +110,17 @@
   }
 
   .btn-primary:hover {
-    background-color: #0284c8; /* Natural hover darken of #0ea5e9 - matches image hover state */
+    background-color: var(--color-primary-hover);
     transform: translateY(-1px);
   }
 
   .btn-primary:active {
-    background-color: #0369a1;
+    background-color: #000000;
   }
 
   /* Feed cards (post cards in main area) */
   .feed-card {
-    background-color: var(--color-background);
+    background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-sm);
@@ -132,8 +131,9 @@
     box-shadow: var(--shadow-md);
   }
 
-  /* Announcement cards on the right (different pastel backgrounds) */
+  /* Announcement cards on the right */
   .announcement-card {
+    background-color: var(--color-surface);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--color-border);
@@ -165,8 +165,8 @@
 
   .global-chat-btn:hover {
     transform: scale(1.08);
-    background-color: #0284c8; /* Slight darken on hover - matches the described "darkens when you hover over it" */
-    box-shadow: var(--shadow-xl);
+    background-color: var(--color-primary-hover);
+    box-shadow: var(--shadow-lg);
   }
 
   .global-chat-btn:active {
@@ -185,7 +185,7 @@
 
   /* Search bar in header */
   .search-input {
-    background-color: #ffffff;
+    background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
     transition: all 0.2s ease;

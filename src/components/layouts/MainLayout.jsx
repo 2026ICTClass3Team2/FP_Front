@@ -13,7 +13,7 @@ function MainLayout() {
         <Header />                
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scrollbar-hide">
           <Outlet />
-          <Footer />
+          
         </main>
       </div>
 

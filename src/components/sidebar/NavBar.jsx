@@ -13,7 +13,7 @@ const NavBar = () => {
         <Link to="/MyProfile" className="flex items-center gap-3">
           {/* 프로필 이미지 placeholder (이미지와 동일한 파란색 느낌) */}
           <div className="w-9 h-9 bg-primary rounded-2xl flex items-center justify-center text-2xl text-primary-foreground flex-shrink-0">
-            👤
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-code-xml-icon lucide-code-xml"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
           </div>
           <div className="flex flex-col">
             <span className="text-foreground font-semibold text-lg leading-none">닉네임</span>
@@ -23,7 +23,9 @@ const NavBar = () => {
 
         {/* 포인트 버튼 - 크기 줄이고 오른쪽 아이콘 완전 제거 */}
         <button className="flex items-center gap-2.5 w-full px-5 py-2 bg-background border border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors">
-          <span className="text-2xl">🪙</span>
+          <span className="text-2xl">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f0b100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-coins-icon lucide-coins"><path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/><path d="M15 6h1v4"/><path d="m6.134 14.768.866-.5 2 3.464"/><circle cx="16" cy="8" r="6"/></svg>
+          </span>
           <span className="font-semibold text-foreground text-base">1250</span>
         </button>
       </div>

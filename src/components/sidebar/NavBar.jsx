@@ -1,10 +1,18 @@
 // NavBar.tsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 
 const NavBar = () => {
   const [subscribedOpen, setSubscribedOpen] = useState(false);
   const [popularOpen, setPopularOpen] = useState(false);
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout?.();
+    navigate('/login');
+  };
 
   return (
     <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0 select-none">
@@ -16,8 +24,8 @@ const NavBar = () => {
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-code-xml-icon lucide-code-xml"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
           </div>
           <div className="flex flex-col">
-            <span className="text-foreground font-semibold text-lg leading-none">닉네임</span>
-            <span className="text-muted text-sm mt-0.5">@사용자명</span>
+            <span className="text-foreground font-semibold text-lg leading-none">{currentUser?.nickname || '닉네임'}</span>
+            <span className="text-muted text-sm mt-0.5">@{currentUser?.username || '사용자명'}</span>
           </div>
         </Link>
 
@@ -140,7 +148,10 @@ const NavBar = () => {
 
       {/* 하단 로그아웃 */}
       <div className="mt-auto p-4 border-t border-border">
-        <button className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-muted/5 transition-all text-sm font-medium">
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-muted/5 transition-all text-sm font-medium"
+        >
           <svg
             width="18"
             height="18"

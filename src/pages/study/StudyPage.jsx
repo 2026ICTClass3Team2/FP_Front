@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getChoseong } from 'es-hangul';
-import { supabase } from '../../supabaseClient';
+
 const StudyPage = () => {
     // 1. 상태 선언 (초기값을 [] 빈 배열로 설정)
     const [incomingLanguages, setIncomingLanguages] = useState([]);
@@ -13,30 +13,13 @@ const StudyPage = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [focusedIndex, setFocusedIndex] = useState(-1);
 
-    // 2. 데이터 가져오기 (n8n 연동 전 가짜 데이터)
+   
     useEffect(() => {
         const fetchDBData = async () => {
             setIsLoading(true);
             try {
 
-                console.log("연결 시도 중..."); // 1번 확인   
-                const { data, error } = await supabase.from('study_pages').select('*');
-                if (error) {
-                    console.log("Supabase 에러 상세:", error); // 2번 확인
-                    throw error;
-                }
-                if (data) {
-                    setIncomingChapters(data); // 서버 데이터를 상태에 저장
-
-                    const uniqueLangs = Array.from(new Set(data.map(item => item.language)));
-                    setIncomingLanguages(uniqueLangs);
-
-                    if (uniqueLangs.length > 0) {
-                        setSelectedLanguage(uniqueLangs[0]);
-                        const firstChapter = data.find(c => c.language === uniqueLangs[0]);
-                        if (firstChapter) setSelectedChapter(firstChapter);
-                    }
-                }
+                
             } catch (err) {
                 console.log("데이터 로드 중 (가짜 데이터 없음) ");
             } finally {

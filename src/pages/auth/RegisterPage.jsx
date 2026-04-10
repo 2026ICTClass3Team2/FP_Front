@@ -16,6 +16,7 @@ const RegisterPage = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [notification, setNotification] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   const [passwordConfirmError, setPasswordConfirmError] = useState('');
   
   // 추가 기능 상태
@@ -52,7 +53,17 @@ const RegisterPage = () => {
       }
     }
 
-    // 2. 비밀번호 실시간 검증
+    // 2. 아이디 실시간 검증
+    if (name === 'username') {
+      const usernameRegex = /^[a-z0-9]{4,20}$/;
+      if (value.length > 0 && !usernameRegex.test(value)) {
+        setUsernameError('❌ 아이디는 영문 소문자와 숫자 4~20자리여야 합니다.');
+      } else {
+        setUsernameError('');
+      }
+    }
+
+    // 3. 비밀번호 실시간 검증
     if (name === 'password') {
       const hasLetter = /[a-zA-Z]/.test(value);
       const hasNumber = /[0-9]/.test(value);
@@ -66,7 +77,7 @@ const RegisterPage = () => {
       });
     }
 
-    // 3. 비밀번호 확인 실시간 검증 (비밀번호나 비밀번호 확인이 변경될 때 모두 체크)
+    // 4. 비밀번호 확인 실시간 검증 (비밀번호나 비밀번호 확인이 변경될 때 모두 체크)
     if (name === 'passwordConfirm' || name === 'password') {
       const checkPassword = name === 'password' ? value : formData.password;
       const checkConfirm = name === 'passwordConfirm' ? value : formData.passwordConfirm;
@@ -98,6 +109,10 @@ const RegisterPage = () => {
   const handleCheckUsername = async () => {
     if (!formData.username) {
       setError('아이디를 입력해주세요.');
+      return;
+    }
+    if (usernameError) {
+      setError('아이디 형식을 먼저 맞춰주세요.');
       return;
     }
     setError('');
@@ -157,6 +172,8 @@ const RegisterPage = () => {
 
   const handleVerifyEmail = async () => {
     if (!verificationCode) return setError('인증 코드를 입력해주세요.');
+    setError('');
+    setNotification('');
     try {
       const response = await fetch('http://localhost:8080/api/member/email/verify', {
         method: 'POST',
@@ -185,7 +202,7 @@ const RegisterPage = () => {
     setNotification('');
 
     // 프론트엔드 유효성 검사
-    if (emailError || passwordConfirmError) {
+    if (emailError || usernameError || passwordConfirmError) {
       return setError('입력 형식을 다시 확인해주세요.');
     }
 
@@ -298,11 +315,12 @@ const RegisterPage = () => {
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-foreground">아이디</label>
             <div className="flex gap-2">
-              <input type="text" name="username" value={formData.username} onChange={(e) => { handleChange(e); setIsUsernameAvailable(false); }} required className="flex-1 px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:border-primary" placeholder="testuser123" />
+              <input type="text" name="username" value={formData.username} onChange={(e) => { handleChange(e); setIsUsernameAvailable(false); }} required className={`flex-1 px-4 py-2 border rounded-xl bg-background text-foreground focus:outline-none transition-colors ${usernameError ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary'}`} placeholder="testuser123" />
               <button type="button" onClick={handleCheckUsername} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap ${isUsernameAvailable ? 'bg-green-500 text-white' : 'bg-muted text-foreground hover:bg-muted/80'}`}>
                 {isUsernameAvailable ? '확인 완료' : '중복 확인'}
               </button>
             </div>
+            {usernameError && <p className="text-red-500 text-xs mt-1 font-medium">{usernameError}</p>}
             {validationErrors.username && <p className="text-destructive text-xs mt-1">{validationErrors.username}</p>}
           </div>
 

@@ -1,8 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Modal from '../../components/common/Modal';
-import QuesionCard from '../../components/question/QuestionCard';
+import QuestionCard from '../../components/question/QuestionCard';
 
 const QuestionBoard = () => {
+  const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+
+  const handleWriteClick = () => setIsWriteModalOpen(true);
+  const handleCloseModal = () => setIsWriteModalOpen(false);
+
   return (
     <section>
       {/* 1. 상단 타이틀 영역 */}
@@ -24,7 +29,7 @@ const QuestionBoard = () => {
           <option>미해결</option>
         </select>
 
-        <button>+ 질문 작성</button>
+        <button onClick={handleWriteClick}>+ 질문 작성</button>
       </nav>
 
       {/* 3. 통계 요약 영역 */}
@@ -81,12 +86,10 @@ const QuestionBoard = () => {
       </main>
 
       {/* 5. 작성 모달 (상태에 따라 렌더링) */}
-      { (
-        <Modal title="질문 작성">
-           {/* FeedCard에 닫기 기능을 전달 */}
-          <QuesionCard />
-        </Modal>
-      )}
+      <Modal title="질문 작성" isOpen={isWriteModalOpen} onClose={handleCloseModal}>
+         {/* FeedCard에 닫기 기능을 전달 */}
+        <QuestionCard onClose={handleCloseModal} />
+      </Modal>
     </section>
   );
 };

@@ -30,7 +30,7 @@ const RegisterPage = () => {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [passwordValidations, setPasswordValidations] = useState({
     combo: false,         // 조건 A: 영문/숫자/특수문자 중 2가지 이상
-    length: false,        // 조건 B: 8~32자, 공백 제외
+    length: false,        // 조건 B: 8~32자, 공백 제외 
     noConsecutive: false, // 조건 C: 연속 3자 이상 동일 문자 제외
   });
 

@@ -3,7 +3,7 @@ import React from 'react';
 
 const NoticeBar = () => {
   return (
-    <aside className="w-80 border-l border-border flex flex-col h-full bg-background shrink-0">
+    <aside className="w-50 border-l border-border flex flex-col h-full bg-background shrink-0">
       
       <div className="p-6">
         <h2 className="text-lg font-black text-foreground">공지사항</h2>

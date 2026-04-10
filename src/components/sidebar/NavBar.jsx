@@ -18,14 +18,17 @@ const NavBar = () => {
     <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0 select-none">
       {/* 1. 상단 프로필 구역 */}
       <div className="p-5 flex flex-col gap-4">
-        <Link to="/MyProfile" className="flex items-center gap-3">
+        <Link to="/profile" className="flex items-center gap-3 hover:bg-foreground/10 rounded-lg p-2 -m-2 transition-colors">
           {/* 프로필 이미지 placeholder (이미지와 동일한 파란색 느낌) */}
           <div className="w-9 h-9 bg-primary rounded-2xl flex items-center justify-center text-2xl text-primary-foreground flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-code-xml-icon lucide-code-xml"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" 
+            fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
+            className="lucide lucide-code-xml-icon lucide-code-xml"><path d="m18 16 4-4-4-4"/>
+            <path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
           </div>
           <div className="flex flex-col">
             <span className="text-foreground font-semibold text-lg leading-none">{currentUser?.nickname || '닉네임'}</span>
-            <span className="text-muted text-sm mt-0.5">@{currentUser?.username || '사용자명'}</span>
+            <span className="text-foreground text-sm mt-0.5">@{currentUser?.username || '사용자명'}</span>
           </div>
         </Link>
 
@@ -61,7 +64,7 @@ const NavBar = () => {
         </Link>
 
         <Link
-          to="/question"
+          to="/qna"
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-foreground hover:bg-muted/5 transition-all"
         >
           <svg
@@ -150,7 +153,7 @@ const NavBar = () => {
       <div className="mt-auto p-4 border-t border-border">
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-muted/5 transition-all text-sm font-medium"
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-foreground/10 transition-all text-sm font-medium"
         >
           <svg
             width="18"

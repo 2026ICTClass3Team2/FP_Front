@@ -9,7 +9,11 @@ interface SliceResponse {
   last: boolean;
 }
 
-const FeedList = forwardRef<any, {}>((props, ref) => {
+interface FeedListProps {
+  onEditClick: (post: Post) => void;
+}
+
+const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   // 상태 관리
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +23,20 @@ const FeedList = forwardRef<any, {}>((props, ref) => {
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const lastPostIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false); // 무한 스크롤 옵저버 내에서 최신 로딩 상태를 확인하기 위한 Ref
+
+  // 게시글 삭제 핸들러
+  const handleDeletePost = async (postId: number) => {
+    if (window.confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+      try {
+        await jwtAxios.delete(`/api/posts/${postId}`);
+        // UI에서 즉시 삭제된 게시글 제거
+        setPosts(currentPosts => currentPosts.filter(p => p.postId !== postId));
+        alert('게시글이 삭제되었습니다.');
+      } catch (err: any) {
+        alert(err.response?.data?.message || '게시글 삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
 
   // API 요청 함수
   const fetchPosts = async (isRefresh = false) => {
@@ -105,8 +123,8 @@ const FeedList = forwardRef<any, {}>((props, ref) => {
       {error && <div className="text-center text-red-500 bg-red-50 p-4 rounded-xl mb-4">{error}</div>}
 
       <div className="flex flex-col gap-5">
-        {posts.map((post, index) => (
-          <PostCard key={post.postId || index} post={post} />
+        {posts.map((post) => (
+          <PostCard key={post.postId} post={post} onEdit={onEditClick} onDelete={handleDeletePost} />
         ))}
       </div>
 

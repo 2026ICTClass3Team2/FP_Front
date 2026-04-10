@@ -4,6 +4,7 @@ import { FiMoreVertical, FiHeart, FiMessageCircle, FiShare2, FiEye, FiBookmark }
 export interface Post {
   postId: number;
   title: string;
+  body?: string; // 수정을 위해 body 필드 추가
   createdAt: string;
   tags: string[];
   
@@ -31,9 +32,11 @@ interface PostCardProps {
   onComment?: (id: string) => void;
   onShare?: (id: string) => void;
   onBookmark?: (id: string) => void;
+  onEdit?: (post: Post) => void;
+  onDelete?: (postId: number) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // 안전한 렌더링을 위한 기본값 및 필드 매핑
@@ -83,8 +86,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
             </button>
             {isDropdownOpen && (
               <div className="absolute right-0 mt-1 w-24 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl overflow-hidden z-10">
-                <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">수정</button>
-                <button className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">삭제</button>
+                <button onClick={() => { onEdit?.(post); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">수정</button>
+                <button onClick={() => { onDelete?.(post.postId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">삭제</button>
               </div>
             )}
           </div>

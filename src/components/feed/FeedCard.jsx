@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 
-const FeedCard = ({ onClose, onPostCreated }) => {
+const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedTechs, setSelectedTechs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 수정 모드일 때 기존 데이터로 폼 채우기
+  useEffect(() => {
+    if (postToEdit) {
+      setTitle(postToEdit.title || '');
+      setContent(postToEdit.body || ''); // body가 없으면 빈 문자열로
+      setSelectedTechs(postToEdit.tags || []);
+    } else {
+      // 새 글 작성 모드일 때 폼 초기화
+      setTitle('');
+      setContent('');
+      setSelectedTechs([]);
+    }
+  }, [postToEdit]);
 
   const techStacks = ['React', 'TypeScript', 'JavaScript', 'Node.js', 'Python', 'Java', 'C++'];
 
@@ -35,22 +49,30 @@ const FeedCard = ({ onClose, onPostCreated }) => {
     // 현재 로그인된 유저 정보 가져오기
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
 
+    // 백엔드에 보낼 데이터
     const postData = {
-      title: title || '제목 없음', // 제목이 선택사항이므로 비어있을 시 기본값 세팅
+      title: title || (postToEdit ? postToEdit.title : '제목 없음'),
       body: content,
       contentType: 'feed',
       channelId: 1, // 백엔드 API 명세에 맞춰 필수값 추가
       thumbnailUrl: null, // 백엔드 명세에 맞추기 위해 썸네일 기본값 추가
       tags: selectedTechs,
-      author: currentUser.username || currentUser.nickname || '익명' // 작성자 데이터 추가
+      author: currentUser.username || currentUser.nickname || '익명'
     };
 
     try {
-      await jwtAxios.post('/api/posts', postData);
-      alert('게시글이 성공적으로 작성되었습니다.');
-      onPostCreated(); // 작성 성공 후 부모 컴포넌트에 알림
+      if (postToEdit) {
+        // 수정 모드: PUT 요청
+        await jwtAxios.put(`/api/posts/${postToEdit.postId}`, postData);
+        alert('게시글이 성공적으로 수정되었습니다.');
+      } else {
+        // 작성 모드: POST 요청
+        await jwtAxios.post('/api/posts', postData);
+        alert('게시글이 성공적으로 작성되었습니다.');
+      }
+      onPostCreated(); // 작성/수정 성공 후 부모 컴포넌트에 알림 (피드 새로고침)
     } catch (err) {
-      console.error('게시글 작성 API 에러 데이터:', err.response?.data);
+      console.error('게시글 작성/수정 API 에러 데이터:', err.response?.data);
       
       const errData = err.response?.data;
       if (errData) {
@@ -124,7 +146,7 @@ const FeedCard = ({ onClose, onPostCreated }) => {
       <div className="flex justify-end gap-2 mt-4">
         <button type="button" onClick={onClose} className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-sm font-medium transition-colors">취소</button>
         <button type="submit" disabled={loading} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg">
-          {loading ? '작성 중...' : '작성'}
+          {loading ? (postToEdit ? '수정 중...' : '작성 중...') : (postToEdit ? '수정' : '작성')}
         </button>
       </div>
     </form>

@@ -5,21 +5,31 @@ import FeedList from '../../components/feed/FeedList';
 
 const MainFeed = () => {
     const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+    const [editingPost, setEditingPost] = useState(null); // 수정할 게시글 데이터 상태
     const feedListRef = useRef();
 
-    const handleWriteClick = () => setIsWriteModalOpen(true);
+    // 새 글 작성 버튼 클릭 핸들러
+    const handleWriteClick = () => {
+        setEditingPost(null); // 새 글 작성이므로 수정 상태는 null로 초기화
+        setIsWriteModalOpen(true);
+    };
+    // 수정 버튼 클릭 핸들러 (FeedList로부터 전달받음)
+    const handleEditClick = (post) => {
+        setEditingPost(post); // 수정할 포스트 데이터 설정
+        setIsWriteModalOpen(true);
+    };
     const handleCloseModal = () => setIsWriteModalOpen(false);
 
+    // 작성/수정 완료 후 피드 새로고침 핸들러
     const handlePostCreated = () => {
         handleCloseModal();
-        // FeedList의 새로고침 함수를 호출
         feedListRef.current?.refresh();
     };
     
     return (
         <div className="w-full bg-background min-h-screen">
             {/* 무한 스크롤, 피드 카드 렌더링을 담당하는 FeedList 컴포넌트 */}
-            <FeedList ref={feedListRef} />
+            <FeedList ref={feedListRef} onEditClick={handleEditClick} />
 
             {/* 작성버튼 (FAB) - 피드 영역(max-w-2xl) 우측 하단에 딱 맞춰 고정 */}
             <div className="fixed bottom-10 left-0 right-0 w-full max-w-2xl mx-auto flex justify-end px-4 pointer-events-none z-50">
@@ -31,8 +41,8 @@ const MainFeed = () => {
                 </button>
             </div>
 
-            <Modal title="새 게시물 작성" isOpen={isWriteModalOpen} onClose={handleCloseModal}>
-                <FeedCard onClose={handleCloseModal} onPostCreated={handlePostCreated} /> 
+            <Modal title={editingPost ? "게시글 수정" : "새 게시물 작성"} isOpen={isWriteModalOpen} onClose={handleCloseModal}>
+                <FeedCard postToEdit={editingPost} onClose={handleCloseModal} onPostCreated={handlePostCreated} /> 
             </Modal>
         </div>
     );

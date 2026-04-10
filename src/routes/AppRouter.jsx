@@ -23,7 +23,7 @@ const AppRouter = () => {
         <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {/* 로그인된 사용자만 접근할 수 있는 영역 */}
-        {/* <Route element={<ProtectedRoute />}> */}  {/* 부모임 얜}
+        <Route element={<ProtectedRoute />}>
           {/* Nested Routing */}
           {/* 메인 영역 */}
           <Route element={<MainLayout />}>  
@@ -54,7 +54,7 @@ const AppRouter = () => {
               <Route index element={<AdminDashboard />} />
             </Route>
           </Route>
-        {/* </Route> */}
+        </Route>
       </Routes>
     </BrowserRouter>
   )

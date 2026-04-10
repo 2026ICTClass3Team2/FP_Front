@@ -5,18 +5,21 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null; 
 
   return (
-    <div> {/* 모달 전체 배경 영역 */}
-      <div> {/* 실제 모달 창 영역 */}
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-background w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-border max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         
-        <div> {/* 상단 제목 및 닫기 버튼 */}
-          {title && <h2>{title}</h2>}
-          <button onClick={onClose}>닫기</button>
+        <div className="flex items-center justify-between mb-5">
+          {title && <h2 className="text-xl font-bold text-foreground">{title}</h2>}
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-3xl leading-none">&times;</button>
         </div>
 
-        <div> {/* 핵심! 각 기능별 내용물이 들어갈 자리 */}
-        
-
-
+        <div>
           {children}
         </div>
 

@@ -10,6 +10,8 @@ const LoginPage = () => {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  
+  const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -70,7 +72,7 @@ const LoginPage = () => {
 
         <div className="flex flex-col gap-3">
           <a 
-            href="http://localhost:8080/oauth2/authorization/google" 
+            href={testURI + "oauth2/authorization/google"} 
             className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-xl font-medium text-foreground hover:bg-muted/5 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -82,7 +84,7 @@ const LoginPage = () => {
             Google로 로그인
           </a>
           <a 
-            href="http://localhost:8080/oauth2/authorization/kakao" 
+            href={testURI + "oauth2/authorization/kakao"} 
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#FEE500] text-[#000000] rounded-xl font-medium hover:bg-[#FEE500]/90 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -91,7 +93,7 @@ const LoginPage = () => {
             카카오로 로그인
           </a>
           <a 
-            href="http://localhost:8080/oauth2/authorization/github" 
+            href={testURI + "oauth2/authorization/github"} 
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#24292F] text-white rounded-xl font-medium hover:bg-[#24292F]/90 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">

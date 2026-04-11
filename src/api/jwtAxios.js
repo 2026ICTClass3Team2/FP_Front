@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 const jwtAxios=axios.create({
     baseURL: "http://localhost:8080" // 모든 요청의 기본 URL을 백엔드 서버로 설정

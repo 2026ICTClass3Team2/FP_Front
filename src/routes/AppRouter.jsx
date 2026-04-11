@@ -26,7 +26,7 @@ const AppRouter = () => {
         <Route element={<ProtectedRoute />}>
           {/* Nested Routing */}
           {/* 메인 영역 */}
-          <Route element={<MainLayout />}>
+          <Route element={<MainLayout />}>  
             <Route index element={<MainFeed />} />
 
 

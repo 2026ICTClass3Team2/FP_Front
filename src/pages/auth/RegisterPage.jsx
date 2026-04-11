@@ -4,6 +4,8 @@ import PasswordValidation from '../../components/auth/PasswordValidation';
 import TechStackModal from '../../components/auth/TechStackModal';
 
 const RegisterPage = () => {
+  const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/';
+
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -119,7 +121,7 @@ const RegisterPage = () => {
     setNotification('');
 
     try {
-      const response = await fetch(`http://localhost:8080/api/member/check-username?username=${formData.username}`);
+      const response = await fetch(`${testURI}member/check-username?username=${formData.username}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -150,7 +152,7 @@ const RegisterPage = () => {
     setError('');
     setNotification('');
     try {
-      const response = await fetch('http://localhost:8080/api/member/email/send', {
+      const response = await fetch(`${testURI}member/email/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),
@@ -175,7 +177,7 @@ const RegisterPage = () => {
     setError('');
     setNotification('');
     try {
-      const response = await fetch('http://localhost:8080/api/member/email/verify', {
+      const response = await fetch(`${testURI}member/email/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, code: verificationCode }),
@@ -229,7 +231,7 @@ const RegisterPage = () => {
         techStacks: selectedTechStack
       };
 
-      const response = await fetch('http://localhost:8080/api/member/signup', {
+      const response = await fetch(`${testURI}member/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -246,7 +248,7 @@ const RegisterPage = () => {
       
       if (data.result === 'success') {
         alert('회원가입이 완료되었습니다. 로그인해주세요.');
-        navigate('/login');
+        navigate('/api/login');
       } else {
         setError('알 수 없는 오류로 회원가입에 실패했습니다.');
       }

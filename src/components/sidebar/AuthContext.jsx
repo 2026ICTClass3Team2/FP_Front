@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const testURI = 'http://localhost:8090/';
 
   // 앱 진입/새로고침 시 스토리지에서 인증 정보 복구
   useEffect(() => {
@@ -28,7 +29,7 @@ export const AuthProvider = ({ children }) => {
     body.append('email', email);
     body.append('pw', password);
 
-    const response = await fetch('http://localhost:8080/api/login', {
+    const response = await fetch(`${testURI}api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

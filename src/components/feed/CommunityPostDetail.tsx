@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2 } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
@@ -6,52 +6,119 @@ import jwtAxios from '../../api/jwtAxios';
 
 interface CommunityPostDetailProps {
   post: Post;
-  onClose: () => void;
+  onClose: (updatedPost?: Post) => void;
 }
 
 const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose }) => {
   const [localPost, setLocalPost] = useState<Post>(post);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(true); // 로딩 상태 추가
+  const viewCountIncrementedRef = useRef<Set<number>>(new Set()); // useRef를 사용하여 특정 postId에 대한 조회수 증가 API가 호출되었는지 추적
 
+  // Escape 키를 눌렀을 때 모달 닫기
   useEffect(() => {
-    setLocalPost(post);
-  }, [post]);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose(localPost); // Pass the local (updated) post state
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [onClose, localPost]); // localPost가 변경될 때마다 최신 값을 참조하도록 의존성 배열에 추가
+
+  // 모달이 열릴 때 게시글 상세 정보를 다시 불러와 조회수를 업데이트합니다.
+  useEffect(() => {
+    // postId가 유효하고, 아직 API 호출을 하지 않았을 때만 실행
+    if (post?.postId && !viewCountIncrementedRef.current.has(post.postId)) {
+      const fetchDetailsAndUpdateViewCount = async () => {
+        setIsLoadingDetails(true); // 로딩 시작
+        try {
+          // 이 API를 호출하면 백엔드에서 조회수가 1 증가합니다.
+          const response = await jwtAxios.get(`posts/${post.postId}`);
+          setLocalPost(response.data); // 응답받은 최신 데이터로 상태를 업데이트합니다.
+        } catch (error) {
+          console.error("게시글 상세 정보 로딩 실패:", error);
+          // 에러 발생 시 모달을 닫거나 사용자에게 알림
+          alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
+          onClose(post); // Pass the original post on error
+        } finally {
+          setIsLoadingDetails(false); // 로딩 종료
+          // 해당 postId에 대한 조회수 증가 API 호출 완료를 기록
+          viewCountIncrementedRef.current.add(post.postId);
+        }
+      };
+      fetchDetailsAndUpdateViewCount();
+    }
+    // 클린업 함수: 컴포넌트 언마운트 또는 postId 변경 시 해당 postId 기록 삭제
+    return () => {
+      if (post?.postId) viewCountIncrementedRef.current.delete(post.postId);
+    };
+  }, [post?.postId, onClose]); // post.postId가 변경될 때만 실행, onClose도 의존성에 추가
 
   // 낙관적 업데이트 - 좋아요
   const handleLike = async () => {
-    const originalLiked = localPost.isLiked || localPost.liked;
-    const originalCount = localPost.likeCount;
-    
-    setLocalPost(prev => ({
-      ...prev,
-      isLiked: !originalLiked,
-      liked: !originalLiked,
-      likeCount: originalLiked ? prev.likeCount - 1 : prev.likeCount + 1,
-    }));
+    const originalState = { ...localPost };
+    setLocalPost(prev => {
+      const newState = { ...prev };
+      if (newState.isLiked || newState.liked) {
+        // Currently liked, so unlike
+        newState.likeCount--;
+        newState.isLiked = false;
+      } else {
+        // Currently not liked, so like
+        newState.likeCount++;
+        newState.isLiked = true;
+        if (newState.isDisliked || newState.disliked) {
+          // If it was disliked, undislike it
+          newState.dislikeCount--;
+          newState.isDisliked = false;
+        }
+      }
+      // sync liked property
+      newState.liked = newState.isLiked;
+      newState.disliked = newState.isDisliked;
+      return newState;
+    });
 
     try {
       await jwtAxios.post(`posts/${localPost.postId}/like`);
     } catch (error) {
-      setLocalPost(prev => ({ ...prev, isLiked: originalLiked, liked: originalLiked, likeCount: originalCount }));
+      setLocalPost(originalState);
       alert('요청에 실패했습니다.');
     }
   };
 
   // 낙관적 업데이트 - 비추천
   const handleDislike = async () => {
-    const originalDisliked = localPost.isDisliked || localPost.disliked;
-    const originalCount = localPost.dislikeCount;
-    
-    setLocalPost(prev => ({
-      ...prev,
-      isDisliked: !originalDisliked,
-      disliked: !originalDisliked,
-      dislikeCount: originalDisliked ? prev.dislikeCount - 1 : prev.dislikeCount + 1,
-    }));
+    const originalState = { ...localPost };
+    setLocalPost(prev => {
+      const newState = { ...prev };
+      if (newState.isDisliked || newState.disliked) {
+        // Currently disliked, so undislike
+        newState.dislikeCount--;
+        newState.isDisliked = false;
+      } else {
+        // Currently not disliked, so dislike
+        newState.dislikeCount++;
+        newState.isDisliked = true;
+        if (newState.isLiked || newState.liked) {
+          // If it was liked, unlike it
+          newState.likeCount--;
+          newState.isLiked = false;
+        }
+      }
+      // sync liked property
+      newState.liked = newState.isLiked;
+      newState.disliked = newState.isDisliked;
+      return newState;
+    });
 
     try {
       await jwtAxios.post(`posts/${localPost.postId}/dislike`);
     } catch (error) {
-      setLocalPost(prev => ({ ...prev, isDisliked: originalDisliked, disliked: originalDisliked, dislikeCount: originalCount }));
+      setLocalPost(originalState);
       alert('요청에 실패했습니다.');
     }
   };
@@ -85,13 +152,26 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
     }
   };
 
+  // 로딩 중일 때 스피너 표시
+  if (isLoadingDetails) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // localPost가 null이 될 가능성은 없지만, 타입스크립트 에러 방지용
+  if (!localPost) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => onClose(localPost)}>
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
+       [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
         
         {/* 우측 상단 닫기 버튼 */}
         <button 
-          onClick={onClose}
+          onClick={() => onClose(localPost)}
           className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
           aria-label="닫기"
         >

@@ -42,7 +42,7 @@ const Header = () => {
         </div>
       </div>
 
-      
+      {/* 오른쪽 알림 및 메시지 아이콘 */}
       <div className="flex items-center gap-3 min-w-[200px] justify-end">
         <button className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

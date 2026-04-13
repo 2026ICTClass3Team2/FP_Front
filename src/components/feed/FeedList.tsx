@@ -4,7 +4,7 @@ import PostCard, { Post } from './PostCard';
 import jwtAxios from '../../api/jwtAxios';
 import CommunityPostDetail from './CommunityPostDetail';
 
-const testURI = 'http://localhost:8090/';
+const testURI = 'http://localhost:8090/api/';
 
 // 백엔드 Spring Data JPA Slice 응답 인터페이스
 interface SliceResponse {

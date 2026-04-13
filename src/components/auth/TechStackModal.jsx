@@ -17,7 +17,7 @@ const TechStackModal = ({ isOpen, onClose, selectedTechStack, onToggle }) => {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h2 className="text-2xl font-extrabold text-gray-900">관심 기술 스택 선택</h2>
-            <p className="text-sm text-gray-500 mt-1.5">자신 있는 기술이나 관심 있는 기술을 선택해주세요.</p>
+            <p className="text-sm text-gray-500 mt-1.5">자신 있는 기술이나 관심 있는 기술을 선택해주세요.(최대 5개)</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-900 text-3xl leading-none p-1 transition-colors">&times;</button>
         </div>

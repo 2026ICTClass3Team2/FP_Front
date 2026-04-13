@@ -6,7 +6,7 @@ import jwtAxios from '../../api/jwtAxios';
 
 interface CommunityPostDetailProps {
   post: Post;
-  onClose: () => void;
+  onClose: (updatedPost?: Post) => void;
 }
 
 const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose }) => {
@@ -18,7 +18,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose(localPost);
+        onClose(localPost); // Pass the local (updated) post state
       }
     };
 
@@ -42,7 +42,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           console.error("게시글 상세 정보 로딩 실패:", error);
           // 에러 발생 시 모달을 닫거나 사용자에게 알림
           alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
-          onClose(); 
+          onClose(post); // Pass the original post on error
         } finally {
           setIsLoadingDetails(false); // 로딩 종료
           // 해당 postId에 대한 조회수 증가 API 호출 완료를 기록
@@ -165,12 +165,13 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   if (!localPost) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => onClose(localPost)}>
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
+       [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
         
         {/* 우측 상단 닫기 버튼 */}
         <button 
-          onClick={onClose}
+          onClick={() => onClose(localPost)}
           className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
           aria-label="닫기"
         >

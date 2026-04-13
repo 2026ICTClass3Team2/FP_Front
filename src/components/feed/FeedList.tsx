@@ -153,7 +153,9 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
           post={selectedPost}
           onClose={(updatedPost) => {
             if (updatedPost) {
-              setPosts(prevPosts => prevPosts.map(p => (p.postId === updatedPost.postId ? updatedPost : p)));
+              setPosts(prevPosts =>
+                prevPosts.map(p => (p.postId === updatedPost.postId ? updatedPost : p))
+              );
             }
             setSelectedPost(null);
           }}

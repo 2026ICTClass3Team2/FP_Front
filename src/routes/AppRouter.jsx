@@ -7,7 +7,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import MainFeed from '../pages/feed/MainFeed';
 import MyPageLayout from '../components/layouts/MyPageLayout';
 import ProfileCard from '../components/profile/ProfileCard';
-import QuesionBoard from '../pages/question/QuestionBoard';
+import QuestionBoard from '../pages/question/QuestionBoard';
 import QuestionDetail from '../pages/question/QuestionDetail';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';

@@ -12,13 +12,25 @@ interface CommentItemProps {
   onRefresh: () => void;
 }
 
+// Helper to get all descendants of a comment in a flat list using recursion.
+const getAllReplies = (comment: CommentResponse): CommentResponse[] => {
+  let replies: CommentResponse[] = [];
+  for (const child of comment.children || []) {
+    replies.push(child);
+    replies = replies.concat(getAllReplies(child));
+  }
+  return replies;
+};
+
 const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, currentUser, onRefresh }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [visibleReplies, setVisibleReplies] = useState(10);
 
   const isAuthor = currentUser?.username === comment.authorUsername || currentUser?.nickname === comment.authorNickname;
   const isDeleted = comment.status === 'deleted';
+  const isRootComment = depth === 0;
 
   // 대댓글 작성 처리
   const handleReplySubmit = async (content: string) => {
@@ -69,12 +81,22 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
     }
   };
 
+  // Get all replies only for root comments
+  const allReplies = isRootComment ? getAllReplies(comment) : [];
+  const hasMoreReplies = allReplies.length > visibleReplies;
+
+  const showMoreReplies = () => {
+    setVisibleReplies(prev => prev + 10);
+  };
+
   // 깊이에 따른 마진 설정 (최대 깊이를 넘어가더라도 시각적으로 구분되도록 여백 부여)
   const depthClass = depth > 0 ? 'ml-4 md:ml-8 lg:ml-12 border-l-2 border-gray-100 dark:border-gray-800 pl-4 mt-4' : 'mt-6';
 
   return (
-    <div className={`${depthClass} flex flex-col gap-2`}>
-      <div className="flex items-start gap-3 relative">
+    <>
+      {/* The actual comment body */}
+      <div className={depthClass}>
+        <div className="flex items-start gap-3 relative">
         {depth > 0 && <FiCornerDownRight className="text-gray-300 dark:text-gray-600 mt-2 flex-shrink-0" size={16} />}
         
         {/* 프로필 이미지 */}
@@ -156,12 +178,34 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
           )}
         </div>
       </div>
+      </div>
 
-      {/* 자식 대댓글 재귀 렌더링 */}
-      {comment.children && comment.children.length > 0 && comment.children.map((child) => (
-        <CommentItem key={child.id} comment={child} postId={postId} depth={depth + 1} currentUser={currentUser} onRefresh={onRefresh} />
-      ))}
-    </div>
+      {/* Render replies only if it's a root comment */}
+      {isRootComment && allReplies.length > 0 && (
+        <div className="flex flex-col">
+          {allReplies.slice(0, visibleReplies).map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              postId={postId}
+              depth={1} // All replies have depth 1
+              currentUser={currentUser}
+              onRefresh={onRefresh}
+            />
+          ))}
+          {hasMoreReplies && (
+            <div className="ml-4 md:ml-8 lg:ml-12 pl-4 mt-2">
+              <button
+                onClick={showMoreReplies}
+                className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
+              >
+                답글 {allReplies.length - visibleReplies}개 더 보기
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 };
 

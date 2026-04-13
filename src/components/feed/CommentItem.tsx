@@ -9,41 +9,59 @@ interface CommentItemProps {
   postId: number;
   depth?: number;
   currentUser: any;
-  onRefresh: () =// Helper t}[> mse[] = [Item: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, currentUser, onRefresh }) => {
+  onRefresh: () => void;
+}
+
+// Helper to get all descendants of a comment in a flat list (depth-first)
+const getAllReplies = (comment: CommentResponse): CommentResponse[] => {
+  let replies: CommentResponse[] = [];
+  for (const child of comment.children || []) {
+    replies.push(child);
+    replies = replies.concat(getAllReplies(child)); // Recursively get children's children
+  }
+  return replies;
+};
+
+const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, currentUser, onRefresh }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isDropdownOpen, setIsDropdownOplse);
-  const [visibleRep
-  const [showAllDirectReplies, setShowAllDirectReplies] = useState(false); // 직접적인 답글을 모두 보여줄지 여부
-  const [visibleDirectRepliesCount, setVisibleDirectRepliesCount] = useState(10); // '더 보기' 시 보여줄 답글 개수
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const initialBriefCount = 2; // '간략히' 모드일 때 보여줄 답글 개수
-  const repliesChunkSize = 10; // '더 보기' 시 추가할 답글 개수
+  // New states for reply expansion and pagination
+  const [isExpanded, setIsExpanded] = useState(false); // True if replies are expanded, false if brief
+  const [visibleRepliesCount, setVisibleRepliesCount] = useState(10); // How many replies are visible when expanded
+
+  const initialBriefCount = 2; // Number of replies to show when not expanded
+  const repliesChunkSize = 10; // Number of replies to add when "더 보기" is clicked
 
   const isAuthor = currentUser?.username === comment.authorUsername || currentUser?.nickname === comment.authorNickname;
-  const isDeleted = comment.;
-  const isRootComment = depth === 0status === 'deleted';
+  const isDeleted = comment.status === 'deleted';
+  const isRootComment = depth === 0;
 
   // 대댓글 작성 처리
   const handleReplySubmit = async (content: string) => {
-    await jwtAxios.post(`/api/v1/posts/${postId}/comments`, {
+    await jwtAxios.post(`posts/${postId}/comments`, {
       content,
       parentId: comment.id,
     });
     onRefresh();
+    setIsReplying(false); // 답글 작성 후 폼 닫기
+    setIsExpanded(true); // 답글 작성 후 자동으로 펼치기
+    setVisibleRepliesCount(prev => prev + 1); // 새로 추가된 답글 포함
   };
 
   // 댓글 수정 처리
   const handleEditSubmit = async (content: string) => {
-    await jwtAxios.put(`/api/v1/posts/${postId}/comments/${comment.id}`, { content });
+    await jwtAxios.put(`posts/${postId}/comments/${comment.id}`, { content });
     onRefresh();
+    setIsEditing(false);
   };
 
   // 댓글 삭제 처리
   const handleDelete = async () => {
     if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
       try {
-        await jwtAxios.delete(`/api/v1/posts/${postId}/comments/${comment.id}`);
+        await jwtAxios.delete(`posts/${postId}/comments/${comment.id}`);
         onRefresh();
       } catch (error) {
         alert('댓글 삭제 중 오류가 발생했습니다.');
@@ -55,7 +73,7 @@ interface CommentItemProps {
   const handleLike = async () => {
     if (isDeleted) return;
     try {
-      await jwtAxios.post(`/api/v1/posts/${postId}/comments/${comment.id}/like`);
+      await jwtAxios.post(`posts/${postId}/comments/${comment.id}/like`);
       onRefresh();
     } catch (error) {
       alert('오류가 발생했습니다.');
@@ -66,26 +84,49 @@ interface CommentItemProps {
   const handleDislike = async () => {
     if (isDeleted) return;
     try {
-      await jwtAxios.post(`/api/v1/posts/${postId}/comments/${comm Geteall replies only for root comments
-  const allReplie  >  // Root 댓글의 직접적인 답글만 관리 (깊이 1로 표시될 댓글들) prev + 1directReplie0 = comment.c)ildren || []rr
-  const repliesToDisplayForRoot = showAllDirectReplies
-    ? directReplies.slice(0, visibleDirectRepliesCount)
-    : directReplies.slice(0, initialBriefCount);
-
-  const hasMoreToExpandForRoot = directReplies.length > initialBriefCount && !showAllDirectReplies;
-  const hasMoreToLoadForRoot = directReplies.length > visibleDirectRepliesCount && showAllDirectReplies;
-  const canCollapseForRoot = showAllDirectReplies && directReplies.length > initialBriefCount {
+      await jwtAxios.post(`posts/${postId}/comments/${comment.id}/dislike`);
+      onRefresh();
+    } catch (error) {
       alert('오류가 발생했습니다.');
     }
   };
 
+  // Get all replies only for root comments (depth 0)
+  const allReplies = isRootComment ? getAllReplies(comment) : [];
+  const totalReplies = allReplies.length;
+
+  // Determine which replies to display based on expansion state
+  const repliesToRender = isExpanded
+    ? allReplies.slice(0, visibleRepliesCount)
+    : allReplies.slice(0, initialBriefCount);
+
+  // Control button visibility
+  const canExpand = !isExpanded && totalReplies > initialBriefCount;
+  const canLoadMore = isExpanded && visibleRepliesCount < totalReplies;
+  const canCollapse = isExpanded && totalReplies > initialBriefCount; // Only show collapse if there were more than initialBriefCount
+
+  const handleExpandReplies = () => {
+    setIsExpanded(true);
+    setVisibleRepliesCount(repliesChunkSize); // Start with the first chunk
+  };
+
+  const handleShowMoreReplies = () => {
+    setVisibleRepliesCount(prev => Math.min(prev + repliesChunkSize, totalReplies));
+  };
+
+  const handleCollapseReplies = () => {
+    setIsExpanded(false);
+    setVisibleRepliesCount(initialBriefCount); // Reset to initial brief count
+  };
+
   // 깊이에 따른 마진 설정 (최대 깊이를 넘어가더라도 시각적으로 구분되도록 여백 부여)
-  const depthClass = depth > 0 ? 'ml-4 md:ml-8 lg:ml-12 border-l-2 border-gray-1}>
-      <div classNamthClas  k:border-gray-800 pl-4 mt-4' : 'mt-6';
+  const depthClass = depth > 0 ? 'ml-4 md:ml-8 lg:ml-12 border-l-2 border-gray-100 dark:border-gray-800 pl-4 mt-4' : 'mt-6';
 
   return (
-    <div className={`${depthClass} flex flex-col gap-2`}>
-      <div className="flex items-start gap-3 relative">
+    <>
+      {/* The actual comment body */}
+      <div className={depthClass}>
+        <div className="flex items-start gap-3 relative">
         {depth > 0 && <FiCornerDownRight className="text-gray-300 dark:text-gray-600 mt-2 flex-shrink-0" size={16} />}
         
         {/* 프로필 이미지 */}
@@ -156,7 +197,7 @@ interface CommentItemProps {
             </p>
           )}
 
-          {/* Reply form */}
+          {/* 답글 폼 */}
           {isReplying && (
             <CommentForm
               onSubmit={handleReplySubmit}
@@ -167,9 +208,10 @@ interface CommentItemProps {
           )}
         </div>
       </div>
+      </div>
 
       {/* Render replies only if it's a root comment */}
-      {isRootComment && totalReplies > 0 && (
+      {isRootComment && allReplies.length > 0 && (
         <div className="flex flex-col">
           {repliesToRender.map((reply) => (
             <CommentItem
@@ -181,23 +223,22 @@ interface CommentItemProps {
               onRefresh={onRefresh}
             />
           ))}
-
           {/* Reply action buttons */}
           <div className="ml-4 md:ml-8 lg:ml-12 pl-4 mt-2 flex gap-2">
-            {hasMoreToExpand && (
+            {canExpand && (
               <button
                 onClick={handleExpandReplies}
                 className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
               >
-                답글 {totalReplies - initialBriefCount}개 펼치기
+                답글 더보기
               </button>
             )}
-            {hasMoreToLoad && (
+            {canLoadMore && (
               <button
                 onClick={handleShowMoreReplies}
                 className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
               >
-                답글 {totalReplies - currentVisibleReplies}개 더 보기
+                답글 더보기
               </button>
             )}
             {canCollapse && (
@@ -207,11 +248,11 @@ interface CommentItemProps {
               >
                 간략히
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

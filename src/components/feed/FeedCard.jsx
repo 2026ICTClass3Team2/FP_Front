@@ -1,38 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
+import TechStackModal from '../auth/TechStackModal';
 
 const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [selectedTechs, setSelectedTechs] = useState([]);
+  const [tags, setTags] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
 
   // 수정 모드일 때 기존 데이터로 폼 채우기
   useEffect(() => {
     if (postToEdit) {
       setTitle(postToEdit.title || '');
       setContent(postToEdit.body || ''); // body가 없으면 빈 문자열로
-      setSelectedTechs(postToEdit.tags || []);
+      setTags(postToEdit.tags?.join(', ') || '');
     } else {
       // 새 글 작성 모드일 때 폼 초기화
       setTitle('');
       setContent('');
-      setSelectedTechs([]);
+      setTags('');
     }
   }, [postToEdit]);
 
-  const techStacks = ['React', 'TypeScript', 'JavaScript', 'Node.js', 'Python', 'Java', 'C++'];
-
-  const handleTechToggle = (tech) => {
-    if (selectedTechs.includes(tech)) {
-      setSelectedTechs(selectedTechs.filter(t => t !== tech));
+  const handleTechStackToggle = (tech) => {
+    const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
+    if (currentTags.includes(tech)) {
+      setTags(currentTags.filter(t => t !== tech).join(', '));
     } else {
-      if (selectedTechs.length >= 5) {
+      if (currentTags.length >= 5) {
         alert('기술 스택은 최대 5개까지만 선택 가능합니다.');
         return;
       }
-      setSelectedTechs([...selectedTechs, tech]);
+      setTags([...currentTags, tech].join(', '));
     }
   };
 
@@ -49,14 +50,16 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
     // 현재 로그인된 유저 정보 가져오기
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
 
+    const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+
     // 백엔드에 보낼 데이터
     const postData = {
       title: title || (postToEdit ? postToEdit.title : '제목 없음'),
       body: content,
       contentType: 'feed',
-      channelId: 1, // 백엔드 API 명세에 맞춰 필수값 추가
+      // channelId: 1, // 필요 시 설정
       thumbnailUrl: null, // 백엔드 명세에 맞추기 위해 썸네일 기본값 추가
-      tags: selectedTechs,
+      tags: tagArray,
       author: currentUser.username || currentUser.nickname || '익명'
     };
 
@@ -118,23 +121,34 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">기술스택(최대5개)</label>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {techStacks.map(tech => (
-            <button
-              key={tech}
-              type="button"
-              onClick={() => handleTechToggle(tech)}
-              className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-                selectedTechs.includes(tech)
-                  ? 'bg-primary border-primary text-primary-foreground'
-                  : 'bg-background border-border text-foreground hover:border-primary'
-              }`}
-            >
-              {tech}
-            </button>
-          ))}
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsTechStackModalOpen(true)}
+          className="flex items-center justify-between w-full min-h-[46px] p-3 border border-border rounded-xl bg-background text-left focus:outline-none focus:border-primary transition-colors hover:bg-muted/30"
+        >
+          <div className="flex flex-wrap gap-1.5">
+            {tags.split(',').map(t => t.trim()).filter(t => t).length > 0 ? (
+              tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
+                <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg shadow-sm">
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-muted-foreground text-sm">관련된 기술 스택을 선택해 주세요.</span>
+            )}
+          </div>
+          <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
       </div>  
+
+      <TechStackModal
+        isOpen={isTechStackModalOpen}
+        onClose={() => setIsTechStackModalOpen(false)}
+        selectedTechStack={tags.split(',').map(t => t.trim()).filter(t => t)}
+        onToggle={handleTechStackToggle}
+      />
             
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">썸네일 이미지 (선택)</label>

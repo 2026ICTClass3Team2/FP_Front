@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } f
 import { FiPlus } from 'react-icons/fi';
 import PostCard, { Post } from './PostCard';
 import jwtAxios from '../../api/jwtAxios';
+import CommunityPostDetail from './CommunityPostDetail';
 
 const testURI = 'http://localhost:8090/';
 
@@ -21,6 +22,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const lastPostIdRef = useRef<string | null>(null);
@@ -126,7 +128,13 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
 
       <div className="flex flex-col gap-5">
         {posts.map((post) => (
-          <PostCard key={post.postId} post={post} onEdit={onEditClick} onDelete={handleDeletePost} />
+          <PostCard 
+            key={post.postId} 
+            post={post} 
+            onEdit={onEditClick} 
+            onDelete={handleDeletePost} 
+            onDetailClick={() => setSelectedPost(post)} 
+          />
         ))}
       </div>
 
@@ -138,6 +146,11 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
       <div ref={observerTarget} className="h-14 flex items-center justify-center mt-4">
         {isLoading && <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
       </div>
+
+      {/* 상세 보기 모달 렌더링 */}
+      {selectedPost && (
+        <CommunityPostDetail post={selectedPost} onClose={() => setSelectedPost(null)} />
+      )}
     </div>
   );
 });

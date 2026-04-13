@@ -75,7 +75,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
     }));
 
     try {
-      await jwtAxios.post(`/api/posts/${localPost.postId}/like`);
+      await jwtAxios.post(`posts/${localPost.postId}/like`);
     } catch (error) {
       setLocalPost(prev => ({ ...prev, isLiked: originalLiked, liked: originalLiked, likeCount: originalCount }));
       alert('요청에 실패했습니다.');
@@ -96,7 +96,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
     }));
 
     try {
-      await jwtAxios.post(`/api/posts/${localPost.postId}/dislike`);
+      await jwtAxios.post(`posts/${localPost.postId}/dislike`);
     } catch (error) {
       setLocalPost(prev => ({ ...prev, isDisliked: originalDisliked, disliked: originalDisliked, dislikeCount: originalCount }));
       alert('요청에 실패했습니다.');
@@ -115,7 +115,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
     }));
 
     try {
-      await jwtAxios.post(`/api/posts/${localPost.postId}/bookmark`);
+      await jwtAxios.post(`posts/${localPost.postId}/bookmark`);
     } catch (error) {
       setLocalPost(prev => ({ ...prev, isBookmarked: originalBookmarked, bookmarked: originalBookmarked }));
       alert('요청에 실패했습니다.');

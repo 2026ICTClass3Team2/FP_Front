@@ -22,7 +22,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
 
   // 대댓글 작성 처리
   const handleReplySubmit = async (content: string) => {
-    await jwtAxios.post(`/api/posts/${postId}/comments`, {
+    await jwtAxios.post(`posts/${postId}/comments`, {
       content,
       parentId: comment.id,
     });
@@ -31,7 +31,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
 
   // 댓글 수정 처리
   const handleEditSubmit = async (content: string) => {
-    await jwtAxios.put(`/api/posts/${postId}/comments/${comment.id}`, { content });
+    await jwtAxios.put(`posts/${postId}/comments/${comment.id}`, { content });
     onRefresh();
   };
 
@@ -39,7 +39,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
   const handleDelete = async () => {
     if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
       try {
-        await jwtAxios.delete(`/api/posts/${postId}/comments/${comment.id}`);
+        await jwtAxios.delete(`posts/${postId}/comments/${comment.id}`);
         onRefresh();
       } catch (error) {
         alert('댓글 삭제 중 오류가 발생했습니다.');
@@ -51,7 +51,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
   const handleLike = async () => {
     if (isDeleted) return;
     try {
-      await jwtAxios.post(`/api/posts/${postId}/comments/${comment.id}/like`);
+      await jwtAxios.post(`posts/${postId}/comments/${comment.id}/like`);
       onRefresh();
     } catch (error) {
       alert('오류가 발생했습니다.');
@@ -62,7 +62,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
   const handleDislike = async () => {
     if (isDeleted) return;
     try {
-      await jwtAxios.post(`/api/posts/${postId}/comments/${comment.id}/dislike`);
+      await jwtAxios.post(`posts/${postId}/comments/${comment.id}/dislike`);
       onRefresh();
     } catch (error) {
       alert('오류가 발생했습니다.');

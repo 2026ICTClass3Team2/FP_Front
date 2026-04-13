@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
     body.append('email', email);
     body.append('pw', password);
 
-    const response = await fetch(`${testURI}api/login`, {
+    const response = await fetch(`${testURI}login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

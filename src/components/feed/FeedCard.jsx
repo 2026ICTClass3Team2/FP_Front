@@ -63,11 +63,11 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
     try {
       if (postToEdit) {
         // 수정 모드: PUT 요청
-        await jwtAxios.put(`/api/posts/${postToEdit.postId}`, postData);
+        await jwtAxios.put(`/posts/${postToEdit.postId}`, postData);
         alert('게시글이 성공적으로 수정되었습니다.');
       } else {
         // 작성 모드: POST 요청
-        await jwtAxios.post('/api/posts', postData);
+        await jwtAxios.post('/posts', postData);
         alert('게시글이 성공적으로 작성되었습니다.');
       }
       onPostCreated(); // 작성/수정 성공 후 부모 컴포넌트에 알림 (피드 새로고침)

@@ -32,7 +32,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const handleDeletePost = async (postId: number) => {
     if (window.confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
       try {
-        await jwtAxios.delete(`/api/posts/${postId}`);
+        await jwtAxios.delete(`posts/${postId}`);
         // UI에서 즉시 삭제된 게시글 제거
         setPosts(currentPosts => currentPosts.filter(p => p.postId !== postId));
         alert('게시글이 삭제되었습니다.');

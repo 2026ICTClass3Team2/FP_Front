@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiThumbsUp, FiThumbsDown, FiCornerDownRight, FiMoreVertical } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { CommentResponse } from './types';
@@ -26,6 +26,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for reply expansion and pagination
   const [isExpanded, setIsExpanded] = useState(false); // True if replies are expanded, false if brief
@@ -37,6 +38,27 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
   const isAuthor = currentUser?.username === comment.authorUsername || currentUser?.nickname === comment.authorNickname;
   const isDeleted = comment.status === 'deleted';
   const isRootComment = depth === 0;
+
+  // 외부 클릭 및 ESC 키 감지를 위한 useEffect
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, []);
 
   // 대댓글 작성 처리
   const handleReplySubmit = async (content: string) => {
@@ -152,7 +174,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
                 </div>
                 
                 {isAuthor && (
-                  <div className="relative">
+                  <div className="relative" ref={dropdownRef}>
                     <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
                       <FiMoreVertical size={16} />
                     </button>

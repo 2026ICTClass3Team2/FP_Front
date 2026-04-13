@@ -39,7 +39,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
 
     setIsUploading(true);
     try {
-      const response = await jwtAxios.post('/upload', formData, {
+      const response = await jwtAxios.post('upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setThumbnailUrl(response.data.url); // API 스펙에 맞춰 객체의 url 필드 참조
@@ -75,10 +75,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
 
     try {
       if (postToEdit) {
-        await jwtAxios.put(`/posts/${postToEdit.postId}`, postData);
+        await jwtAxios.put(`posts/${postToEdit.postId}`, postData);
         alert('게시글이 성공적으로 수정되었습니다.');
       } else {
-        await jwtAxios.post('/posts', { ...postData, contentType: 'feed' });
+        await jwtAxios.post('posts', { ...postData, contentType: 'feed' });
         alert('게시글이 성공적으로 작성되었습니다.');
       }
       onClose();

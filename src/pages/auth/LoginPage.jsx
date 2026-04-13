@@ -11,7 +11,7 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   
-  const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/';
+  const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/api/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();

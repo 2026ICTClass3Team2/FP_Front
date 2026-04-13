@@ -4,7 +4,7 @@ import PasswordValidation from '../../components/auth/PasswordValidation';
 import TechStackModal from '../../components/auth/TechStackModal';
 
 const RegisterPage = () => {
-  const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/';
+  const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/api/';
 
   const [formData, setFormData] = useState({
     email: '',

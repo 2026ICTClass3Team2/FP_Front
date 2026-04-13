@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/api/';
+
 const jwtAxios=axios.create({
-    baseURL: "http://localhost:8080" // 모든 요청의 기본 URL을 백엔드 서버로 설정
+    baseURL: testURI // 모든 요청의 기본 URL을 백엔드 서버로 설정
 });
 const beforeReq=(config)=>{
     const token = localStorage.getItem("token"); // AuthContext와 동일하게 localStorage에서 토큰 가져오기
@@ -22,7 +24,7 @@ const beforeReq=(config)=>{
 const refreshJWT=async(accessToken,refreshToken)=>{
     const header={headers:{"Authorization":`Bearer ${accessToken}`}}
     // 백엔드 주소가 누락되어 통신에 실패하지 않도록 전체 URL을 명시합니다.
-    const res=await axios.get(`http://localhost:8080/api/member/refresh?refreshToken=${refreshToken}`,
+    const res=await axios.get(`${testURI}member/refresh?refreshToken=${refreshToken}`,
         header
     );
     console.log("refresh===>",res);

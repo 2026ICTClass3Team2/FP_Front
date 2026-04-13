@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const testURI = 'http://localhost:8090/';
+  const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/api/';
 
   // 앱 진입/새로고침 시 스토리지에서 인증 정보 복구
   useEffect(() => {

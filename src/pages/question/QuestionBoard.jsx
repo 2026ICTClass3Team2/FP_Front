@@ -69,7 +69,7 @@ const QuestionBoard = () => {
   // 검색 제출 핸들러
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    page=0;
+    setPage(0); // 검색 시 페이지 초기화
     fetchQnaList();
   };
 

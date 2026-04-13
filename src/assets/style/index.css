@@ -144,8 +144,14 @@
     transform: translateY(-2px);
   }
 
-  /* Floating global chat button - bottom right (exact spec from the left panel description) */
-  .global-chat-btn {
+  /* Left sidebar navigation items */
+  .sidebar-link {
+    border-radius: var(--radius);
+    transition: background-color 0.2s ease;
+  }
+
+  /* Global write button */
+  .global-write-btn {
     position: fixed;
     bottom: 1.5rem;
     right: 1.5rem;
@@ -160,23 +166,16 @@
     justify-content: center;
     z-index: 50;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Always on top of feed */
   }
 
-  .global-chat-btn:hover {
+  .global-write-btn:hover {
     transform: scale(1.08);
     background-color: var(--color-primary-hover);
     box-shadow: var(--shadow-lg);
   }
 
-  .global-chat-btn:active {
+  .global-write-btn:active {
     transform: scale(0.95);
-  }
-
-  /* Left sidebar navigation items */
-  .sidebar-link {
-    border-radius: var(--radius);
-    transition: background-color 0.2s ease;
   }
 
   .sidebar-link:hover {

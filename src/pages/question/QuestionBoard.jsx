@@ -84,7 +84,9 @@ const QuestionBoard = () => {
           <button
             type="button"
             onClick={handleWriteClick}
-            className="inline-flex items-center justify-center rounded-3xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center justify-center rounded-3xl 
+            bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground 
+            shadow-sm hover:bg-primary/90 transition-colors"
           >
             + 질문 작성
           </button>
@@ -97,11 +99,15 @@ const QuestionBoard = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="제목/내용/작성자 검색"
-              className="flex-1 rounded-3xl border border-border bg-background px-5 py-3 text-sm text-foreground focus:outline-none focus:border-primary"
+              className="flex-1 rounded-3xl border border-border 
+              bg-background px-5 py-3 text-sm text-foreground focus:outline-none 
+              focus:border-primary"
             />
             <button
               type="submit"
-              className="rounded-3xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="rounded-3xl bg-primary px-5 py-3 
+              text-sm font-semibold text-primary-foreground 
+              hover:bg-primary/90 transition-colors"
             >
               검색
             </button>
@@ -111,7 +117,8 @@ const QuestionBoard = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-3xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary"
+              className="rounded-3xl border border-border bg-background 
+              px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary"
             >
               <option value="all">전체</option>
               <option value="resolved">해결된 질문</option>
@@ -120,7 +127,9 @@ const QuestionBoard = () => {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="rounded-3xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary"
+              className="rounded-3xl border border-border bg-background 
+              px-4 py-3 text-sm text-foreground 
+              focus:outline-none focus:border-primary"
             >
               <option value="latest">최신순</option>
               <option value="popular">인기순</option>
@@ -145,8 +154,10 @@ const QuestionBoard = () => {
         </div>
       </div>
 
-      {error && <div className="rounded-3xl bg-destructive/10 p-6 text-center text-destructive">{error}</div>}
-      {!error && loading && <div className="rounded-3xl bg-card p-6 text-center text-muted">목록을 불러오는 중입니다...</div>}
+      {error && <div className="rounded-3xl bg-destructive/10 p-6 
+      text-center text-destructive">{error}</div>}
+      {!error && loading && <div className="rounded-3xl 
+      bg-card p-6 text-center text-muted">목록을 불러오는 중입니다...</div>}
 
       <div className="grid gap-5 xl:grid-cols-2">
         {items.length > 0 ? (
@@ -160,7 +171,8 @@ const QuestionBoard = () => {
           ))
         ) : (
           !loading && (
-            <div className="rounded-3xl border border-border bg-card p-12 text-center text-muted">
+            <div className="rounded-3xl border border-border 
+            bg-card p-12 text-center text-muted">
               검색 결과가 없습니다. 다른 검색어로 다시 시도해보세요.
             </div>
           )

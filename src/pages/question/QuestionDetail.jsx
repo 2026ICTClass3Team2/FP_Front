@@ -32,7 +32,8 @@ const QuestionDetail = () => {
       <button
         type="button"
         onClick={() => navigate('/qna')}
-        className="inline-flex items-center rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
+        className="inline-flex items-center rounded-full border 
+        border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
       >
         뒤로가기
       </button>
@@ -48,7 +49,8 @@ const QuestionDetail = () => {
 
           <div className="p-8 space-y-6">
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
-              <span className={`inline-flex items-center rounded-full px-3 py-1.5 ${item.resolved ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+              <span className={`inline-flex items-center rounded-full px-3 py-1.5 
+                ${item.resolved ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
                 {item.resolved ? '해결됨' : '미해결'}
               </span>
               <span className="font-semibold text-foreground">+{item.points ?? 0}P</span>

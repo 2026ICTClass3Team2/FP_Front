@@ -57,7 +57,12 @@ const QuestionCard = ({ onClose }) => {
         <input 
           type="text" value={title} onChange={(e) => setTitle(e.target.value)} 
           placeholder="궁금한 내용을 요약해서 적어주세요." 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+          className="px-4 py-2 border border-gray-300 
+          dark:border-gray-700 rounded-xl 
+          bg-white dark:bg-slate-800 text-gray-900 
+          dark:text-gray-100 focus:outline-none 
+          focus:border-blue-500 focus:ring-1 
+          focus:ring-blue-500 transition-colors"
           required />
       </div>
 
@@ -66,7 +71,10 @@ const QuestionCard = ({ onClose }) => {
         <textarea 
           value={body} onChange={(e) => setBody(e.target.value)} 
           placeholder="문제 상황, 시도해본 방법, 에러 메시지 등을 상세히 적어주시면 더 좋은 답변을 받을 수 있습니다." 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors min-h-[150px] resize-none"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-700 
+          rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 
+          focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 
+          transition-colors min-h-[150px] resize-none"
           required />
       </div>
 
@@ -75,7 +83,9 @@ const QuestionCard = ({ onClose }) => {
         <input 
           type="text" value={tags} onChange={(e) => setTags(e.target.value)} 
           placeholder="쉼표(,)로 구분해서 입력해주세요. 예: React, Error" 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl 
+          bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none 
+          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -83,13 +93,19 @@ const QuestionCard = ({ onClose }) => {
         <input 
           type="number" min="0" value={rewardPoints} onChange={(e) => setRewardPoints(e.target.value)} 
           placeholder="답변자에게 걸 포인트를 입력하세요." 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white 
+          dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 
+          focus:ring-1 focus:ring-blue-500 transition-colors" />
         <span className="text-xs text-gray-500">포인트를 걸면 더 빠르고 양질의 답변을 받을 확률이 높아집니다!</span>
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium transition-colors">취소</button>
-        <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold hover:bg-blue-600 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg">
+        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-100 
+        hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 
+        dark:text-gray-300 rounded-xl text-sm font-medium transition-colors">취소</button>
+        <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-500 
+        text-white rounded-xl text-sm font-bold hover:bg-blue-600 disabled:opacity-50 
+        transition-colors shadow-md hover:shadow-lg">
           {loading ? '등록 중...' : '질문 등록'}
         </button>
       </div>

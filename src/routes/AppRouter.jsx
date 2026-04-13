@@ -8,6 +8,7 @@ import MainFeed from '../pages/feed/MainFeed';
 import MyPageLayout from '../components/layouts/MyPageLayout';
 import ProfileCard from '../components/profile/ProfileCard';
 import QuesionBoard from '../pages/question/QuestionBoard';
+import QuestionDetail from '../pages/question/QuestionDetail';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -31,7 +32,8 @@ const AppRouter = () => {
 
 
           {/* 질문게시판 - 여기서 연결 */}
-          <Route path="qna" element={<QuesionBoard />} />
+          <Route path="qna" element={<QuestionBoard />} />
+          <Route path="qna/:qnaId" element={<QuestionDetail />} />
 
             {/* 학습 페이지 - 여기서 연결 */}
             <Route path="study" element={<StudyPage />} />

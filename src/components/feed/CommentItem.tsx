@@ -3,6 +3,7 @@ import { FiThumbsUp, FiThumbsDown, FiCornerDownRight, FiMoreVertical } from 'rea
 import jwtAxios from '../../api/jwtAxios';
 import { CommentResponse } from './types';
 import CommentForm from './CommentForm';
+import { formatTimeAgo } from '../../utils/time';
 
 interface CommentItemProps {
   comment: CommentResponse;
@@ -170,7 +171,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-semibold text-gray-900 dark:text-white text-sm">{comment.authorNickname}</span>
-                  <span className="text-xs text-gray-400">{comment.createdAt}</span>
+                  <span className="text-xs text-gray-400">{formatTimeAgo(comment.createdAt)}</span>
                 </div>
                 
                 {isAuthor && (

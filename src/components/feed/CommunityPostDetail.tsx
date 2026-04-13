@@ -3,6 +3,7 @@ import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2 } fro
 import { Post } from './PostCard';
 import CommentList from './CommentList';
 import jwtAxios from '../../api/jwtAxios';
+import { formatTimeAgo } from '../../utils/time';
 
 interface CommunityPostDetailProps {
   post: Post;
@@ -214,7 +215,7 @@ const AuthorHeader = ({ post }: { post: Post }) => {
       <div className="flex flex-col">
         <span className="font-bold text-gray-900">{post.authorNickname || '익명'}</span>
         <span className="text-sm text-gray-400">@{post.authorUsername || 'unknown'}</span>
-        <span className="text-xs text-gray-400 mt-0.5">{post.createdAt}</span>
+        <span className="text-xs text-gray-400 mt-0.5">{formatTimeAgo(post.createdAt)}</span>
       </div>
     </div>
   );

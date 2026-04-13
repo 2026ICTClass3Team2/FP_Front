@@ -200,6 +200,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
           {/* 답글 폼 */}
           {isReplying && (
             <CommentForm
+              initialValue={isAuthor ? '' : `@${comment.authorNickname} `}
               onSubmit={handleReplySubmit}
               onCancel={() => setIsReplying(false)}
               placeholder="답글을 남겨보세요."

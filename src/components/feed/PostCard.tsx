@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { FiMoreVertical, FiHeart, FiMessageCircle, FiShare2, FiEye, FiBookmark } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark } from 'react-icons/fi';
+import jwtAxios from '../../api/jwtAxios';
 
 export interface Post {
   postId: number;
@@ -14,16 +15,20 @@ export interface Post {
   channelName?: string | null;
   
   likeCount: number;
+  dislikeCount: number;
   viewCount: number;
   commentCount: number;
   shareCount: number;
   
   isLiked: boolean;
   liked?: boolean; // Jackson 직렬화 시 isLiked가 liked로 올 수 있음 대응
+  isDisliked: boolean;
+  disliked?: boolean;
   isBookmarked: boolean;
   bookmarked?: boolean; 
   isAuthor: boolean;
   author?: boolean;
+  thumbnailUrl?: string;
 }
 
 interface PostCardProps {
@@ -34,95 +39,182 @@ interface PostCardProps {
   onBookmark?: (id: string) => void;
   onEdit?: (post: Post) => void;
   onDelete?: (postId: number) => void;
+  onDetailClick?: () => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onDetailClick }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [localPost, setLocalPost] = useState<Post>(post);
+
+  // 부모 컴포넌트의 데이터가 변경되면 동기화
+  useEffect(() => {
+    setLocalPost(post);
+  }, [post]);
 
   // 안전한 렌더링을 위한 기본값 및 필드 매핑
-  const authorNickname = post.authorNickname || '익명';
-  const authorUsername = post.authorUsername || 'unknown';
-  const tags = post.tags || [];
+  const authorNickname = localPost.authorNickname || '익명';
+  const authorUsername = localPost.authorUsername || 'unknown';
+  const tags = localPost.tags || [];
   
-  const isMyPost = post.isAuthor || post.author === true;
-  const isLiked = post.isLiked || post.liked === true;
-  const isBookmarked = post.isBookmarked || post.bookmarked === true;
+  const isMyPost = localPost.isAuthor || localPost.author === true;
+  const isLiked = localPost.isLiked || localPost.liked === true;
+  const isDisliked = localPost.isDisliked || localPost.disliked === true;
+  const isBookmarked = localPost.isBookmarked || localPost.bookmarked === true;
+
+  // 낙관적 업데이트 - 좋아요
+  const handleLikeClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const originalLiked = isLiked;
+    const originalCount = localPost.likeCount;
+    
+    setLocalPost(prev => ({
+      ...prev,
+      isLiked: !originalLiked,
+      liked: !originalLiked,
+      likeCount: originalLiked ? prev.likeCount - 1 : prev.likeCount + 1,
+    }));
+
+    try {
+      await jwtAxios.post(`posts/${localPost.postId}/like`);
+    } catch (error) {
+      setLocalPost(prev => ({ ...prev, isLiked: originalLiked, liked: originalLiked, likeCount: originalCount }));
+      alert('요청에 실패했습니다.');
+    }
+  };
+
+  // 낙관적 업데이트 - 비추천
+  const handleDislikeClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const originalDisliked = isDisliked;
+    const originalCount = localPost.dislikeCount;
+    
+    setLocalPost(prev => ({
+      ...prev,
+      isDisliked: !originalDisliked,
+      disliked: !originalDisliked,
+      dislikeCount: originalDisliked ? prev.dislikeCount - 1 : prev.dislikeCount + 1,
+    }));
+
+    try {
+      await jwtAxios.post(`posts/${localPost.postId}/dislike`);
+    } catch (error) {
+      setLocalPost(prev => ({ ...prev, isDisliked: originalDisliked, disliked: originalDisliked, dislikeCount: originalCount }));
+      alert('요청에 실패했습니다.');
+    }
+  };
+
+  // 낙관적 업데이트 - 북마크
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const originalBookmarked = isBookmarked;
+    
+    setLocalPost(prev => ({
+      ...prev,
+      isBookmarked: !originalBookmarked,
+      bookmarked: !originalBookmarked,
+    }));
+
+    try {
+      await jwtAxios.post(`posts/${localPost.postId}/bookmark`);
+    } catch (error) {
+      setLocalPost(prev => ({ ...prev, isBookmarked: originalBookmarked, bookmarked: originalBookmarked }));
+      alert('요청에 실패했습니다.');
+    }
+  };
+
+  // 공유 (클립보드 복사)
+  const handleShareClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/posts/${localPost.postId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('클립보드에 복사되었습니다.');
+    } catch (err) {
+      alert('복사에 실패했습니다.');
+    }
+  };
 
   return (
     <article className="bg-card bg-white dark:bg-slate-900 border border-border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
-      {/* 상단: 프로필 및 정보 영역 */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          {/* 원형 프로필 이미지 */}
-          <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-            {post.authorProfileImageUrl ? (
-              <img src={post.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-500 font-bold">
-                {authorNickname.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-gray-900 dark:text-white">{authorNickname}</span>
-              <span className="text-sm text-gray-500">@{authorUsername}</span>
-              {post.channelName && (
-                <span className="text-xs font-semibold px-2 py-0.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-md">
-                  {post.channelName}
-                </span>
+      {/* 메인 컨텐츠 영역 (클릭 시 상세 모달 열림) */}
+      <div onClick={onDetailClick} className="cursor-pointer flex flex-col gap-4">
+        {/* 상단: 프로필 및 정보 영역 */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            {/* 원형 프로필 이미지 */}
+            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+              {post.authorProfileImageUrl ? (
+                <img src={post.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-500 font-bold">
+                  {authorNickname.charAt(0).toUpperCase()}
+                </div>
               )}
             </div>
-            {/* 작성일자 (백엔드에서 포맷팅 된 문자열을 그대로 사용) */}
-            {post.createdAt && <span className="text-xs text-gray-400 mt-0.5">{post.createdAt}</span>}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-gray-900 dark:text-white">{authorNickname}</span>
+                <span className="text-sm text-gray-500">@{authorUsername}</span>
+                {post.channelName && (
+                  <span className="text-xs font-semibold px-2 py-0.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-md">
+                    {post.channelName}
+                  </span>
+                )}
+              </div>
+              {/* 작성일자 (백엔드에서 포맷팅 된 문자열을 그대로 사용) */}
+              {post.createdAt && <span className="text-xs text-gray-400 mt-0.5">{post.createdAt}</span>}
+            </div>
           </div>
+
+          {/* 우측 상단 옵션 (isAuthor가 true일 때만 렌더링) */}
+          {isMyPost && (
+            <div className="relative">
+              <button onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
+                <FiMoreVertical size={20} />
+              </button>
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-1 w-24 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl overflow-hidden z-10">
+                  <button onClick={(e) => { e.stopPropagation(); onEdit?.(post); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">수정</button>
+                  <button onClick={(e) => { e.stopPropagation(); onDelete?.(post.postId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">삭제</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* 우측 상단 옵션 (isAuthor가 true일 때만 렌더링) */}
-        {isMyPost && (
-          <div className="relative">
-            <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
-              <FiMoreVertical size={20} />
-            </button>
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-24 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl overflow-hidden z-10">
-                <button onClick={() => { onEdit?.(post); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">수정</button>
-                <button onClick={() => { onDelete?.(post.postId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">삭제</button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        {/* 본문 영역: 오직 제목만 굵게 표시 */}
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-white leading-snug">{post.title}</h2>
 
-      {/* 본문 영역: 오직 제목만 굵게 표시 */}
-      <h2 className="text-xl font-extrabold text-gray-900 dark:text-white leading-snug">{post.title}</h2>
-
-      {/* 태그 영역 */}
-      <div className="flex flex-wrap gap-2 mt-1">
-        {tags.map((tag, idx) => (
-          <span key={idx} className="px-3 py-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-xs font-medium rounded-full cursor-pointer hover:bg-gray-200 transition-colors">
-            #{tag}
-          </span>
-        ))}
-      </div>
+        {/* 태그 영역 */}
+        <div className="flex flex-wrap gap-2 mt-1">
+          {tags.map((tag, idx) => (
+            <span key={idx} className="px-3 py-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-xs font-medium rounded-full cursor-pointer hover:bg-gray-200 transition-colors">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      </div> {/* 메인 컨텐츠 영역 끝 */}
 
       {/* 하단 액션 바 */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-2 text-gray-500">
         <div className="flex gap-6">
-          <button onClick={() => onLike?.(String(post.postId))} className={`flex items-center gap-1.5 hover:text-rose-500 transition-colors ${isLiked ? 'text-rose-500' : ''}`}>
-            <FiHeart size={18} className={isLiked ? 'fill-current' : ''} /> <span className="text-sm font-medium">{post.likeCount}</span>
+          <button onClick={handleLikeClick} className={`flex items-center gap-1.5 hover:text-rose-500 transition-colors ${isLiked ? 'text-rose-500' : ''}`}>
+            <FiHeart size={18} className={isLiked ? 'fill-current' : ''} /> <span className="text-sm font-medium">{localPost.likeCount}</span>
           </button>
-          <button onClick={() => onComment?.(String(post.postId))} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
-            <FiMessageCircle size={18} /> <span className="text-sm font-medium">{post.commentCount}</span>
+          <button onClick={handleDislikeClick} className={`flex items-center gap-1.5 hover:text-purple-500 transition-colors ${isDisliked ? 'text-purple-500' : ''}`}>
+            <FiThumbsDown size={18} className={isDisliked ? 'fill-current' : ''} /> <span className="text-sm font-medium">{localPost.dislikeCount}</span>
           </button>
-          <button onClick={() => onShare?.(String(post.postId))} className="flex items-center gap-1.5 hover:text-green-500 transition-colors">
-            <FiShare2 size={18} /> <span className="text-sm font-medium">{post.shareCount}</span>
+          <button onClick={(e) => { e.stopPropagation(); onComment?.(String(localPost.postId)); }} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
+            <FiMessageCircle size={18} /> <span className="text-sm font-medium">{localPost.commentCount}</span>
+          </button>
+          <button onClick={handleShareClick} className="flex items-center gap-1.5 hover:text-green-500 transition-colors">
+            <FiShare2 size={18} /> <span className="text-sm font-medium">공유</span>
           </button>
           <div className="flex items-center gap-1.5">
-            <FiEye size={18} /> <span className="text-sm font-medium">{post.viewCount}</span>
+            <FiEye size={18} /> <span className="text-sm font-medium">{localPost.viewCount}</span>
           </div>
         </div>
-        <button onClick={() => onBookmark?.(String(post.postId))} className={`hover:text-amber-500 transition-colors ${isBookmarked ? 'text-amber-500' : ''}`}>
+        <button onClick={handleBookmarkClick} className={`hover:text-amber-500 transition-colors ${isBookmarked ? 'text-amber-500' : ''}`}>
           <FiBookmark size={20} className={isBookmarked ? 'fill-current' : ''} />
         </button>
       </div>

@@ -37,7 +37,7 @@ const QuestionCard = ({ onClose }) => {
     try {
       // 실제 백엔드 API 주소에 맞게 수정 필요 (/api/posts 또는 /api/questions 등)
       console.log('백엔드로 전송하는 데이터:', questionData);
-      await jwtAxios.post('/api/posts', questionData);
+      await jwtAxios.post('posts', questionData);
       alert('질문이 성공적으로 등록되었습니다.');
       onClose();
       // TODO: 창이 닫힌 뒤 게시판 목록 데이터를 초기화(새로고침) 하는 로직 추가

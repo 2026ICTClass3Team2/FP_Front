@@ -248,7 +248,7 @@ const RegisterPage = () => {
       
       if (data.result === 'success') {
         alert('회원가입이 완료되었습니다. 로그인해주세요.');
-        navigate('/api/login');
+        navigate('/login');
       } else {
         setError('알 수 없는 오류로 회원가입에 실패했습니다.');
       }

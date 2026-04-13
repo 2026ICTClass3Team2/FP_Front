@@ -3,6 +3,8 @@ import { FiPlus } from 'react-icons/fi';
 import PostCard, { Post } from './PostCard';
 import jwtAxios from '../../api/jwtAxios';
 
+const testURI = 'http://localhost:8090/';
+
 // 백엔드 Spring Data JPA Slice 응답 인터페이스
 interface SliceResponse {
   content: Post[];
@@ -48,7 +50,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
 
     try {
       // URL 및 파라미터 조합
-      let url = 'http://localhost:8080/api/posts?size=10';
+      let url = `${testURI}posts?size=10`;
       if (lastPostIdRef.current) {
         url += `&lastPostId=${lastPostIdRef.current}`;
       }

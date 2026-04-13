@@ -4,7 +4,9 @@ import QuestionCard from '../../components/question/QuestionCard';
 import QnaCard from '../../components/question/QnaCard';
 import jwtAxios from '../../api/jwtAxios';
 
+// Q&A 게시판 메인 페이지
 const QuestionBoard = () => {
+  // 검색 및 필터 상태
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('latest');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -15,6 +17,7 @@ const QuestionBoard = () => {
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
   const [page, setPage] = useState(0);
 
+  // Q&A 목록 가져오기 함수
   const fetchQnaList = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -40,10 +43,12 @@ const QuestionBoard = () => {
     }
   }, [query, sort, statusFilter]);
 
+  // 컴포넌트 마운트 및 검색 조건 변경 시 데이터 로드
   useEffect(() => {
     fetchQnaList();
   }, [fetchQnaList]);
 
+  // 통계 계산
   const stats = useMemo(() => {
     const total = items.length;
     const solved = items.filter((item) => item.resolved).length;
@@ -51,6 +56,7 @@ const QuestionBoard = () => {
     return { total, solved, unsolved };
   }, [items]);
 
+  // 북마크 토글 핸들러
   const handleBookmarkToggle = (id) => {
     setBookmarkedIds((prev) => {
       const next = new Set(prev);
@@ -60,12 +66,14 @@ const QuestionBoard = () => {
     });
   };
 
+  // 검색 제출 핸들러
   const handleSearchSubmit = (event) => {
     event.preventDefault();
     page=0;
     fetchQnaList();
   };
 
+  // 모달 핸들러
   const handleWriteClick = () => setIsWriteModalOpen(true);
   const handleCloseModal = () => setIsWriteModalOpen(false);
 

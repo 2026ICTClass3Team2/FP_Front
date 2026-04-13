@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 
+// 질문 작성 폼 컴포넌트
 const QuestionCard = ({ onClose }) => {
+  // 폼 상태 관리
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [tags, setTags] = useState('');
@@ -9,6 +11,7 @@ const QuestionCard = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // 폼 제출 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) {
@@ -19,28 +22,29 @@ const QuestionCard = ({ onClose }) => {
     setLoading(true);
     setError('');
 
-    // 쉼표(,)로 구분된 태그들을 배열로 변환 (공백 제거 및 빈 값 제외)
+    // 태그 문자열을 배열로 변환
     const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
 
-    // 현재 로그인된 유저 정보 가져오기
+    // 사용자 정보 가져오기
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
 
+    // 전송 데이터 구성
     const questionData = {
       title,
       body,
       contentType: 'question',
       tags: tagArray,
       rewardPoints: parseInt(rewardPoints, 10) || 0,
-      author: currentUser.username || currentUser.nickname || '익명' // 작성자 데이터 추가
+      author: currentUser.username || currentUser.nickname || '익명'
     };
 
     try {
-      // 실제 백엔드 API 주소에 맞게 수정 필요 (/api/posts 또는 /api/questions 등)
+      // 백엔드 API 호출
       console.log('백엔드로 전송하는 데이터:', questionData);
       await jwtAxios.post('posts', questionData);
       alert('질문이 성공적으로 등록되었습니다.');
       onClose();
-      // TODO: 창이 닫힌 뒤 게시판 목록 데이터를 초기화(새로고침) 하는 로직 추가
+      // TODO: 게시판 목록 새로고침 로직 추가
     } catch (err) {
       setError(err.response?.data?.message || '질문 등록 중 오류가 발생했습니다.');
     } finally {

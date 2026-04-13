@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import jwtAxios from '../../api/jwtAxios';
 
+// Q&A 게시글 상세 페이지
 const QuestionDetail = () => {
   const { qnaId } = useParams();
   const navigate = useNavigate();
+  // 게시글 데이터 상태
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // 게시글 상세 정보 가져오기
   useEffect(() => {
     const fetchDetail = async () => {
       setLoading(true);
@@ -29,6 +32,7 @@ const QuestionDetail = () => {
 
   return (
     <section className="max-w-6xl mx-auto space-y-6">
+      {/* 뒤로가기 버튼 */}
       <button
         type="button"
         onClick={() => navigate('/qna')}
@@ -38,11 +42,14 @@ const QuestionDetail = () => {
         뒤로가기
       </button>
 
+      {/* 로딩 및 에러 상태 표시 */}
       {loading && <div className="rounded-3xl bg-card p-8 text-center text-muted">로딩 중입니다...</div>}
       {error && <div className="rounded-3xl bg-destructive/10 p-6 text-destructive text-center">{error}</div>}
 
+      {/* 게시글 내용 표시 */}
       {item && (
         <article className="rounded-[2rem] border border-border bg-card overflow-hidden shadow-sm">
+          {/* 게시글 이미지 */}
           {item.imageUrl && (
             <img src={item.imageUrl} alt={item.title} className="h-72 w-full object-cover" />
           )}

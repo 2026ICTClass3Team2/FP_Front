@@ -19,7 +19,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await jwtAxios.get(`/api/posts/${postId}/comments`);
+      const response = await jwtAxios.get(`posts/${postId}/comments`);
       setComments(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || '댓글을 불러오는 중 오류가 발생했습니다.');
@@ -33,7 +33,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
   }, [fetchComments]);
 
   const handleMainCommentSubmit = async (content: string) => {
-    await jwtAxios.post(`/api/posts/${postId}/comments`, { content });
+    await jwtAxios.post(`posts/${postId}/comments`, { content });
     fetchComments(); // 작성 완료 후 댓글 리스트 갱신
   };
 

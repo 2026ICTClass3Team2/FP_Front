@@ -18,40 +18,66 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
   // 낙관적 업데이트 - 좋아요
   const handleLike = async () => {
-    const originalLiked = localPost.isLiked || localPost.liked;
-    const originalCount = localPost.likeCount;
-    
-    setLocalPost(prev => ({
-      ...prev,
-      isLiked: !originalLiked,
-      liked: !originalLiked,
-      likeCount: originalLiked ? prev.likeCount - 1 : prev.likeCount + 1,
-    }));
+    const originalState = { ...localPost };
+    setLocalPost(prev => {
+      const newState = { ...prev };
+      if (newState.isLiked || newState.liked) {
+        // Currently liked, so unlike
+        newState.likeCount--;
+        newState.isLiked = false;
+      } else {
+        // Currently not liked, so like
+        newState.likeCount++;
+        newState.isLiked = true;
+        if (newState.isDisliked || newState.disliked) {
+          // If it was disliked, undislike it
+          newState.dislikeCount--;
+          newState.isDisliked = false;
+        }
+      }
+      // sync liked property
+      newState.liked = newState.isLiked;
+      newState.disliked = newState.isDisliked;
+      return newState;
+    });
 
     try {
       await jwtAxios.post(`posts/${localPost.postId}/like`);
     } catch (error) {
-      setLocalPost(prev => ({ ...prev, isLiked: originalLiked, liked: originalLiked, likeCount: originalCount }));
+      setLocalPost(originalState);
       alert('요청에 실패했습니다.');
     }
   };
 
   // 낙관적 업데이트 - 비추천
   const handleDislike = async () => {
-    const originalDisliked = localPost.isDisliked || localPost.disliked;
-    const originalCount = localPost.dislikeCount;
-    
-    setLocalPost(prev => ({
-      ...prev,
-      isDisliked: !originalDisliked,
-      disliked: !originalDisliked,
-      dislikeCount: originalDisliked ? prev.dislikeCount - 1 : prev.dislikeCount + 1,
-    }));
+    const originalState = { ...localPost };
+    setLocalPost(prev => {
+      const newState = { ...prev };
+      if (newState.isDisliked || newState.disliked) {
+        // Currently disliked, so undislike
+        newState.dislikeCount--;
+        newState.isDisliked = false;
+      } else {
+        // Currently not disliked, so dislike
+        newState.dislikeCount++;
+        newState.isDisliked = true;
+        if (newState.isLiked || newState.liked) {
+          // If it was liked, unlike it
+          newState.likeCount--;
+          newState.isLiked = false;
+        }
+      }
+      // sync liked property
+      newState.liked = newState.isLiked;
+      newState.disliked = newState.isDisliked;
+      return newState;
+    });
 
     try {
       await jwtAxios.post(`posts/${localPost.postId}/dislike`);
     } catch (error) {
-      setLocalPost(prev => ({ ...prev, isDisliked: originalDisliked, disliked: originalDisliked, dislikeCount: originalCount }));
+      setLocalPost(originalState);
       alert('요청에 실패했습니다.');
     }
   };

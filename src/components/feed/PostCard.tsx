@@ -164,6 +164,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
 
   return (
     <article className="bg-card bg-white dark:bg-slate-900 border border-border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+      {/* 메인 컨텐츠 영역 (클릭 시 상세 모달 열림) */}
       <div onClick={onDetailClick} className="cursor-pointer flex flex-col gap-4">
         {/* 상단: 프로필 및 정보 영역 */}
         <div className="flex items-start justify-between">

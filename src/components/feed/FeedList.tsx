@@ -149,15 +149,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
 
       {/* 상세 보기 모달 렌더링 */}
       {selectedPost && (
-        <CommunityPostDetail
-          post={selectedPost}
-          onClose={(updatedPost) => {
-            if (updatedPost) {
-              setPosts(prevPosts => prevPosts.map(p => (p.postId === updatedPost.postId ? updatedPost : p)));
-            }
-            setSelectedPost(null);
-          }}
-        />
+        <CommunityPostDetail post={selectedPost} onClose={() => setSelectedPost(null)} />
       )}
     </div>
   );

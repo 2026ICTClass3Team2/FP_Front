@@ -75,7 +75,9 @@ const QuestionCard = ({ onClose, onPostCreated }) => {
           value={title} 
           onChange={(e) => setTitle(e.target.value)} 
           placeholder="궁금한 내용을 요약해서 적어주세요." 
-          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:border-primary transition-colors"
+          className="px-4 py-2 border border-border rounded-xl 
+          bg-background text-foreground focus:outline-none 
+          focus:border-primary transition-colors"
           required 
         />
       </div>
@@ -96,12 +98,16 @@ const QuestionCard = ({ onClose, onPostCreated }) => {
         <button
           type="button"
           onClick={() => setIsTechStackModalOpen(true)}
-          className="flex items-center justify-between w-full min-h-[46px] p-3 border border-border rounded-xl bg-background text-left focus:outline-none focus:border-primary transition-colors hover:bg-muted/30"
+          className="flex items-center justify-between w-full min-h-[46px] 
+          p-3 border border-border rounded-xl bg-background text-left 
+          focus:outline-none focus:border-primary transition-colors 
+          hover:bg-muted/30"
         >
           <div className="flex flex-wrap gap-1.5">
             {tags.split(',').map(t => t.trim()).filter(t => t).length > 0 ? (
               tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
-                <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg shadow-sm">
+                <span key={tag} className="px-2.5 py-1 
+                bg-primary/10 text-primary text-xs font-semibold rounded-lg shadow-sm">
                   {tag}
                 </span>
               ))
@@ -109,8 +115,13 @@ const QuestionCard = ({ onClose, onPostCreated }) => {
               <span className="text-muted-foreground text-sm">관련된 기술 스택을 선택해 주세요.</span>
             )}
           </div>
-          <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+          <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24" 
+          xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" 
+            strokeWidth="2" d="M19 9l-7 7-7-7"></path>
           </svg>
         </button>
       </div>
@@ -130,23 +141,29 @@ const QuestionCard = ({ onClose, onPostCreated }) => {
           value={rewardPoints} 
           onChange={(e) => setRewardPoints(e.target.value)} 
           placeholder="답변자에게 걸 포인트를 입력하세요." 
-          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:border-primary transition-colors"
+          className="px-4 py-2 border border-border rounded-xl bg-background 
+          text-foreground focus:outline-none focus:border-primary transition-colors"
         />
-        <span className="text-xs text-muted-foreground">포인트를 걸면 더 빠르고 양질의 답변을 받을 확률이 높아집니다!</span>
+        <span className="text-xs text-muted-foreground">
+          포인트를 걸면 더 빠르고 양질의 답변을 받을 확률이 높아집니다!
+        </span>
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
         <button 
           type="button" 
           onClick={onClose} 
-          className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-sm font-medium transition-colors"
+          className="px-4 py-2 bg-muted hover:bg-muted/80 
+          text-foreground rounded-xl text-sm font-medium transition-colors"
         >
           취소
         </button>
         <button 
           type="submit" 
           disabled={loading} 
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg"
+          className="px-4 py-2 bg-primary text-primary-foreground 
+          rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 
+          transition-colors shadow-md hover:shadow-lg"
         >
           {loading ? '등록 중...' : '질문 등록'}
         </button>

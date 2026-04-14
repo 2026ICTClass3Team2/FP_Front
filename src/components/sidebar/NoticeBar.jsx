@@ -43,7 +43,7 @@ const NoticeBar = () => {
         const testNotices = [];
         const cleanItems = rawItems[0] === "공지사항" ? rawItems.slice(1) : rawItems;
         
-        for (let i = 0; i < cleanItems.length; i += 4) {
+        for (let i = 0; i < cleanItems.length; i++) {
          if (noticeData[i] && noticeData[i].length > 2) {
     if (noticeData[i] === "로그아웃" || noticeData[i] === "홈") break;
 
@@ -89,11 +89,7 @@ const NoticeBar = () => {
         )}
       </div>
 
-      {/* ✅ [포인트 2] 상원님이 만드신 Modal 컴포넌트에 데이터를 불러와서 보여줍니다. */}
-      {/* isOpen: 데이터가 담기면(selectedNotice가 있으면) true
-          onClose: 닫으면 다시 바구니를 비움(null)
-          title: PDF에서 긁어온 제목을 넘겨줌
-      */}
+  
       <Modal 
         isOpen={!!selectedNotice} 
         onClose={() => setSelectedNotice(null)} 

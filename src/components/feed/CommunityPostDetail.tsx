@@ -16,6 +16,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   const [isLoadingDetails, setIsLoadingDetails] = useState(true); // 로딩 상태 추가
   const viewCountIncrementedRef = useRef<Set<number>>(new Set()); // useRef를 사용하여 특정 postId에 대한 조회수 증가 API가 호출되었는지 추적
   const commentSectionRef = useRef<HTMLDivElement>(null); // 스크롤 타겟용 Ref
+  const backdropClickRef = useRef(false); // 배경 클릭 여부 추적용 Ref
 
   // Escape 키를 눌렀을 때 모달 닫기
   useEffect(() => {
@@ -204,7 +205,19 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" 
-      onClick={() => onClose(localPost)}
+      onMouseDown={(e) => {
+        // 마우스를 누른 곳이 정확히 배경(backdrop)일 때만 true로 설정
+        if (e.target === e.currentTarget) {
+          backdropClickRef.current = true;
+        }
+      }}
+      onMouseUp={(e) => {
+        // 마우스를 뗀 곳도 배경이고, 누른 곳도 배경이었을 때만 모달 닫기
+        if (e.target === e.currentTarget && backdropClickRef.current) {
+          onClose(localPost);
+        }
+        backdropClickRef.current = false; // 상태 초기화
+      }}
     >
       <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>

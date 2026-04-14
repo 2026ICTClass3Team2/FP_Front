@@ -15,7 +15,14 @@ const OAuthCallback = () => {
 
     if (token) {
       handleOAuthLogin(token, username);
-      navigate('/', { replace: true }); // 일반 로그인(LoginPage)처럼 '/'로 이동
+      
+      const redirectUrl = sessionStorage.getItem('redirectUrl');
+      if (redirectUrl) {
+        sessionStorage.removeItem('redirectUrl');
+        window.location.href = redirectUrl;
+      } else {
+        navigate('/', { replace: true });
+      }
     } else {
       alert('소셜 로그인에 실패했습니다.');
       navigate('/login', { replace: true });

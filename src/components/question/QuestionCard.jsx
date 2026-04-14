@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import jwtAxios from '../../api/jwtAxios';
+import TechStackModal from '../auth/TechStackModal';
+import RichTextEditor from '../editor/RichTextEditor';
 
 // 질문 작성 폼 컴포넌트
-const QuestionCard = ({ onClose }) => {
+const QuestionCard = ({ onClose, onPostCreated }) => {
   // 폼 상태 관리
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -10,6 +12,7 @@ const QuestionCard = ({ onClose }) => {
   const [rewardPoints, setRewardPoints] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
 
   // 폼 제출 핸들러
   const handleSubmit = async (e) => {
@@ -25,17 +28,13 @@ const QuestionCard = ({ onClose }) => {
     // 태그 문자열을 배열로 변환
     const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
 
-    // 사용자 정보 가져오기
-    const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-
     // 전송 데이터 구성
     const questionData = {
       title,
       body,
-      contentType: 'question',
+      contentType: 'qna',
       tags: tagArray,
-      rewardPoints: parseInt(rewardPoints, 10) || 0,
-      author: currentUser.username || currentUser.nickname || '익명'
+      rewardPoints: parseInt(rewardPoints, 10) || 0
     };
 
     try {
@@ -44,7 +43,7 @@ const QuestionCard = ({ onClose }) => {
       await jwtAxios.post('posts', questionData);
       alert('질문이 성공적으로 등록되었습니다.');
       onClose();
-      // TODO: 게시판 목록 새로고침 로직 추가
+      if (onPostCreated) onPostCreated();
     } catch (err) {
       setError(err.response?.data?.message || '질문 등록 중 오류가 발생했습니다.');
     } finally {
@@ -52,64 +51,120 @@ const QuestionCard = ({ onClose }) => {
     }
   };
 
+  const handleTechStackToggle = (tech) => {
+    const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
+    if (currentTags.includes(tech)) {
+      setTags(currentTags.filter(t => t !== tech).join(', '));
+    } else {
+      if (currentTags.length >= 5) {
+        alert('기술 스택은 최대 5개까지만 선택 가능합니다.');
+        return;
+      }
+      setTags([...currentTags, tech].join(', '));
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
       
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">제목</label>
+        <label className="text-sm font-semibold text-foreground">제목</label>
         <input 
-          type="text" value={title} onChange={(e) => setTitle(e.target.value)} 
+          type="text" 
+          value={title} 
+          onChange={(e) => setTitle(e.target.value)} 
           placeholder="궁금한 내용을 요약해서 적어주세요." 
-          className="px-4 py-2 border border-gray-300 
-          dark:border-gray-700 rounded-xl 
-          bg-white dark:bg-slate-800 text-gray-900 
-          dark:text-gray-100 focus:outline-none 
-          focus:border-blue-500 focus:ring-1 
-          focus:ring-blue-500 transition-colors"
-          required />
+          className="px-4 py-2 border border-border rounded-xl 
+          bg-background text-foreground focus:outline-none 
+          focus:border-primary transition-colors"
+          required 
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">본문</label>
-        <textarea 
-          value={body} onChange={(e) => setBody(e.target.value)} 
-          placeholder="문제 상황, 시도해본 방법, 에러 메시지 등을 상세히 적어주시면 더 좋은 답변을 받을 수 있습니다." 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 
-          rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 
-          focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 
-          transition-colors min-h-[150px] resize-none"
-          required />
+        <label className="text-sm font-semibold text-foreground">본문</label>
+        <RichTextEditor
+          value={body}
+          onChange={setBody}
+          placeholder="문제 상황, 시도해본 방법, 에러 메시지 등을 상세히 적어주시면 더 좋은 답변을 받을 수 있습니다."
+          readOnly={loading}
+          className="rounded-xl transition-shadow"
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">태그</label>
+        <label className="text-sm font-semibold text-foreground">기술스택(최대5개)</label>
+        <button
+          type="button"
+          onClick={() => setIsTechStackModalOpen(true)}
+          className="flex items-center justify-between w-full min-h-[46px] 
+          p-3 border border-border rounded-xl bg-background text-left 
+          focus:outline-none focus:border-primary transition-colors 
+          hover:bg-muted/30"
+        >
+          <div className="flex flex-wrap gap-1.5">
+            {tags.split(',').map(t => t.trim()).filter(t => t).length > 0 ? (
+              tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
+                <span key={tag} className="px-2.5 py-1 
+                bg-primary/10 text-primary text-xs font-semibold rounded-lg shadow-sm">
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-muted-foreground text-sm">관련된 기술 스택을 선택해 주세요.</span>
+            )}
+          </div>
+          <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24" 
+          xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" 
+            strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+      </div>
+
+      <TechStackModal
+        isOpen={isTechStackModalOpen}
+        onClose={() => setIsTechStackModalOpen(false)}
+        selectedTechStack={tags.split(',').map(t => t.trim()).filter(t => t)}
+        onToggle={handleTechStackToggle}
+      />
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-semibold text-foreground">채택 포인트 (선택)</label>
         <input 
-          type="text" value={tags} onChange={(e) => setTags(e.target.value)} 
-          placeholder="쉼표(,)로 구분해서 입력해주세요. 예: React, Error" 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl 
-          bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none 
-          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">채택 포인트 (선택)</label>
-        <input 
-          type="number" min="0" value={rewardPoints} onChange={(e) => setRewardPoints(e.target.value)} 
+          type="number" 
+          min="0" 
+          value={rewardPoints} 
+          onChange={(e) => setRewardPoints(e.target.value)} 
           placeholder="답변자에게 걸 포인트를 입력하세요." 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white 
-          dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 
-          focus:ring-1 focus:ring-blue-500 transition-colors" />
-        <span className="text-xs text-gray-500">포인트를 걸면 더 빠르고 양질의 답변을 받을 확률이 높아집니다!</span>
+          className="px-4 py-2 border border-border rounded-xl bg-background 
+          text-foreground focus:outline-none focus:border-primary transition-colors"
+        />
+        <span className="text-xs text-muted-foreground">
+          포인트를 걸면 더 빠르고 양질의 답변을 받을 확률이 높아집니다!
+        </span>
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-100 
-        hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 
-        dark:text-gray-300 rounded-xl text-sm font-medium transition-colors">취소</button>
-        <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-500 
-        text-white rounded-xl text-sm font-bold hover:bg-blue-600 disabled:opacity-50 
-        transition-colors shadow-md hover:shadow-lg">
+        <button 
+          type="button" 
+          onClick={onClose} 
+          className="px-4 py-2 bg-muted hover:bg-muted/80 
+          text-foreground rounded-xl text-sm font-medium transition-colors"
+        >
+          취소
+        </button>
+        <button 
+          type="submit" 
+          disabled={loading} 
+          className="px-4 py-2 bg-primary text-primary-foreground 
+          rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 
+          transition-colors shadow-md hover:shadow-lg"
+        >
           {loading ? '등록 중...' : '질문 등록'}
         </button>
       </div>

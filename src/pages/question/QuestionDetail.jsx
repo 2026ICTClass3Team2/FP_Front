@@ -49,11 +49,6 @@ const QuestionDetail = () => {
       {/* 게시글 내용 표시 */}
       {item && (
         <article className="rounded-[2rem] border border-border bg-card overflow-hidden shadow-sm">
-          {/* 게시글 이미지 */}
-          {item.imageUrl && (
-            <img src={item.imageUrl} alt={item.title} className="h-72 w-full object-cover" />
-          )}
-
           <div className="p-8 space-y-6">
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
               <span className={`inline-flex items-center rounded-full px-3 py-1.5 
@@ -61,7 +56,7 @@ const QuestionDetail = () => {
                 {item.resolved ? '해결됨' : '미해결'}
               </span>
               <span className="font-semibold text-foreground">+{item.points ?? 0}P</span>
-              <span>작성자 {item.author ?? '익명'}</span>
+              <span>작성자 {item.nickname} ({item.username})</span>
               <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString('ko-KR') : '날짜 없음'}</span>
             </div>
 
@@ -88,7 +83,6 @@ const QuestionDetail = () => {
               <div className="space-y-2">
                 <p>공유 {item.shares ?? 0}</p>
                 <p>조회 {item.views ?? 0}</p>
-                <p>카테고리 {item.category ?? '미지정'}</p>
               </div>
             </div>
           </div>

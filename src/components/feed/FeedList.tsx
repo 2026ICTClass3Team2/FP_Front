@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FiPlus } from 'react-icons/fi';
 import PostCard, { Post } from './PostCard';
 import jwtAxios from '../../api/jwtAxios';
@@ -24,12 +25,14 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const [hasNextPage, setHasNextPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [autoScrollToComment, setAutoScrollToComment] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const lastPostIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false); // 무한 스크롤 옵저버 내에서 최신 로딩 상태를 확인하기 위한 Ref
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // 게시글 삭제 핸들러
   const handleDeletePost = (postId: number) => {
@@ -131,6 +134,14 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     return () => observer.disconnect();
   }, [hasNextPage]); // hasNextPage가 변경될 때마다 옵저버 재등록
 
+  // URL 파라미터 감지하여 모달 자동 오픈
+  useEffect(() => {
+    const postIdParam = searchParams.get('postId');
+    if (postIdParam && !selectedPost) {
+      setSelectedPost({ postId: Number(postIdParam) } as Post);
+    }
+  }, [searchParams]);
+
   return (
     <div className="relative max-w-2xl mx-auto w-full pb-20 pt-4 px-4">
       {error && <div className="text-center text-red-500 bg-red-50 p-4 rounded-xl mb-4">{error}</div>}
@@ -143,6 +154,10 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
             onEdit={onEditClick} 
             onDelete={handleDeletePost} 
             onDetailClick={() => setSelectedPost(post)} 
+            onComment={() => {
+              setSelectedPost(post);
+              setAutoScrollToComment(true);
+            }}
           />
         ))}
       </div>
@@ -160,6 +175,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
       {selectedPost && (
         <CommunityPostDetail
           post={selectedPost}
+          autoScrollToComment={autoScrollToComment}
           onClose={(updatedPost) => {
             if (updatedPost) {
               setPosts(prevPosts =>
@@ -167,6 +183,13 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
               );
             }
             setSelectedPost(null);
+            setAutoScrollToComment(false);
+
+            // 모달이 닫힐 때 URL 파라미터 제거
+            if (searchParams.has('postId')) {
+              searchParams.delete('postId');
+              setSearchParams(searchParams, { replace: true });
+            }
           }}
         />
       )}

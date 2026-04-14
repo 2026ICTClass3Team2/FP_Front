@@ -40,7 +40,7 @@ const QuestionCard = ({ onClose, onPostCreated }) => {
     try {
       // 백엔드 API 호출
       console.log('백엔드로 전송하는 데이터:', questionData);
-      await jwtAxios.post('posts', questionData);
+      await jwtAxios.post('qna', questionData);
       alert('질문이 성공적으로 등록되었습니다.');
       onClose();
       if (onPostCreated) onPostCreated();

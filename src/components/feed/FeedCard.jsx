@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import TechStackModal from '../auth/TechStackModal';
+import RichTextEditor from '../editor/RichTextEditor';
 
 const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
   const [title, setTitle] = useState('');
@@ -39,7 +40,10 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim()) {
+    
+    // 에디터 특성상 내용이 비어있어도 <p><br></p>가 들어갈 수 있으므로 태그를 제외하고 검사합니다.
+    const isContentEmpty = content.replace(/<(.|\n)*?>/g, '').trim().length === 0;
+    if (isContentEmpty) {
       setError('내용을 필수로 입력해주세요.');
       return;
     }
@@ -109,13 +113,12 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">내용</label>
-        <textarea 
+        <RichTextEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="내용을 입력하세요 (최대 10,000자)" 
-          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:border-primary min-h-[150px] resize-none transition-colors"
-          maxLength={10000}
-          required
+          onChange={setContent}
+          placeholder="내용을 입력하세요 (최대 10,000자)"
+          readOnly={loading}
+          className="rounded-xl transition-shadow"
         />
       </div>
 

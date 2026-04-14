@@ -1,14 +1,26 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 const techStacks = ['Java', 'Spring', 'React', 'Vue', 'Python', 'Node.js', 'MySQL'];
 
 const TechStackModal = ({ isOpen, onClose, selectedTechStack, onToggle }) => {
+  const backdropClickRef = useRef(false);
+
   if (!isOpen) return null;
 
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4 transition-opacity duration-300 animate-in fade-in"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          backdropClickRef.current = true;
+        }
+      }}
+      onMouseUp={(e) => {
+        if (e.target === e.currentTarget && backdropClickRef.current) {
+          onClose();
+        }
+        backdropClickRef.current = false;
+      }}
     >
       <div 
         className="bg-white w-full max-w-lg rounded-3xl p-7 shadow-2xl border border-gray-100 transition-all duration-300 animate-in zoom-in-95"

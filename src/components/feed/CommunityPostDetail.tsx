@@ -8,12 +8,15 @@ import { formatTimeAgo } from '../../utils/time';
 interface CommunityPostDetailProps {
   post: Post;
   onClose: (updatedPost?: Post) => void;
+  autoScrollToComment?: boolean;
 }
 
-const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose }) => {
+const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose, autoScrollToComment = false }) => {
   const [localPost, setLocalPost] = useState<Post>(post);
   const [isLoadingDetails, setIsLoadingDetails] = useState(true); // 로딩 상태 추가
   const viewCountIncrementedRef = useRef<Set<number>>(new Set()); // useRef를 사용하여 특정 postId에 대한 조회수 증가 API가 호출되었는지 추적
+  const commentSectionRef = useRef<HTMLDivElement>(null); // 스크롤 타겟용 Ref
+  const backdropClickRef = useRef(false); // 배경 클릭 여부 추적용 Ref
 
   // Escape 키를 눌렀을 때 모달 닫기
   useEffect(() => {
@@ -81,6 +84,16 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
       if (post?.postId) viewCountIncrementedRef.current.delete(post.postId);
     };
   }, [post?.postId, onClose]); // post.postId가 변경될 때만 실행, onClose도 의존성에 추가
+
+  // 데이터 로딩 완료 후 댓글 영역으로 자동 스크롤
+  useEffect(() => {
+    if (!isLoadingDetails && autoScrollToComment && commentSectionRef.current) {
+      // 하위 컴포넌트 렌더링 시간을 보장하기 위해 짧은 지연(setTimeout) 부여
+      setTimeout(() => {
+        commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100); 
+    }
+  }, [isLoadingDetails, autoScrollToComment]);
 
   // 낙관적 업데이트 - 좋아요
   const handleLike = async () => {
@@ -192,7 +205,19 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" 
-      onClick={() => onClose(localPost)}
+      onMouseDown={(e) => {
+        // 마우스를 누른 곳이 정확히 배경(backdrop)일 때만 true로 설정
+        if (e.target === e.currentTarget) {
+          backdropClickRef.current = true;
+        }
+      }}
+      onMouseUp={(e) => {
+        // 마우스를 뗀 곳도 배경이고, 누른 곳도 배경이었을 때만 모달 닫기
+        if (e.target === e.currentTarget && backdropClickRef.current) {
+          onClose(localPost);
+        }
+        backdropClickRef.current = false; // 상태 초기화
+      }}
     >
       <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
@@ -217,12 +242,14 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           onShare={handleShare}
         />
         
-        {/* 실제 동작하는 댓글 리스트 컴포넌트 연결 */}
-        <CommentList 
-          postId={localPost.postId} 
-          commentCount={localPost.commentCount || 0}
-          onCommentCountChange={(delta) => setLocalPost(prev => ({ ...prev, commentCount: Math.max(0, (prev.commentCount || 0) + delta) }))}
-        />
+        {/* 댓글 리스트 컴포넌트 (여기로 스크롤 이동) */}
+        <div ref={commentSectionRef}>
+          <CommentList 
+            postId={localPost.postId} 
+            commentCount={localPost.commentCount || 0}
+            onCommentCountChange={(delta) => setLocalPost(prev => ({ ...prev, commentCount: Math.max(0, (prev.commentCount || 0) + delta) }))}
+          />
+        </div>
         
       </div>
     </div>

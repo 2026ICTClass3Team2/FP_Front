@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
+import { formatTimeAgo } from '../../utils/time';
 
 export interface Post {
   postId: number;
@@ -212,7 +213,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
                 )}
               </div>
               {/* 작성일자 (백엔드에서 포맷팅 된 문자열을 그대로 사용) */}
-              {post.createdAt && <span className="text-xs text-gray-400 mt-0.5">{post.createdAt}</span>}
+              {localPost.createdAt && <span className="text-xs text-gray-400 mt-0.5">{formatTimeAgo(localPost.createdAt)}</span>}
             </div>
           </div>
 

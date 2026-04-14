@@ -97,7 +97,7 @@ const StudyPage = () => {
             const data = await reload.json();
             setIncomingLanguages(data.languages || []);
             setIncomingChapters(data.chapters || []);
-
+                
             setIsModalOpen(false);
             setNewLangName("");
             setNewLangUrl("");
@@ -193,8 +193,7 @@ const StudyPage = () => {
                     <div className="mb-6 flex justify-end">
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="px-6 py-3 bg-primary text-white rounded-2xl"
-                        >
+                            className="px-6 py-3 bg-primary text-white rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95">
                             언어 추가
                         </button>
                     </div>
@@ -233,13 +232,13 @@ const StudyPage = () => {
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setIsModalOpen(false)}
-                                        className="flex-1 p-3 bg-secondary rounded-xl"
+                                        className="flex-1 p-3 bg-secondary rounded-xl transition hover:bg-secondary/70 hover:scale-105 active:scale-95"
                                     >
                                         취소
                                     </button>
                                     <button
                                         onClick={handleAddLanguage}
-                                        className="flex-1 p-3 bg-primary text-white rounded-xl"
+                                        className="flex-1 p-3 bg-primary text-white rounded-xl transition hover:bg-primary/80 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                                     >
                                         추가
                                     </button>

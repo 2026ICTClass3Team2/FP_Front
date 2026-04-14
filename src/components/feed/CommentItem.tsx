@@ -4,6 +4,7 @@ import jwtAxios from '../../api/jwtAxios';
 import { CommentResponse } from './types';
 import CommentForm from './CommentForm';
 import { formatTimeAgo } from '../../utils/time';
+import ConfirmationModal from '../common/ConfirmationModal';
 
 interface CommentItemProps {
   comment: CommentResponse;
@@ -11,6 +12,7 @@ interface CommentItemProps {
   depth?: number;
   currentUser: any;
   onRefresh: () => void;
+  onOptimisticDelete?: (commentId: number) => void;
 }
 
 // Helper to get all descendants of a comment in a flat list (depth-first)
@@ -23,10 +25,11 @@ const getAllReplies = (comment: CommentResponse): CommentResponse[] => {
   return replies;
 };
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, currentUser, onRefresh }) => {
+const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, currentUser, onRefresh, onOptimisticDelete }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for reply expansion and pagination
@@ -82,13 +85,18 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
 
   // 댓글 삭제 처리
   const handleDelete = async () => {
-    if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
-      try {
-        await jwtAxios.delete(`posts/${postId}/comments/${comment.id}`);
-        onRefresh();
-      } catch (error) {
-        alert('댓글 삭제 중 오류가 발생했습니다.');
-      }
+    // 낙관적 업데이트가 가능한 경우 UI를 먼저 변경
+    if (onOptimisticDelete) {
+      onOptimisticDelete(comment.id);
+    }
+
+    try {
+      await jwtAxios.delete(`posts/${postId}/comments/${comment.id}`);
+      // 성공 시 onRefresh를 호출하지 않아 UX 개선.
+      // 만약 삭제 후 다른 데이터도 갱신해야 한다면 onRefresh()를 다시 호출할 수 있습니다.
+    } catch (error) {
+      alert('댓글 삭제 중 오류가 발생했습니다.');
+      onRefresh(); // 실패 시에는 전체 데이터를 다시 불러와서 상태를 되돌립니다.
     }
   };
 
@@ -182,7 +190,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
                     {isDropdownOpen && (
                       <div className="absolute right-0 mt-1 w-24 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl overflow-hidden z-10">
                         <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">수정</button>
-                        <button onClick={() => { handleDelete(); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">삭제</button>
+                        <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">삭제</button>
                       </div>
                     )}
                   </div>
@@ -234,6 +242,14 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
       </div>
       </div>
 
+      <ConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={handleDelete}
+        title="댓글 삭제"
+        message="정말로 이 댓글을 삭제하시겠습니까? 삭제된 댓글은 되돌릴 수 없습니다."
+      />
+
       {/* Render replies only if it's a root comment */}
       {isRootComment && allReplies.length > 0 && (
         <div className="flex flex-col">
@@ -245,6 +261,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
               depth={1} // All replies have depth 1
               currentUser={currentUser}
               onRefresh={onRefresh}
+              onOptimisticDelete={onOptimisticDelete}
             />
           ))}
           {/* Reply action buttons */}

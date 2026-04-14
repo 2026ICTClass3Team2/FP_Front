@@ -37,6 +37,23 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
     fetchComments(); // 작성 완료 후 댓글 리스트 갱신
   };
 
+  // 댓글 삭제 시 낙관적 업데이트를 위한 핸들러
+  const handleOptimisticDelete = (commentId: number) => {
+    const updateRecursively = (list: CommentResponse[]): CommentResponse[] => {
+      return list.map(c => {
+        if (c.id === commentId) {
+          // status를 'deleted'로 변경하여 UI에 즉시 반영
+          return { ...c, status: 'deleted' };
+        }
+        if (c.children && c.children.length > 0) {
+          return { ...c, children: updateRecursively(c.children) };
+        }
+        return c;
+      });
+    };
+    setComments(prev => updateRecursively(prev));
+  };
+
   return (
     <section className="w-full mt-10 pt-8 border-t border-gray-200 dark:border-gray-800">
       <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">댓글</h3>
@@ -53,7 +70,14 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
       ) : comments.length > 0 ? (
         <div className="flex flex-col">
           {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} postId={postId} currentUser={currentUser} onRefresh={fetchComments} />
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              postId={postId}
+              currentUser={currentUser}
+              onRefresh={fetchComments}
+              onOptimisticDelete={handleOptimisticDelete}
+            />
           ))}
         </div>
       ) : (

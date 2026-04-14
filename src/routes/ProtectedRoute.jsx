@@ -11,8 +11,8 @@ const ProtectedRoute = () => {
     // [핵심] 현재 접속하려던 주소(경로 + 쿼리스트링)를 가져옵니다.
     const currentUrl = location.pathname + location.search;
 
-    // 로그인 페이지가 아닐 때만 세션 스토리지에 저장
-    if (currentUrl !== '/login') {
+    // 로그인 페이지가 아니고, '명시적 로그아웃' 상태가 아닐 때만 세션에 저장
+    if (currentUrl !== '/login' && !sessionStorage.getItem('isLoggingOut')) {
       sessionStorage.setItem('redirectUrl', currentUrl);
       console.log("보호된 라우트 진입 시도 - 주소 저장됨:", currentUrl);
     }

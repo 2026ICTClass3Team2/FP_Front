@@ -9,11 +9,14 @@ const jwtAxios = axios.create({
 const beforeReq = (config) => {
     const token = localStorage.getItem("token");
     if (!token) {
-        // API 요청 시점에 토큰이 없으면 현재 주소를 세션 스토리지에 백업
-        const currentUrl = window.location.pathname + window.location.search;
-        sessionStorage.setItem('redirectUrl', currentUrl);
-        window.location.href = '/login'; // 로그인 페이지로 강제 이동
-
+        // 명시적 로그아웃 상태이거나, 이미 로그인/가입 페이지라면 주소 저장 생략
+        const isLoggingOut = sessionStorage.getItem('isLoggingOut');
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && !isLoggingOut) {
+            const currentUrl = window.location.pathname + window.location.search;
+            sessionStorage.setItem('redirectUrl', currentUrl);
+            window.location.href = '/login'; // 로그인 페이지로 강제 이동
+        }
+        
         return Promise.reject({
             response: { data: { message: '로그인이 필요한 서비스입니다.' } }
         });
@@ -42,9 +45,12 @@ const responseFail = async (err) => {
         } catch (refreshErr) {
             localStorage.removeItem("token");
             localStorage.removeItem("user");
-            // 리프레시 실패 시에도 현재 주소 저장 후 로그인 이동
-            sessionStorage.setItem('redirectUrl', window.location.pathname + window.location.search);
-            window.location.href = "/login";
+            
+            const isLoggingOut = sessionStorage.getItem('isLoggingOut');
+            if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && !isLoggingOut) {
+                sessionStorage.setItem('redirectUrl', window.location.pathname + window.location.search);
+                window.location.href = "/login";
+            }
             return Promise.reject(refreshErr);
         }
     }

@@ -81,6 +81,10 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    sessionStorage.removeItem('redirectUrl'); // 사용자가 직접 로그아웃 시 저장된 돌아갈 주소 삭제
+    
+    // 라우터나 인터셉터가 주소를 다시 낚아채는 것을 방지하는 팻말 달기
+    sessionStorage.setItem('isLoggingOut', 'true');
   };
 
   const value = {

@@ -25,6 +25,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const [hasNextPage, setHasNextPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [autoScrollToComment, setAutoScrollToComment] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
 
@@ -153,6 +154,10 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
             onEdit={onEditClick} 
             onDelete={handleDeletePost} 
             onDetailClick={() => setSelectedPost(post)} 
+            onComment={() => {
+              setSelectedPost(post);
+              setAutoScrollToComment(true);
+            }}
           />
         ))}
       </div>
@@ -170,6 +175,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
       {selectedPost && (
         <CommunityPostDetail
           post={selectedPost}
+          autoScrollToComment={autoScrollToComment}
           onClose={(updatedPost) => {
             if (updatedPost) {
               setPosts(prevPosts =>
@@ -177,6 +183,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
               );
             }
             setSelectedPost(null);
+            setAutoScrollToComment(false);
 
             // 모달이 닫힐 때 URL 파라미터 제거
             if (searchParams.has('postId')) {

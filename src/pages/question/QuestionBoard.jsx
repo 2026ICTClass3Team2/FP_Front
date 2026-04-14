@@ -45,10 +45,15 @@ const QuestionBoard = () => {
     }
   }, [query, sort, statusFilter]);
 
-  // 컴포넌트 마운트 및 검색 조건 변경 시 데이터 로드
+  // 실시간 검색 (300ms 디바운싱)
   useEffect(() => {
-    fetchQnaList();
-  }, [fetchQnaList]);
+    const searchTimer = setTimeout(() => {
+      setPage(0); // 검색 시 페이지 초기화
+      fetchQnaList();
+    }, 300);
+
+    return () => clearTimeout(searchTimer);
+  }, [query, sort, statusFilter, fetchQnaList]);
 
   // URL 파라미터로 모달 열기
   useEffect(() => {
@@ -79,13 +84,6 @@ const QuestionBoard = () => {
     });
   };
 
-  // 검색 제출 핸들러
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    setPage(0); // 검색 시 페이지 초기화
-    fetchQnaList();
-  };
-
   // 모달 핸들러
   const handleCloseModal = () => setIsWriteModalOpen(false);
 
@@ -101,25 +99,15 @@ const QuestionBoard = () => {
         </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.8fr_auto]">
-          <form onSubmit={handleSearchSubmit} className="flex gap-3">
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="제목/내용/작성자 검색"
-              className="flex-1 rounded-3xl border border-border 
-              bg-background px-5 py-3 text-sm text-foreground focus:outline-none 
-              focus:border-primary"
-            />
-            <button
-              type="submit"
-              className="rounded-3xl bg-primary px-5 py-3 
-              text-sm font-semibold text-primary-foreground 
-              hover:bg-primary/90 transition-colors"
-            >
-              검색
-            </button>
-          </form>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="제목/내용/작성자 검색"
+            className="flex-1 rounded-3xl border border-border 
+            bg-background px-5 py-3 text-sm text-foreground focus:outline-none 
+            focus:border-primary"
+          />
 
           <div className="flex flex-wrap items-center gap-3">
             <select

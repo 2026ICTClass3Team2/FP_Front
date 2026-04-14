@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useLocation } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import Modal from '../../components/common/Modal';
 import FeedCard from '../../components/feed/FeedCard';
 import FeedList from '../../components/feed/FeedList';
@@ -8,19 +8,18 @@ const MainFeed = () => {
     const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
     const [editingPost, setEditingPost] = useState(null); // 수정할 게시글 데이터 상태
     const feedListRef = useRef();
-    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     // URL 파라미터로 모달 열기
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        if (params.get('write') === 'feed') {
+        if (searchParams.get('write') === 'feed') {
             setEditingPost(null);
             setIsWriteModalOpen(true);
-            // URL에서 파라미터 제거
-            const newUrl = location.pathname;
-            window.history.replaceState({}, '', newUrl);
+            // URL에서 파라미터 제거 (React Router 상태 동기화)
+            searchParams.delete('write');
+            setSearchParams(searchParams, { replace: true });
         }
-    }, [location.search]);
+    }, [searchParams, setSearchParams]);
 
     // 새 글 작성 버튼 클릭 핸들러
     const handleWriteClick = () => {

@@ -1,7 +1,42 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null; 
+
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  // 모달이 열려있을 때 배경 스크롤 방지
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      const originalPosition = document.body.style.position;
+      const originalTop = document.body.style.top;
+      const originalWidth = document.body.style.width;
+      const originalOverflow = document.body.style.overflow;
+
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.body.style.position = originalPosition;
+        document.body.style.top = originalTop;
+        document.body.style.width = originalWidth;
+        document.body.style.overflow = originalOverflow;
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
 
   return (
     <div 
@@ -9,7 +44,8 @@ const Modal = ({ isOpen, onClose, title, children }) => {
       onClick={onClose}
     >
       <div 
-        className="bg-background w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-border max-h-[90vh] overflow-y-auto"
+        className="bg-background w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-border max-h-[90vh] overflow-y-auto
+         [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         onClick={(e) => e.stopPropagation()}
       >
         

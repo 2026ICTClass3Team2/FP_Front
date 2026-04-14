@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import ReactQuill, { Quill } from 'react-quill-new';
 import { FiSmile } from 'react-icons/fi';
 // @ts-ignore
@@ -50,6 +50,59 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
     setIsStickerPickerOpen(false);
   };
 
+  useEffect(() => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+
+    const root = quill.root;
+    const handleClick = (event: MouseEvent) => {
+      if (event.target !== root) return;
+
+      const clickY = event.clientY;
+      const firstChild = root.firstElementChild;
+
+      if (!firstChild) {
+        quill.focus();
+        return;
+      }
+
+      const rects = root.getBoundingClientRect();
+      const firstChildBounds = firstChild.getBoundingClientRect();
+
+      // Case 1: 컨텐츠 위쪽 빈 공간 클릭 -> 코드 블록 탈출하여 위에 생성
+      if (clickY < firstChildBounds.top) {
+        const firstLineFormats = quill.getFormat(0, 1);
+        if (firstLineFormats['code-block']) {
+          quill.insertText(0, '\n', 'api');
+          quill.formatLine(0, 1, 'code-block', false, 'api');
+          quill.setSelection(0, 0, 'user');
+        } else {
+          quill.setSelection(0, 0, 'user');
+        }
+      } 
+      // Case 2: 컨텐츠 아래쪽 빈 공간 클릭 -> 코드 블록 탈출하여 아래에 생성
+      else if (clickY > root.lastElementChild!.getBoundingClientRect().bottom) {
+        const length = quill.getLength();
+        // 실제 텍스트가 있는 마지막 위치의 포맷 확인
+        const lastLineFormats = quill.getFormat(length - 1, 1);
+
+        if (lastLineFormats['code-block']) {
+          // 마지막이 코드 블록이면, 줄바꿈을 추가하고 해당 줄의 코드 서식을 해제
+          quill.insertText(length, '\n', 'user');
+          quill.formatLine(length, 1, 'code-block', false, 'api');
+          quill.setSelection(length + 1, 0, 'user');
+        } else {
+          quill.setSelection(length, 0, 'user');
+        }
+      }
+      
+      quill.focus(); // 에디터 자체에 포커스 강제
+    };
+
+    root.addEventListener('click', handleClick);
+    return () => root.removeEventListener('click', handleClick);
+  }, []);
+
   return (
     <div className={`relative flex flex-col border border-gray-300 dark:border-gray-700 rounded-xl bg-transparent transition-shadow ${className}`}>
       
@@ -98,7 +151,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
         modules={modules}
         readOnly={readOnly}
         placeholder={placeholder || "내용을 입력하세요..."}
-        className="bg-transparent [&_.ql-container]:!border-none [&_.ql-editor]:min-h-[120px] rounded-b-xl"
+        className="bg-transparent [&_.ql-container]:!border-none [&_.ql-editor]:min-h-[120px] [&_.ql-editor]:p-4 [&_.ql-editor]:pb-20"
       />
 
       {/* 4. 스티커 선택 모달창 */}

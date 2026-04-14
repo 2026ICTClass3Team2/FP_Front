@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../components/sidebar/AuthContext';
 
@@ -13,13 +13,34 @@ const LoginPage = () => {
   
   const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/api/';
 
+  useEffect(() => {
+    // Interceptor나 라우터 가드가 주소를 못 잡았을 경우 대비 (외부 링크 직접 타고 올 때)
+    if (!sessionStorage.getItem('redirectUrl')) {
+      const prevPath = document.referrer;
+      if (prevPath && prevPath.includes(window.location.host)) {
+        const url = new URL(prevPath);
+        const target = url.pathname + url.search;
+        if (target !== '/login' && target !== '/register' && target !== '/') {
+          sessionStorage.setItem('redirectUrl', target);
+        }
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setError('');
       setLoading(true);
       await login(email, password);
-      navigate('/'); // 로그인 성공 시 홈으로 이동
+      
+      const redirectUrl = sessionStorage.getItem('redirectUrl');
+      if (redirectUrl) {
+        sessionStorage.removeItem('redirectUrl');
+        window.location.href = redirectUrl; // 상세 모달 등 원래 주소로 이동
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err) {
       setError(err.message);
     } finally {

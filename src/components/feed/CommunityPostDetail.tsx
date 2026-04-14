@@ -168,7 +168,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
   // 공유 (클립보드 복사)
   const handleShare = async () => {
-    const url = `${window.location.origin}/posts/${localPost.postId}`;
+    const url = `${window.location.origin}${window.location.pathname}?postId=${localPost.postId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('클립보드에 복사되었습니다.');

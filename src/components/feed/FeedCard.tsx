@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import { FiImage, FiX } from 'react-icons/fi';
 import { Post } from './PostCard';
+import RichTextEditor from '../editor/RichTextEditor';
 import TechStackModal from '../auth/TechStackModal';
 
 interface FeedCardProps {
@@ -64,7 +65,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) {
+    
+    // 에디터의 빈 태그(<p><br></p>) 상태 검증
+    const isBodyEmpty = body.replace(/<(.|\n)*?>/g, '').trim().length === 0;
+    if (!title.trim() || isBodyEmpty) {
       setError('제목과 본문을 입력해주세요.');
       return;
     }
@@ -117,11 +121,13 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">본문</label>
-        <textarea 
-          value={body} onChange={(e) => setBody(e.target.value)} 
-          placeholder="내용을 입력하세요. (HTML 등 포함 가능)" 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors min-h-[150px] resize-none"
-          required />
+        <RichTextEditor
+          value={body}
+          onChange={setBody}
+          placeholder="내용을 입력하세요..."
+          readOnly={loading}
+          className="rounded-xl transition-shadow shadow-sm"
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">

@@ -4,6 +4,7 @@ import jwtAxios from '../../api/jwtAxios';
 import { CommentResponse } from './types';
 import CommentForm from './CommentForm';
 import { formatTimeAgo } from '../../utils/time';
+import ConfirmationModal from '../common/ConfirmationModal';
 
 interface CommentItemProps {
   comment: CommentResponse;
@@ -11,6 +12,8 @@ interface CommentItemProps {
   depth?: number;
   currentUser: any;
   onRefresh: () => void;
+  onOptimisticDelete?: (commentId: number) => void;
+  onCommentCountChange?: (delta: number) => void;
 }
 
 // Helper to get all descendants of a comment in a flat list (depth-first)
@@ -23,17 +26,18 @@ const getAllReplies = (comment: CommentResponse): CommentResponse[] => {
   return replies;
 };
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, currentUser, onRefresh }) => {
+const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, currentUser, onRefresh, onOptimisticDelete, onCommentCountChange }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for reply expansion and pagination
   const [isExpanded, setIsExpanded] = useState(false); // True if replies are expanded, false if brief
   const [visibleRepliesCount, setVisibleRepliesCount] = useState(10); // How many replies are visible when expanded
 
-  const initialBriefCount = 2; // Number of replies to show when not expanded
+  const initialBriefCount = 0; // 대댓글 기본 숨김 처리
   const repliesChunkSize = 10; // Number of replies to add when "더 보기" is clicked
 
   const isAuthor = currentUser?.username === comment.authorUsername || currentUser?.nickname === comment.authorNickname;
@@ -68,6 +72,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
       parentId: comment.id,
     });
     onRefresh();
+    if (onCommentCountChange) onCommentCountChange(1); // 대댓글 추가 시 +1
     setIsReplying(false); // 답글 작성 후 폼 닫기
     setIsExpanded(true); // 답글 작성 후 자동으로 펼치기
     setVisibleRepliesCount(prev => prev + 1); // 새로 추가된 답글 포함
@@ -82,13 +87,19 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
 
   // 댓글 삭제 처리
   const handleDelete = async () => {
-    if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
-      try {
-        await jwtAxios.delete(`posts/${postId}/comments/${comment.id}`);
-        onRefresh();
-      } catch (error) {
-        alert('댓글 삭제 중 오류가 발생했습니다.');
-      }
+    // 낙관적 업데이트가 가능한 경우 UI를 먼저 변경
+    if (onOptimisticDelete) {
+      onOptimisticDelete(comment.id);
+    }
+
+    try {
+      await jwtAxios.delete(`posts/${postId}/comments/${comment.id}`);
+      if (onCommentCountChange) onCommentCountChange(-1); // 댓글 삭제 시 -1
+      // 성공 시 onRefresh를 호출하지 않아 UX 개선.
+      // 만약 삭제 후 다른 데이터도 갱신해야 한다면 onRefresh()를 다시 호출할 수 있습니다.
+    } catch (error) {
+      alert('댓글 삭제 중 오류가 발생했습니다.');
+      onRefresh(); // 실패 시에는 전체 데이터를 다시 불러와서 상태를 되돌립니다.
     }
   };
 
@@ -143,14 +154,14 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
   };
 
   // 깊이에 따른 마진 설정 (최대 깊이를 넘어가더라도 시각적으로 구분되도록 여백 부여)
-  const depthClass = depth > 0 ? 'ml-4 md:ml-8 lg:ml-12 border-l-2 border-gray-100 dark:border-gray-800 pl-4 mt-4' : 'mt-6';
+  const depthClass = depth > 0 ? 'ml-4 md:ml-8 lg:ml-12 border-l-2 border-gray-100 pl-4 mt-4' : 'mt-6';
 
   return (
     <>
       {/* The actual comment body */}
       <div className={depthClass}>
         <div className="flex items-start gap-3 relative">
-        {depth > 0 && <FiCornerDownRight className="text-gray-300 dark:text-gray-600 mt-2 flex-shrink-0" size={16} />}
+        {depth > 0 && <FiCornerDownRight className="text-gray-300 mt-2 flex-shrink-0" size={16} />}
         
         {/* 프로필 이미지 */}
         {!isDeleted && (
@@ -170,19 +181,19 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
             <>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-gray-900 dark:text-white text-sm">{comment.authorNickname}</span>
+                  <span className="font-semibold text-gray-900 text-sm">{comment.authorNickname}</span>
                   <span className="text-xs text-gray-400">{formatTimeAgo(comment.createdAt)}</span>
                 </div>
                 
                 {isAuthor && (
                   <div className="relative" ref={dropdownRef}>
-                    <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+                    <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
                       <FiMoreVertical size={16} />
                     </button>
                     {isDropdownOpen && (
-                      <div className="absolute right-0 mt-1 w-24 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl overflow-hidden z-10">
-                        <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">수정</button>
-                        <button onClick={() => { handleDelete(); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">삭제</button>
+                      <div className="absolute right-0 mt-1 w-24 bg-white border border-gray-200 shadow-lg rounded-xl overflow-hidden z-10">
+                        <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors">수정</button>
+                        <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">삭제</button>
                       </div>
                     )}
                   </div>
@@ -197,25 +208,31 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
                   isReply
                 />
               ) : (
-                <p className="text-gray-800 dark:text-gray-200 text-sm whitespace-pre-wrap leading-relaxed mb-2">
-                  {comment.content}
-                </p>
+                <div 
+                  className="text-gray-800 text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-h-24 [&_img]:align-middle"
+                  dangerouslySetInnerHTML={{ __html: comment.content }}
+                />
               )}
 
               <div className="flex items-center gap-4 mt-2 text-gray-500">
-                <button onClick={handleLike} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
-                  <FiThumbsUp size={14} /> <span className="text-xs font-medium">{comment.likeCount}</span>
+                <button onClick={handleLike} className="relative group flex items-center gap-1 p-1.5 hover:bg-gray-100 rounded-full hover:text-blue-500 transition-colors">
+                  <FiThumbsUp size={16} />
+                  <span className="text-xs font-medium">{comment.likeCount}</span>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">좋아요</span>
                 </button>
-                <button onClick={handleDislike} className="flex items-center gap-1.5 hover:text-red-500 transition-colors">
-                  <FiThumbsDown size={14} /> <span className="text-xs font-medium">{comment.dislikeCount}</span>
+                <button onClick={handleDislike} className="relative group flex items-center gap-1 p-1.5 hover:bg-gray-100 rounded-full hover:text-red-500 transition-colors">
+                  <FiThumbsDown size={16} />
+                  <span className="text-xs font-medium">{comment.dislikeCount}</span>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
                 </button>
-                <button onClick={() => setIsReplying(!isReplying)} className="text-xs font-medium hover:text-gray-800 dark:hover:text-white transition-colors ml-2">
-                  답글 달기
+                <button onClick={() => setIsReplying(!isReplying)} className="relative group flex items-center p-1.5 hover:bg-gray-100 rounded-full hover:text-gray-800 transition-colors">
+                  <FiCornerDownRight size={16} />
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
                 </button>
               </div>
             </>
           ) : (
-            <p className="text-gray-400 dark:text-gray-500 italic text-sm py-2">
+            <p className="text-gray-400 italic text-sm py-2">
               삭제된 댓글입니다.
             </p>
           )}
@@ -223,7 +240,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
           {/* 답글 폼 */}
           {isReplying && (
             <CommentForm
-              initialValue={isAuthor ? '' : `@${comment.authorNickname} `}
+              initialValue={isAuthor ? '' : `<strong>@${comment.authorNickname}</strong>&nbsp;`}
               onSubmit={handleReplySubmit}
               onCancel={() => setIsReplying(false)}
               placeholder="답글을 남겨보세요."
@@ -233,6 +250,14 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
         </div>
       </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={handleDelete}
+        title="댓글 삭제"
+        message="정말로 이 댓글을 삭제하시겠습니까? 삭제된 댓글은 되돌릴 수 없습니다."
+      />
 
       {/* Render replies only if it's a root comment */}
       {isRootComment && allReplies.length > 0 && (
@@ -245,6 +270,8 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
               depth={1} // All replies have depth 1
               currentUser={currentUser}
               onRefresh={onRefresh}
+              onOptimisticDelete={onOptimisticDelete}
+              onCommentCountChange={onCommentCountChange}
             />
           ))}
           {/* Reply action buttons */}
@@ -252,25 +279,25 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
             {canExpand && (
               <button
                 onClick={handleExpandReplies}
-                className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
+                className="text-sm font-semibold text-blue-500 hover:text-blue-600"
               >
-                답글 더보기
+                답글 {totalReplies}개 보기
               </button>
             )}
             {canLoadMore && (
               <button
                 onClick={handleShowMoreReplies}
-                className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
+                className="text-sm font-semibold text-gray-500 hover:text-blue-500"
               >
-                답글 더보기
+                더보기
               </button>
             )}
             {canCollapse && (
               <button
                 onClick={handleCollapseReplies}
-                className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
+                className="text-sm font-semibold text-gray-500 hover:text-blue-500"
               >
-                간략히
+                숨기기
               </button>
             )}
           </div>

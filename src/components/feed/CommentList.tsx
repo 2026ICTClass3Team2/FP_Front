@@ -6,12 +6,20 @@ import CommentForm from './CommentForm';
 
 interface CommentListProps {
   postId: number;
+  commentCount?: number;
+  onCommentCountChange?: (delta: number) => void;
 }
 
-const CommentList: React.FC<CommentListProps> = ({ postId }) => {
+const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onCommentCountChange }) => {
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 메인 댓글 더보기/간략히 상태 관리
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
+  const initialBriefCount = 3; // 처음에 보여줄 댓글 수
+  const commentsChunkSize = 10; // 더보기 클릭 시 추가로 보여줄 댓글 수
 
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -34,17 +42,59 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
 
   const handleMainCommentSubmit = async (content: string) => {
     await jwtAxios.post(`posts/${postId}/comments`, { content });
+    if (onCommentCountChange) onCommentCountChange(1); // 댓글 추가 시 +1
     fetchComments(); // 작성 완료 후 댓글 리스트 갱신
   };
 
-  return (
-    <section className="w-full mt-10 pt-8 border-t border-gray-200 dark:border-gray-800">
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">댓글</h3>
-      
-      {/* 메인 댓글 작성 폼 */}
-      <CommentForm onSubmit={handleMainCommentSubmit} />
+  // 댓글 삭제 시 낙관적 업데이트를 위한 핸들러
+  const handleOptimisticDelete = (commentId: number) => {
+    const updateRecursively = (list: CommentResponse[]): CommentResponse[] => {
+      return list.map(c => {
+        if (c.id === commentId) {
+          // status를 'deleted'로 변경하여 UI에 즉시 반영
+          return { ...c, status: 'deleted' };
+        }
+        if (c.children && c.children.length > 0) {
+          return { ...c, children: updateRecursively(c.children) };
+        }
+        return c;
+      });
+    };
+    setComments(prev => updateRecursively(prev));
+  };
 
-      {error && <div className="text-red-500 text-sm mb-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">{error}</div>}
+  // 댓글 렌더링을 위한 계산 로직
+  const totalComments = comments.length;
+  const commentsToRender = isExpanded
+    ? comments.slice(0, visibleCommentsCount)
+    : comments.slice(0, initialBriefCount);
+
+  const canExpand = !isExpanded && totalComments > initialBriefCount;
+  const canLoadMore = isExpanded && visibleCommentsCount < totalComments;
+  const canCollapse = isExpanded && totalComments > initialBriefCount;
+
+  const handleExpandComments = () => {
+    setIsExpanded(true);
+    setVisibleCommentsCount(Math.min(initialBriefCount + commentsChunkSize, totalComments));
+  };
+  const handleShowMoreComments = () => {
+    setVisibleCommentsCount(prev => Math.min(prev + commentsChunkSize, totalComments));
+  };
+  const handleCollapseComments = () => {
+    setIsExpanded(false);
+    setVisibleCommentsCount(initialBriefCount);
+  };
+
+  return (
+    <section className="w-full mt-10 pt-8 border-t border-gray-100">
+      {/* 메인 댓글 작성 폼 */}
+      {currentUser.username ? ( <CommentForm onSubmit={handleMainCommentSubmit} /> ) : ( <div className="p-4 mb-6 text-center bg-gray-50 border border-gray-200 rounded-xl"> <p className="text-sm text-gray-500"> 댓글을 작성하려면 <a href="/login" className="font-semibold text-blue-500 hover:underline">로그인</a>이 필요합니다. </p> </div> )}
+
+      <h3 className="text-lg font-bold text-gray-900 mt-8 mb-6 flex items-center gap-1.5">
+        댓글 <span className="text-blue-500">{commentCount}</span>
+      </h3>
+
+      {error && <div className="text-red-500 text-sm mb-4 p-4 bg-red-50 rounded-xl">{error}</div>}
 
       {isLoading && comments.length === 0 ? (
         <div className="flex justify-center py-10">
@@ -52,12 +102,48 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
         </div>
       ) : comments.length > 0 ? (
         <div className="flex flex-col">
-          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} postId={postId} currentUser={currentUser} onRefresh={fetchComments} />
+          {commentsToRender.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              postId={postId}
+              currentUser={currentUser}
+              onRefresh={fetchComments}
+              onOptimisticDelete={handleOptimisticDelete}
+              onCommentCountChange={onCommentCountChange}
+            />
           ))}
+
+          {/* 메인 댓글 더보기 / 간략히 버튼 영역 */}
+          <div className="mt-6 flex justify-center gap-3">
+            {canExpand && (
+              <button
+                onClick={handleExpandComments}
+                className="px-5 py-2 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-600 rounded-full transition-colors border border-gray-200 shadow-sm"
+              >
+                댓글 더보기
+              </button>
+            )}
+            {canLoadMore && (
+              <button
+                onClick={handleShowMoreComments}
+                className="px-5 py-2 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-600 rounded-full transition-colors border border-gray-200 shadow-sm"
+              >
+                댓글 더보기
+              </button>
+            )}
+            {canCollapse && (
+              <button
+                onClick={handleCollapseComments}
+                className="px-5 py-2 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-600 rounded-full transition-colors border border-gray-200 shadow-sm"
+              >
+                간략히
+              </button>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="text-center py-16 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">작성된 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</div>
+        <div className="text-center py-10 text-gray-500">작성된 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</div>
       )}
     </section>
   );

@@ -14,6 +14,9 @@ const LoginPage = () => {
   const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/api/';
 
   useEffect(() => {
+    // 로그인 페이지에 무사히 도착했으면 로그아웃 팻말을 수거합니다.
+    sessionStorage.removeItem('isLoggingOut');
+
     // Interceptor나 라우터 가드가 주소를 못 잡았을 경우 대비 (외부 링크 직접 타고 올 때)
     if (!sessionStorage.getItem('redirectUrl')) {
       const prevPath = document.referrer;

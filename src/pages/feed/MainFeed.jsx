@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import { useLocation } from 'react-router-dom';
 import Modal from '../../components/common/Modal';
 import FeedCard from '../../components/feed/FeedCard';
 import FeedList from '../../components/feed/FeedList';
@@ -7,6 +8,19 @@ const MainFeed = () => {
     const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
     const [editingPost, setEditingPost] = useState(null); // 수정할 게시글 데이터 상태
     const feedListRef = useRef();
+    const location = useLocation();
+
+    // URL 파라미터로 모달 열기
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('write') === 'feed') {
+            setEditingPost(null);
+            setIsWriteModalOpen(true);
+            // URL에서 파라미터 제거
+            const newUrl = location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [location.search]);
 
     // 새 글 작성 버튼 클릭 핸들러
     const handleWriteClick = () => {
@@ -30,16 +44,6 @@ const MainFeed = () => {
         <div className="w-full bg-background min-h-screen">
             {/* 무한 스크롤, 피드 카드 렌더링을 담당하는 FeedList 컴포넌트 */}
             <FeedList ref={feedListRef} onEditClick={handleEditClick} />
-
-            {/* 작성버튼 (FAB) - 피드 영역(max-w-2xl) 우측 하단에 딱 맞춰 고정 */}
-            <div className="fixed bottom-10 left-0 right-0 w-full max-w-2xl mx-auto flex justify-end px-4 pointer-events-none z-50">
-                <button 
-                    onClick={handleWriteClick} 
-                    className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center text-3xl font-light pointer-events-auto"
-                >
-                    +
-                </button>
-            </div>
 
             <Modal title={editingPost ? "게시글 수정" : "새 게시물 작성"} isOpen={isWriteModalOpen} onClose={handleCloseModal}>
                 <FeedCard postToEdit={editingPost} onClose={handleCloseModal} onPostCreated={handlePostCreated} /> 

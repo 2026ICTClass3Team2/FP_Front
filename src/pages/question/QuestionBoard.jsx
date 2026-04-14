@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Modal from '../../components/common/Modal';
 import QuestionCard from '../../components/question/QuestionCard';
 import QnaCard from '../../components/question/QnaCard';
@@ -16,6 +17,7 @@ const QuestionBoard = () => {
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
   const [page, setPage] = useState(0);
+  const location = useLocation();
 
   // Q&A 목록 가져오기 함수
   const fetchQnaList = useCallback(async () => {
@@ -48,6 +50,17 @@ const QuestionBoard = () => {
     fetchQnaList();
   }, [fetchQnaList]);
 
+  // URL 파라미터로 모달 열기
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('write') === 'qna') {
+      setIsWriteModalOpen(true);
+      // URL에서 파라미터 제거
+      const newUrl = location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [location.search]);
+
   // 통계 계산
   const stats = useMemo(() => {
     const total = items.length;
@@ -74,30 +87,17 @@ const QuestionBoard = () => {
   };
 
   // 모달 핸들러
-  const handleWriteClick = () => setIsWriteModalOpen(true);
   const handleCloseModal = () => setIsWriteModalOpen(false);
 
   return (
     <section className="space-y-8">
       <header className="rounded-[2rem] border border-border bg-card p-8 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm text-muted">Dead Bug</p>
-            <h1 className="mt-1 text-3xl font-bold text-foreground">질문답변 게시판</h1>
-            <p className="mt-3 text-sm text-muted">
-              제목, 내용, 작성자 검색이 가능합니다. 질문에 이미지, 포인트, 태그, 조회수, 댓글, 좋아요, 공유 정보를 함께 보여줍니다.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleWriteClick}
-            className="inline-flex items-center justify-center rounded-3xl 
-            bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground 
-            shadow-sm hover:bg-primary/90 transition-colors"
-          >
-            + 질문 작성
-          </button>
+        <div>
+          <p className="text-sm text-muted">Dead Bug</p>
+          <h1 className="mt-1 text-3xl font-bold text-foreground">질문답변 게시판</h1>
+          <p className="mt-3 text-sm text-muted">
+            제목, 내용, 작성자 검색이 가능합니다. 질문에 이미지, 포인트, 태그, 조회수, 댓글, 좋아요, 공유 정보를 함께 보여줍니다.
+          </p>
         </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.8fr_auto]">

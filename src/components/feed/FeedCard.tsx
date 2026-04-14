@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import { FiImage, FiX } from 'react-icons/fi';
 import { Post } from './PostCard';
+import TechStackModal from '../auth/TechStackModal';
 
 interface FeedCardProps {
   onClose: () => void;
@@ -18,6 +19,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
 
   // 수정 모드일 경우 초기값 세팅
   useEffect(() => {
@@ -25,6 +27,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
       setTitle(postToEdit.title || '');
       setBody(postToEdit.body || '');
       setTags(postToEdit.tags?.join(', ') || '');
+      // In a real app, you'd likely set the selected techs here too
       setThumbnailUrl(postToEdit.thumbnailUrl || '');
     }
   }, [postToEdit]);
@@ -47,6 +50,15 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
       alert('파일 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleTechStackToggle = (tech: string) => {
+    const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
+    if (currentTags.includes(tech)) {
+      setTags(currentTags.filter(t => t !== tech).join(', '));
+    } else {
+      setTags([...currentTags, tech].join(', '));
     }
   };
 
@@ -114,11 +126,34 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">태그</label>
-        <input 
-          type="text" value={tags} onChange={(e) => setTags(e.target.value)} 
-          placeholder="쉼표(,)로 구분해서 입력해주세요. 예: Spring, React" 
-          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+        <button
+          type="button"
+          onClick={() => setIsTechStackModalOpen(true)}
+          className="flex items-center justify-between w-full min-h-[46px] p-3 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-left focus:outline-none focus:border-blue-500 transition-colors hover:bg-gray-50 dark:hover:bg-slate-700"
+        >
+          <div className="flex flex-wrap gap-1.5">
+            {tags.split(',').map(t => t.trim()).filter(t => t).length > 0 ? (
+              tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
+                <span key={tag} className="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 text-xs font-semibold rounded-lg shadow-sm">
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-400 dark:text-gray-500 text-sm">관심 있는 기술을 선택해주세요...</span>
+            )}
+          </div>
+          <svg className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
       </div>
+
+      <TechStackModal
+        isOpen={isTechStackModalOpen}
+        onClose={() => setIsTechStackModalOpen(false)}
+        selectedTechStack={tags.split(',').map(t => t.trim()).filter(t => t)}
+        onToggle={handleTechStackToggle}
+      />
 
       {/* 이미지 업로드 영역 */}
       <div className="flex flex-col gap-1.5">

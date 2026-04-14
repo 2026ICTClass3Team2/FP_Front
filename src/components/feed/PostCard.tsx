@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
+import { formatTimeAgo } from '../../utils/time';
 
 export interface Post {
   postId: number;
@@ -45,11 +46,33 @@ interface PostCardProps {
 const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onDetailClick }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localPost, setLocalPost] = useState<Post>(post);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // 부모 컴포넌트의 데이터가 변경되면 동기화
   useEffect(() => {
     setLocalPost(post);
   }, [post]);
+
+  // 외부 클릭 및 ESC 키 감지를 위한 useEffect
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, []);
 
   // 안전한 렌더링을 위한 기본값 및 필드 매핑
   const authorNickname = localPost.authorNickname || '익명';
@@ -190,13 +213,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
                 )}
               </div>
               {/* 작성일자 (백엔드에서 포맷팅 된 문자열을 그대로 사용) */}
-              {post.createdAt && <span className="text-xs text-gray-400 mt-0.5">{post.createdAt}</span>}
+              {localPost.createdAt && <span className="text-xs text-gray-400 mt-0.5">{formatTimeAgo(localPost.createdAt)}</span>}
             </div>
           </div>
 
           {/* 우측 상단 옵션 (isAuthor가 true일 때만 렌더링) */}
           {isMyPost && (
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
                 <FiMoreVertical size={20} />
               </button>

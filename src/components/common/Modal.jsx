@@ -1,7 +1,6 @@
 import React from 'react';
 
 const Modal = ({ isOpen, onClose, title, children }) => {
-  // 열림 상태가 아니면 아무것도 렌더링하지 않음
   if (!isOpen) return null; 
 
   return (

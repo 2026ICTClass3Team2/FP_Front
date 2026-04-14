@@ -94,32 +94,18 @@ const QnaCard = ({ item, onBookmarkToggle, isBookmarked }) => {
   return (
     <article className="group bg-card border border-border rounded-3xl 
     overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      {/* 게시글 이미지 영역 */}
-      <div className="relative h-44 overflow-hidden bg-slate-100 dark:bg-slate-800">
-        {item.imageUrl ? (
-          <img
-            className="h-full w-full object-cover"
-            src={item.imageUrl}
-            alt={item.title}
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-400">
-            이미지가 없습니다.
-          </div>
-        )}
-
-        {/* 북마크 버튼 */}
+      {/* 북마크 버튼 */}
+      <div className="relative p-4 border-b border-border flex justify-between items-center">
         <button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
             onBookmarkToggle(postId);
           }}
-        className="group/btn absolute right-4 top-4 rounded-full bg-background/90 p-2 text-foreground shadow-sm hover:bg-background transition-colors"
+          className="group/btn rounded-full bg-background/90 p-2 text-foreground shadow-sm hover:bg-background transition-colors"
         >
-        <BookmarkIcon isBookmarked={isBookmarked} />
-        <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 dark:bg-gray-700 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">북마크</span>
+          <BookmarkIcon isBookmarked={isBookmarked} />
+          <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 dark:bg-gray-700 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">북마크</span>
         </button>
       </div>
 
@@ -158,7 +144,7 @@ const QnaCard = ({ item, onBookmarkToggle, isBookmarked }) => {
 
         {/* 작성자 및 날짜 */}
         <div className="grid grid-cols-2 gap-3 text-xs text-muted">
-          <span>작성자: {item.author ?? '익명'}</span>
+          <span>작성자: {item.nickname} ({item.username})</span>
           <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString('ko-KR') : '날짜 없음'}</span>
         </div>
 

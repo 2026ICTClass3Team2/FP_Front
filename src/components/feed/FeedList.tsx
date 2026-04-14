@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } f
 import { FiPlus } from 'react-icons/fi';
 import PostCard, { Post } from './PostCard';
 import jwtAxios from '../../api/jwtAxios';
+import ConfirmationModal from '../common/ConfirmationModal';
 import CommunityPostDetail from './CommunityPostDetail';
 
 const testURI = 'http://localhost:8090/api/';
@@ -23,22 +24,30 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const [hasNextPage, setHasNextPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<number | null>(null);
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const lastPostIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false); // 무한 스크롤 옵저버 내에서 최신 로딩 상태를 확인하기 위한 Ref
 
   // 게시글 삭제 핸들러
-  const handleDeletePost = async (postId: number) => {
-    if (window.confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
-      try {
-        await jwtAxios.delete(`posts/${postId}`);
-        // UI에서 즉시 삭제된 게시글 제거
-        setPosts(currentPosts => currentPosts.filter(p => p.postId !== postId));
-        alert('게시글이 삭제되었습니다.');
-      } catch (err: any) {
-        alert(err.response?.data?.message || '게시글 삭제 중 오류가 발생했습니다.');
-      }
+  const handleDeletePost = (postId: number) => {
+    setPostToDelete(postId);
+    setIsConfirmModalOpen(true);
+  };
+
+  // 모달에서 확인 시 실제 삭제를 실행하는 함수
+  const confirmDeletePost = async () => {
+    if (!postToDelete) return;
+    try {
+      await jwtAxios.delete(`posts/${postToDelete}`);
+      setPosts(currentPosts => currentPosts.filter(p => p.postId !== postToDelete));
+      alert('게시글이 삭제되었습니다.');
+    } catch (err: any) {
+      alert(err.response?.data?.message || '게시글 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setPostToDelete(null);
     }
   };
 
@@ -161,6 +170,18 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
           }}
         />
       )}
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => {
+          setIsConfirmModalOpen(false);
+          setPostToDelete(null);
+        }}
+        onConfirm={confirmDeletePost}
+        title="게시글 삭제"
+        message="정말로 이 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+      />
     </div>
   );
 });

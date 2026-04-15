@@ -18,7 +18,6 @@ const NoticeBar = () => {
         const page = await pdf.getPage(1);
         const textContent = await page.getTextContent();
         
-        // [1] PDF 텍스트 추출 로직
         const lines = {};
         textContent.items.forEach(item => {
           const y = Math.round(item.transform[5]);
@@ -29,75 +28,48 @@ const NoticeBar = () => {
         const sortedLines = Object.keys(lines)
           .sort((a, b) => b - a)
           .map(y => lines[y].sort((a, b) => a.x - b.x).map(obj => obj.str).join(" ").trim())
-          .filter(line => line !== "" && line !== "관리자");
-
-        const noticeData = sortedLines;
+          .filter(line => 
+            line !== "" && 
+            line !== "관리자" && 
+            !line.includes("공지사항") // 💡 "공지사항 상세" 같은 불필요한 헤더 텍스트 제거
+          );
 
         let pdfNotices = [];
         let tempNotice = null;
+        const tagKeywords = ["일반", "이벤트", "가이드라인", "유지보수"];
 
-        for (let i = 0; i < noticeData.length; i++) {
-          const line = noticeData[i];
-          const isTag = line === "일반" || line === "이벤트" || line === "가이드라인";
+        for (let i = 0; i < sortedLines.length; i++) {
+          const line = sortedLines[i];
+          const isTag = tagKeywords.includes(line);
 
-          if (isTag || (!tempNotice && line.length > 2)) {
+          if (isTag) {
             if (tempNotice) pdfNotices.push(tempNotice);
             tempNotice = { 
               id: `pdf-${pdfNotices.length}`, 
-              tag: isTag ? line : "일반", 
+              tag: line, 
               title: "", 
               content: "", 
-              date: "1일 전", 
-              views: "조회수 1,234" 
+              date: "방금 전", 
+              views: "조회수 0" 
             };
-            if (isTag) continue;
+            continue;
           }
+
           if (!tempNotice) continue;
 
           if (!tempNotice.title) {
             tempNotice.title = line;
-          } else if (line.includes("전") || line.includes("일")) {
+          } else if (line.includes("전") || (line.includes("일") && line.length < 10)) {
             tempNotice.date = line;
           } else if (line.includes("조회수")) {
             tempNotice.views = line;
-          } else {
+          } else if (!line.includes("내용을 확인합니다")) { // 💡 파싱 찌꺼기 문구 제거
             tempNotice.content += (tempNotice.content ? "\n" : "") + line;
           }
         }
         if (tempNotice) pdfNotices.push(tempNotice);
-
-        // 💡 [2] 중복 제거 핵심 로직
-        // PDF에서 가져온 것 중 제목에 "챌린지"나 "유지보수"가 있으면 버립니다. (우리가 수동으로 예쁘게 만들 거니까요)
-        const filteredPdf = pdfNotices.filter(n => 
-          !n.title.includes("챌린지") && !n.title.includes("유지보수") && !n.title.includes("공지사항")
-        );
-
-        // [3] 수동 추가 (오른쪽 사진처럼 정리정돈된 데이터)
-        const staticNotices = [
-          {
-            id: "challenge-1",
-            tag: "이벤트",
-            title: "주간 챌린지 공지",
-            content: "이번 주 코딩 챌린지에 참여하고 상품을 받으세요!\n매주 진행되는 코딩 챌린지가 시작되었습니다.\n알고리즘 문제를 풀고 상위권에 들면 특별한 보상을 받을 수 있습니다.\n\n참여 방법:\n1. 챌린지 페이지 방문\n2. 문제 풀기\n3. 코드 제출\n\n많은 참여 부탁드립니다!",
-            date: "2일 전",
-            views: "조회수 2,949"
-          },
-          {
-            id: "maintenance-1",
-            tag: "유지보수",
-            title: "유지보수 일정",
-            content: "이번 주말 오전 2시부터 4시까지 유지보수가 진행됩니다.\n시스템 안정성 향상을 위한 유지보수가 예정되어 있습니다.\n해당 시간 동안에는 일부 서비스 이용이 제한될 수 있습니다.\n\n일시: 2024년 4월 13일 (토) 02:00 ~ 04:00\n불편을 드려 죄송합니다.",
-            date: "3일 전",
-            views: "조회수 3,702"
-          }
-        ];
-
-        setDynamicNotices([...filteredPdf, ...staticNotices]);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
+        setDynamicNotices(pdfNotices.slice(0, 5));
+      } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
     fetchPdfText();
   }, []);
@@ -117,10 +89,13 @@ const NoticeBar = () => {
 
   const currentNoticeData = dynamicNotices.find(n => n.id === selectedNotice?.id);
 
+
   return (
     <aside className="w-80 border-l border-border flex flex-col h-full bg-background shrink-0">
+      {/* 헤더 */}
       <div className="p-10 pb-6"><h2 className="text-2xl font-black tracking-tighter">공지사항</h2></div>
 
+      {/* 리스트 영역 */}
       <div className="flex-1 flex flex-col gap-10 p-10 pt-0 overflow-y-auto scrollbar-hide">
         {isLoading ? (
           <div className="text-sm text-muted-foreground animate-pulse text-center mt-10 font-bold">로딩 중...</div>
@@ -143,22 +118,47 @@ const NoticeBar = () => {
         )}
       </div>
 
-      <Modal isOpen={!!selectedNotice} onClose={() => setSelectedNotice(null)} title={currentNoticeData?.title}>
+      {/* 💡 [해결 포인트] Modal은 여기서 단 한 번만! 
+          title 속성을 비워서 Modal 컴포넌트가 자체적으로 제목을 띄우지 못하게 막고,
+          우리가 내용물 안에서 직접 컨트롤합니다. */}
+      <Modal 
+        isOpen={!!selectedNotice} 
+        onClose={() => setSelectedNotice(null)} 
+        title="" 
+      >
         {currentNoticeData && (
-          <div className="p-6">
+          <div className="p-4 pt-2">
+            {/* 1. 카테고리 태그 */}
+            <div className="mb-6">
+               <span className="px-3 py-1 rounded-md bg-pink-50 text-pink-500 text-xs font-bold inline-block">
+                  {currentNoticeData.tag}
+               </span>
+            </div>
+
+            {/* 2. 중복 없는 제목 딱 하나! */}
+            <h2 className="text-3xl font-black mb-6 leading-tight tracking-tight text-foreground">
+              {currentNoticeData.title}
+            </h2>
+
+            {/* 3. 메타 정보 (날짜 | 조회수) */}
             <div className="pb-8 border-b border-dashed mb-10">
-               <span className="px-3 py-1 rounded-md bg-pink-50 text-pink-500 text-xs font-bold mb-6 inline-block">{currentNoticeData.tag}</span>
-               <h2 className="text-3xl font-black mb-6 leading-tight">{currentNoticeData.title}</h2>
-               <div className="flex gap-4 text-sm text-muted-foreground">
-                 <span>📅 {currentNoticeData.date}</span>
+               <div className="flex gap-4 text-sm text-muted-foreground items-center">
+                 <span className="flex items-center gap-1.5">관리자 {currentNoticeData.date}</span>
                  <span className="opacity-30">|</span>
-                 <span className="text-primary font-bold">👁️ {currentNoticeData.views}</span>
+                 <span className="text-primary font-bold flex items-center gap-1.5">
+                   👁️ {currentNoticeData.views}
+                 </span>
                </div>
             </div>
             
-            {/* 💡 이 부분이 오른쪽 사진처럼 예쁜 간격을 만듭니다 */}
+            {/* 4. 본문 (시원한 간격) */}
             <div className="text-[18px] leading-[2.2] text-foreground/80 whitespace-pre-line break-keep tracking-tight">
               {currentNoticeData.content}
+            </div>
+
+            {/* 5. 마무리 인사 */}
+            <div className="pt-20 text-sm text-muted-foreground italic border-t border-dashed mt-10">
+              감사합니다. Dead Bug 운영팀 드림.
             </div>
           </div>
         )}

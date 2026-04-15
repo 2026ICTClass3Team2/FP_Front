@@ -24,7 +24,7 @@ const OAuthCallback = () => {
         navigate('/', { replace: true });
       }
     } else {
-      alert('소셜 로그인에 실패했습니다.');
+      alert('로그인에 실패했습니다.');
       navigate('/login', { replace: true });
     }
   }, [location.search, navigate, handleOAuthLogin]);

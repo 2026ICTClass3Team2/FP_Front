@@ -50,41 +50,39 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
     >
       <div
-        className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 text-center"
-        // 내부 영역 클릭 시 이벤트가 배경으로 퍼지는 것을 방지
+        className="bg-background w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-border max-h-[90vh] overflow-y-auto text-center [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         onMouseDown={(e) => e.stopPropagation()}
         onMouseUp={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mb-3">
           <FiAlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
         </div>
-        
-        <div className="mt-3">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
-          <div className="mt-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
-          </div>
+        <div className="mb-2">
+          <h2 className="text-xl font-bold text-foreground">{title}</h2>
         </div>
-
-        <div className="mt-6 flex justify-center gap-3">
-          <button 
-            type="button" 
-            className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" 
+        <div className="mb-6">
+          <p className="text-base text-muted-foreground">{message}</p>
+        </div>
+        <div className="flex justify-center gap-3">
+          <button
+            type="button"
+            className="px-6 py-2.5 text-sm font-semibold text-muted-foreground bg-muted rounded-xl hover:bg-accent hover:text-foreground transition-colors border border-border"
             onClick={onClose}
           >
             {cancelText}
           </button>
-          <button 
-            type="button" 
-            className="px-6 py-2.5 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-md" 
-            onClick={() => { 
-              onConfirm(); 
-              onClose(); 
+          <button
+            type="button"
+            className="px-6 py-2.5 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-md"
+            onClick={() => {
+              onConfirm();
+              onClose();
+              mouseDownTarget.current = null;
             }}
           >
             {confirmText}

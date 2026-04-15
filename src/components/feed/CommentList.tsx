@@ -8,9 +8,10 @@ interface CommentListProps {
   postId: number;
   commentCount?: number;
   onCommentCountChange?: (delta: number) => void;
+  resourcePath?: string;
 }
 
-const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onCommentCountChange }) => {
+const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onCommentCountChange, resourcePath = 'posts' }) => {
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
     setIsLoading(true);
     setError(null);
     try {
-      const response = await jwtAxios.get(`posts/${postId}/comments`);
+      const response = await jwtAxios.get(`${resourcePath}/${postId}/comments`);
       setComments(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || '댓글을 불러오는 중 오류가 발생했습니다.');
@@ -41,7 +42,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
   }, [fetchComments]);
 
   const handleMainCommentSubmit = async (content: string) => {
-    await jwtAxios.post(`posts/${postId}/comments`, { content });
+    await jwtAxios.post(`${resourcePath}/${postId}/comments`, { content });
     if (onCommentCountChange) onCommentCountChange(1); // 댓글 추가 시 +1
     fetchComments(); // 작성 완료 후 댓글 리스트 갱신
   };
@@ -107,6 +108,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
               key={comment.id}
               comment={comment}
               postId={postId}
+              resourcePath={resourcePath}
               currentUser={currentUser}
               onRefresh={fetchComments}
               onOptimisticDelete={handleOptimisticDelete}

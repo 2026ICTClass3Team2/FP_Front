@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import TechStackModal from '../auth/TechStackModal';
 import RichTextEditor from '../editor/RichTextEditor';
 
-// 질문 작성 폼 컴포넌트
-const QuestionCard = ({ onClose, onPostCreated }) => {
+// 질문 작성/수정 폼 컴포넌트
+const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
   // 폼 상태 관리
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -13,6 +13,16 @@ const QuestionCard = ({ onClose, onPostCreated }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
+
+  // 수정 모드일 경우 초기값 세팅
+  useEffect(() => {
+    if (postToEdit) {
+      setTitle(postToEdit.title || '');
+      setBody(postToEdit.body || '');
+      setTags(postToEdit.techStacks?.join(', ') || postToEdit.tags?.join(', ') || '');
+      setRewardPoints(postToEdit.points || 0);
+    }
+  }, [postToEdit]);
 
   // 폼 제출 핸들러
   const handleSubmit = async (e) => {
@@ -38,14 +48,20 @@ const QuestionCard = ({ onClose, onPostCreated }) => {
     };
 
     try {
-      // 백엔드 API 호출
-      console.log('백엔드로 전송하는 데이터:', questionData);
-      await jwtAxios.post('qna', questionData);
-      alert('질문이 성공적으로 등록되었습니다.');
+      if (postToEdit) {
+        // 수정 모드
+        await jwtAxios.put(`qna/${postToEdit.qnaId}`, questionData);
+        alert('질문이 성공적으로 수정되었습니다.');
+      } else {
+        // 새 작성 모드
+        console.log('백엔드로 전송하는 데이터:', questionData);
+        await jwtAxios.post('qna', questionData);
+        alert('질문이 성공적으로 등록되었습니다.');
+      }
       onClose();
       if (onPostCreated) onPostCreated();
     } catch (err) {
-      setError(err.response?.data?.message || '질문 등록 중 오류가 발생했습니다.');
+      setError(err.response?.data?.message || '질문 처리 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }

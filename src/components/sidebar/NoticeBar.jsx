@@ -12,7 +12,7 @@ const NoticeBar = () => {
   useEffect(() => {
     const fetchPdfText = async () => {
       try {
-        console.log("--- PDF 정찰 시작 ---");
+        // console.log("--- PDF 정찰 시작 ---");
         // 워커 설정
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
         // 2. "/notice.pdf" 대신 임포트한 pdfFile 변수를 사용합니다.

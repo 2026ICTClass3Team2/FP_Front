@@ -31,7 +31,7 @@ const NoticeBar = () => {
 
         // 텍스트 추출
         const rawItems = textContent.items.map(item => item.str.trim()).filter(s => s !== "");
-        console.log("정찰 성공! 원본 데이터:", rawItems);
+        // console.log("정찰 성공! 원본 데이터:", rawItems);
 
         // [필터링 시작] "공지사항"이라는 단어가 몇 번째 칸에 있는지 찾습니다.
         const noticeStart = rawItems.findIndex(text => text.includes("공지사항"));

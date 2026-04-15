@@ -56,7 +56,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all"
       onMouseDown={handleMouseDown} // 누르는 시점 체크
       onMouseUp={handleMouseUp}     // 떼는 시점 체크
     >

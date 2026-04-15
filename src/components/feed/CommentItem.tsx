@@ -9,6 +9,7 @@ import ConfirmationModal from '../common/ConfirmationModal';
 interface CommentItemProps {
   comment: CommentResponse;
   postId: number;
+  resourcePath?: string;
   depth?: number;
   currentUser: any;
   onRefresh: () => void;
@@ -26,7 +27,7 @@ const getAllReplies = (comment: CommentResponse): CommentResponse[] => {
   return replies;
 };
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, currentUser, onRefresh, onOptimisticDelete, onCommentCountChange }) => {
+const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath = 'posts', depth = 0, currentUser, onRefresh, onOptimisticDelete, onCommentCountChange }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -67,7 +68,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
 
   // 대댓글 작성 처리
   const handleReplySubmit = async (content: string) => {
-    await jwtAxios.post(`posts/${postId}/comments`, {
+    await jwtAxios.post(`${resourcePath}/${postId}/comments`, {
       content,
       parentId: comment.id,
     });
@@ -80,7 +81,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
 
   // 댓글 수정 처리
   const handleEditSubmit = async (content: string) => {
-    await jwtAxios.put(`posts/${postId}/comments/${comment.id}`, { content });
+    await jwtAxios.put(`${resourcePath}/${postId}/comments/${comment.id}`, { content });
     onRefresh();
     setIsEditing(false);
   };
@@ -93,7 +94,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
     }
 
     try {
-      await jwtAxios.delete(`posts/${postId}/comments/${comment.id}`);
+      await jwtAxios.delete(`${resourcePath}/${postId}/comments/${comment.id}`);
       if (onCommentCountChange) onCommentCountChange(-1); // 댓글 삭제 시 -1
       // 성공 시 onRefresh를 호출하지 않아 UX 개선.
       // 만약 삭제 후 다른 데이터도 갱신해야 한다면 onRefresh()를 다시 호출할 수 있습니다.
@@ -107,7 +108,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
   const handleLike = async () => {
     if (isDeleted) return;
     try {
-      await jwtAxios.post(`posts/${postId}/comments/${comment.id}/like`);
+      await jwtAxios.post(`${resourcePath}/${postId}/comments/${comment.id}/like`);
       onRefresh();
     } catch (error) {
       alert('오류가 발생했습니다.');
@@ -118,7 +119,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, depth = 0, c
   const handleDislike = async () => {
     if (isDeleted) return;
     try {
-      await jwtAxios.post(`posts/${postId}/comments/${comment.id}/dislike`);
+      await jwtAxios.post(`${resourcePath}/${postId}/comments/${comment.id}/dislike`);
       onRefresh();
     } catch (error) {
       alert('오류가 발생했습니다.');

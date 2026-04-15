@@ -78,6 +78,10 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         }
       };
       fetchDetailsAndUpdateViewCount();
+    } else {
+      // 이미 조회수를 올렸거나, post.id가 없는 경우
+      // post 데이터가 이미 있다면 로딩을 바로 끝냅니다.
+      setIsLoadingDetails(false);
     }
     // 클린업 함수: 컴포넌트 언마운트 또는 postId 변경 시 해당 postId 기록 삭제
     return () => {

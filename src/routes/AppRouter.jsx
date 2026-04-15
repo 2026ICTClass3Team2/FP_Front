@@ -13,6 +13,12 @@ import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ProtectedRoute from './ProtectedRoute';
 import OAuthCallback from '../pages/auth/OAuthCallback';
+import MyPosts from '../pages/profile/MyPosts'; // Import MyPosts
+import MyBookmarks from '../pages/profile/MyBookmarks';
+import PostList from '../components/profile/PostList';
+import BlocksList from '../pages/profile/BlocksList';
+
+
 
 const AppRouter = () => {
   return (
@@ -42,8 +48,11 @@ const AppRouter = () => {
 
           <Route element={<MyPageLayout />}>
             {/* 마이페이지 영역 */}
-            <Route path='profile'>
-              <Route index element={<MyProfile />} />
+            <Route path='mypage'>
+              <Route index element={<MyProfile />} /> 
+              <Route path='posts' element={<MyPosts />} /> {/* Corrected: Use MyPosts component */}
+              <Route path='bookmarks' element={< MyBookmarks />} />
+              <Route path='blocks' element={< BlocksList />} />
             </Route>
 
               <Route path='user/:userId'>

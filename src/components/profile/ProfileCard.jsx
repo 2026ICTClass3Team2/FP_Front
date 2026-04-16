@@ -1,5 +1,3 @@
-
-
 import { FiEdit2, FiMail, FiCalendar, FiUser, FiAward } from 'react-icons/fi';
 
 const ProfileCard = ({ profile, onEdit }) => {

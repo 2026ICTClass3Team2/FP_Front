@@ -3,6 +3,7 @@ import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
 
+// QnA 게시글 카드 컴포넌트
 export interface QnAPost {
   qnaId: number;
   title: string;

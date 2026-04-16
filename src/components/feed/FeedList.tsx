@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FiPlus } from 'react-icons/fi';
+
 import PostCard, { Post } from './PostCard';
 import jwtAxios from '../../api/jwtAxios';
 import ConfirmationModal from '../common/ConfirmationModal';
@@ -96,6 +96,21 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     }
   };
 
+  // 3. 게시물 신고 후 성공 시 목록에서 즉시 숨김 처리
+  const handleReportSuccess = (reportData: any) => {
+    if (reportData.targetType.toUpperCase() === 'POST') {
+      // `blockPost`는 항상 true이므로, 신고 성공 시 해당 게시글을 목록에서 제거합니다.
+      setPosts(prev => prev.filter(p => p.postId !== reportData.targetId));
+
+      // `blockUser` 옵션이 선택되었다면(additionalAction: true), 전체 목록을 새로고침하여
+      // 서버에서 필터링된 새로운 데이터를 받아옵니다.
+      if (reportData.additionalAction) {
+        // `refresh` 함수를 호출하여 피드를 새로고침합니다.
+        ref.current?.refresh();
+      }
+    }
+  };
+
   // 부모 컴포넌트에서 호출할 수 있도록 함수 노출
   useImperativeHandle(ref, () => ({
     refresh: () => {
@@ -156,6 +171,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
               setSelectedPost(post);
               setAutoScrollToComment(true);
             }}
+            onReportSuccess={handleReportSuccess}
           />
         ))}
       </div>
@@ -174,11 +190,14 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
         <CommunityPostDetail
           post={selectedPost}
           autoScrollToComment={autoScrollToComment}
-          onClose={(updatedPost) => {
+          onClose={(updatedPost?: Post) => {
             if (updatedPost) {
               setPosts(prevPosts =>
                 prevPosts.map(p => (p.postId === updatedPost.postId ? updatedPost : p))
               );
+            } else {
+              // updatedPost가 없으면, 게시글이 숨김/차단 처리되었을 수 있으므로 목록을 새로고침합니다.
+              ref.current?.refresh();
             }
             setSelectedPost(null);
             setAutoScrollToComment(false);

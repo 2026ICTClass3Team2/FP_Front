@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark } from 'react-icons/fi';
+import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark, FiAlertTriangle } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
+import ReportModal from '../common/ReportModal';
 
 export interface Post {
   postId: number;
   title: string;
   body?: string; // 수정을 위해 body 필드 추가
   createdAt: string;
+  contentType?: string;
   tags: string[];
   
   authorProfileImageUrl?: string | null;
@@ -41,11 +43,13 @@ interface PostCardProps {
   onEdit?: (post: Post) => void;
   onDelete?: (postId: number) => void;
   onDetailClick?: () => void;
+  onReportSuccess?: (reportData: any) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onDetailClick }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onDetailClick, onReportSuccess }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localPost, setLocalPost] = useState<Post>(post);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // 부모 컴포넌트의 데이터가 변경되면 동기화
@@ -176,7 +180,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
   // 공유 (클립보드 복사)
   const handleShareClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/?postId=${localPost.postId}`;
+    const url = `${window.location.origin}${window.location.pathname}?postId=${localPost.postId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('클립보드에 복사되었습니다.');
@@ -217,20 +221,22 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
             </div>
           </div>
 
-          {/* 우측 상단 옵션 (isAuthor가 true일 때만 렌더링) */}
-          {isMyPost && (
-            <div className="relative" ref={dropdownRef}>
-              <button onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
-                <FiMoreVertical size={20} />
-              </button>
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-1 w-24 bg-white border border-gray-200 shadow-lg rounded-xl overflow-hidden z-10">
+          {/* 우측 상단 옵션 */}
+          <div className="relative" ref={dropdownRef}>
+            <button onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }} className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
+              <FiMoreVertical size={20} />
+            </button>
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-1 w-28 bg-white border border-gray-200 shadow-lg rounded-xl overflow-hidden z-10">
+                {isMyPost ? (<>
                   <button onClick={(e) => { e.stopPropagation(); onEdit?.(post); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors">수정</button>
                   <button onClick={(e) => { e.stopPropagation(); onDelete?.(post.postId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">삭제</button>
-                </div>
-              )}
-            </div>
-          )}
+                </>) : (
+                  <button onClick={(e) => { e.stopPropagation(); setIsReportModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors flex items-center gap-2"><FiAlertTriangle size={14} /> 신고</button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 본문 영역: 오직 제목만 굵게 표시 */}
@@ -281,6 +287,16 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
           </button>
         </div>
       </div>
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        targetType="post"
+        targetId={localPost.postId}
+        onSuccess={(reportData) => {
+          onReportSuccess?.(reportData);
+        }}
+      />
     </article>
   );
 };

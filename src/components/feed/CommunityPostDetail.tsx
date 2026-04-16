@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye } from 'react-icons/fi';
+import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
+import ReportModal from '../common/ReportModal';
 
 interface CommunityPostDetailProps {
   post: Post;
@@ -17,12 +18,18 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   const viewCountIncrementedRef = useRef<Set<number>>(new Set()); // useRef를 사용하여 특정 postId에 대한 조회수 증가 API가 호출되었는지 추적
   const commentSectionRef = useRef<HTMLDivElement>(null); // 스크롤 타겟용 Ref
   const backdropClickRef = useRef(false); // 배경 클릭 여부 추적용 Ref
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment' | 'user', id: number } | null>(null);
+
+  const handleClose = () => {
+    onClose(localPost);
+  };
 
   // Escape 키를 눌렀을 때 모달 닫기
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose(localPost); // Pass the local (updated) post state
+        handleClose();
       }
     };
 
@@ -30,7 +37,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
     return () => {
       window.removeEventListener('keydown', handleEscape);
     };
-  }, [onClose, localPost]); // localPost가 변경될 때마다 최신 값을 참조하도록 의존성 배열에 추가
+  }, [onClose, localPost]);
 
   // 모달이 열려있을 때 배경 스크롤 방지
   useEffect(() => {
@@ -69,7 +76,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         } catch (error) {
           console.error("게시글 상세 정보 로딩 실패:", error);
           // 에러 발생 시 모달을 닫거나 사용자에게 알림
-          alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
+          // alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
           onClose(post); // Pass the original post on error
         } finally {
           setIsLoadingDetails(false); // 로딩 종료
@@ -94,6 +101,23 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
       }, 100); 
     }
   }, [isLoadingDetails, autoScrollToComment]);
+
+  const openReportModal = (type: 'post' | 'comment' | 'user', id: number) => {
+    setReportTarget({ type, id });
+    setIsReportModalOpen(true);
+  };
+
+  const handleReportSuccess = (reportData: any) => {
+    // 게시글 자체를 신고했거나, 작성자를 차단했다면 모달을 닫고 부모에게 리프레시를 위임합니다.
+    if (reportData.targetType.toUpperCase() === 'POST' || reportData.additionalAction) {
+      // 부모 컴포넌트(FeedList 등)에서 이 게시글을 목록에서 제거하거나,
+      // 전체 목록을 새로고침하도록 onClose를 호출합니다. (updatedPost 없이)
+      onClose();
+    } else {
+      // 댓글만 신고된 경우, CommentList가 내부적으로 re-render 하므로 모달만 닫습니다.
+      setIsReportModalOpen(false);
+    }
+  };
 
   // 낙관적 업데이트 - 좋아요
   const handleLike = async () => {
@@ -181,7 +205,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
   // 공유 (클립보드 복사)
   const handleShare = async () => {
-    const url = `${window.location.origin}/?postId=${localPost.postId}`;
+    const url = `${window.location.origin}${window.location.pathname}?postId=${localPost.postId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('클립보드에 복사되었습니다.');
@@ -214,7 +238,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
       onMouseUp={(e) => {
         // 마우스를 뗀 곳도 배경이고, 누른 곳도 배경이었을 때만 모달 닫기
         if (e.target === e.currentTarget && backdropClickRef.current) {
-          onClose(localPost);
+          handleClose();
         }
         backdropClickRef.current = false; // 상태 초기화
       }}
@@ -224,7 +248,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         
         {/* 우측 상단 닫기 버튼 */}
         <button 
-          onClick={() => onClose(localPost)}
+          onClick={handleClose}
           className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
           aria-label="닫기"
         >
@@ -232,7 +256,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         </button>
 
         {/* 분리된 하위 컴포넌트 렌더링 */}
-        <AuthorHeader post={localPost} />
+        <AuthorHeader post={localPost} onReport={() => openReportModal(localPost.contentType || 'post', localPost.postId)} />
         <PostContent post={localPost} />
         <ActionButtons 
           post={localPost} 
@@ -247,17 +271,29 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           <CommentList 
             postId={localPost.postId} 
             commentCount={localPost.commentCount || 0}
-            onCommentCountChange={(delta) => setLocalPost(prev => ({ ...prev, commentCount: Math.max(0, (prev.commentCount || 0) + delta) }))}
+            onCommentCountChange={(delta) => 
+              setLocalPost(prev => ({ ...prev, commentCount: Math.max(0, (prev.commentCount || 0) + delta) }))
+            }
+            onReportRequest={openReportModal}
           />
         </div>
         
+        {isReportModalOpen && reportTarget && (
+          <ReportModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            targetType={reportTarget.type}
+            targetId={reportTarget.id}
+            onSuccess={handleReportSuccess}
+          />
+        )}
       </div>
     </div>
   );
 };
 
 // 1. 작성자 정보 영역 (Header)
-const AuthorHeader = ({ post }: { post: Post }) => {
+const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) => {
   const initial = post.authorNickname ? post.authorNickname.charAt(0).toUpperCase() : 'U';
   return (
     <div className="flex items-center gap-4 mb-6">
@@ -269,10 +305,20 @@ const AuthorHeader = ({ post }: { post: Post }) => {
         )}
       </div>
       <div className="flex flex-col">
-        <span className="font-bold text-gray-900">{post.authorNickname || '익명'}</span>
+        <span className="font-bold text-gray-900">{post.isAuthor ? post.authorNickname : (post.authorNickname || '익명')}</span>
         <span className="text-sm text-gray-400">@{post.authorUsername || 'unknown'}</span>
         <span className="text-xs text-gray-400 mt-0.5">{formatTimeAgo(post.createdAt)}</span>
       </div>
+      <div className="flex-grow" />
+      {!post.isAuthor && (
+        <button 
+          onClick={onReport}
+          className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"
+          aria-label="게시글 신고"
+        >
+          <FiAlertTriangle size={20} />
+        </button>
+      )}
     </div>
   );
 };

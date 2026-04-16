@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import Modal from '../common/Modal';
+import axios from 'axios'; 
 
 const NoticeBar = () => {
     const [dynamicNotices, setDynamicNotices] = useState([]);
@@ -10,7 +11,7 @@ const NoticeBar = () => {
     useEffect(() => {
         const fetchPdfText = async () => {
             try {
-                // 외부 CDN에서 호출한 엔진 (연산 로직 포함)
+                // 1. PDF 파싱 엔진 설정
                 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
                 const response = await fetch("/notice.pdf");
@@ -18,41 +19,30 @@ const NoticeBar = () => {
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
                 const page = await pdf.getPage(1);
-                // 비정형 데이터 
                 const textContent = await page.getTextContent();
-                {/* 반정형 데이터 시작*/}
+                
+                // 2. 비정형 -> 반정형 데이터 변환 (상원님 로직 유지)
                 const lines = {};
                 textContent.items.forEach(item => {
                     const y = Math.round(item.transform[5]);
-                    if (!lines[y]) {
-                        lines[y] = [];
-                    }
+                    if (!lines[y]) lines[y] = [];
                     lines[y].push({ x: item.transform[4], str: item.str.trim() });
                 });
 
                 const sortedLines = Object.keys(lines)
                     .sort((a, b) => b - a)
                     .map(y => lines[y].sort((a, b) => a.x - b.x).map(obj => obj.str).join(" ").trim())
-                    .filter(line => 
-                        line !== "" && 
-                        line !== "관리자" && 
-                        !line.includes("공지사항")
-                    );
-                {/* 반정형 데이터 끝*/}
+                    .filter(line => line !== "" && line !== "관리자" && !line.includes("공지사항"));
 
-                {/* 정형 데이터 시작 */}
+                // 3. 정형 데이터(pdfNotices) 추출
                 let pdfNotices = [];
                 let tempNotice = null;
                 const tagKeywords = ["일반", "이벤트", "가이드라인", "유지보수"];
 
                 for (let i = 0; i < sortedLines.length; i++) {
                     const line = sortedLines[i];
-                    const isTag = tagKeywords.includes(line);
-
-                    if (isTag === true) {
-                        if (tempNotice) {
-                            pdfNotices.push(tempNotice);
-                        }
+                    if (tagKeywords.includes(line)) {
+                        if (tempNotice) pdfNotices.push(tempNotice);
                         tempNotice = {
                             id: `pdf-${pdfNotices.length}`,
                             tag: line,
@@ -63,11 +53,7 @@ const NoticeBar = () => {
                         };
                         continue;
                     }
-
-                    if (!tempNotice) {
-                        continue;
-                    }
-
+                    if (!tempNotice) continue;
                     if (!tempNotice.title) {
                         tempNotice.title = line;
                     } else if (line.includes("전") || (line.includes("일") && line.length < 10)) {
@@ -78,11 +64,35 @@ const NoticeBar = () => {
                         tempNotice.content += (tempNotice.content ? "\n" : "") + line;
                     }
                 }
+                if (tempNotice) pdfNotices.push(tempNotice);
 
-                if (tempNotice) {
-                    pdfNotices.push(tempNotice);
-                }
+                // 4. ★ DB 전송: 오직 PDF 데이터 5개만 보냄 ★
+                // 여기서 다른 게시글 데이터를 만지는 코드는 싹 다 지웠습니다.
+                pdfNotices.forEach(async (notice) => {
+                    try {
+                        await axios.post("http://localhost:8090/api/notices/add", {
+                            title: notice.title,
+                            body: notice.content,
+                            authorName: "관리자",
+                            contentType: "notice", // DB 분류용 딱지
+                            sourceType: "internal",
+                            status: "active",
+                            viewCount: 0,
+                            commentCount: 0,
+                            likeCount: 0,
+                            dislikeCount: 0,
+                            isHidden: false,
+                            isSolved: false,
+                            channelId: 1
+                        });
+                    } catch (err) {
+                        // 중복 시 무시
+                    }
+                });
+
+                // 5. ★ 화면 반영: 오직 오른쪽 바 전용 상태만 업데이트 ★
                 setDynamicNotices(pdfNotices.slice(0, 5));
+
             } catch (e) {
                 console.error(e);
             } finally {
@@ -91,20 +101,8 @@ const NoticeBar = () => {
         };
         fetchPdfText();
     }, []);
-     {/* 정형 데이터 끝 */}
-    const handleNoticeClick = (notice) => {
-        setSelectedNotice(notice);
-        setDynamicNotices((prev) => 
-            prev.map((n) => {
-                if (n.id === notice.id) {
-                    const currentViews = parseInt(n.views.replace(/[^0-9]/g, "")) || 0;
-                    return { ...n, views: `조회수 ${(currentViews + 1).toLocaleString()}` };
-                }
-                return n;
-            })
-        );
-    };
 
+    const handleNoticeClick = (notice) => setSelectedNotice(notice);
     const currentNoticeData = dynamicNotices.find(n => n.id === selectedNotice?.id);
 
     return (
@@ -112,12 +110,10 @@ const NoticeBar = () => {
             <div className="p-10 pb-6">
                 <h2 className="text-2xl font-black tracking-tighter">공지사항</h2>
             </div>
-
             <div className="flex-1 flex flex-col gap-10 p-10 pt-0 overflow-y-auto scrollbar-hide">
-                {isLoading === true ? (
+                {isLoading ? (
                     <div className="text-sm text-muted-foreground animate-pulse text-center mt-10 font-bold">로딩 중...</div>
                 ) : (
-                      // 모달창 띄우기전 클릭 기능 
                     dynamicNotices.map((notice) => (
                         <div 
                             key={notice.id} 
@@ -136,40 +132,16 @@ const NoticeBar = () => {
                 )}
             </div>
 
-            <Modal 
-                isOpen={!!selectedNotice} 
-                onClose={() => setSelectedNotice(null)} 
-                title="" 
-            >
+            <Modal isOpen={!!selectedNotice} onClose={() => setSelectedNotice(null)} title="">
                 {currentNoticeData && (
                     <div className="p-4 pt-2">
-                        <div className="mb-6">
-                            <span className="px-3 py-1 rounded-md bg-pink-50 text-pink-500 text-xs font-bold inline-block">
-                                {currentNoticeData.tag}
-                            </span>
+                        <span className="px-3 py-1 rounded-md bg-pink-50 text-pink-500 text-xs font-bold mb-6 inline-block">{currentNoticeData.tag}</span>
+                        <h2 className="text-3xl font-black mb-6 leading-tight tracking-tight">{currentNoticeData.title}</h2>
+                        <div className="pb-8 border-b border-dashed mb-10 text-sm text-muted-foreground">
+                            관리자 {currentNoticeData.date} | <span className="text-primary font-bold">👁️ {currentNoticeData.views}</span>
                         </div>
-
-                        <h2 className="text-3xl font-black mb-6 leading-tight tracking-tight text-foreground">
-                            {currentNoticeData.title}
-                        </h2>
-
-                        <div className="pb-8 border-b border-dashed mb-10">
-                            <div className="flex gap-4 text-sm text-muted-foreground items-center">
-                                <span className="flex items-center gap-1.5">관리자 {currentNoticeData.date}</span>
-                                <span className="opacity-30">|</span>
-                                <span className="text-primary font-bold flex items-center gap-1.5">
-                                    👁️ {currentNoticeData.views}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div className="text-[18px] leading-[2.2] text-foreground/80 whitespace-pre-line break-keep tracking-tight">
-                            {currentNoticeData.content}
-                        </div>
-
-                        <div className="pt-20 text-sm text-muted-foreground italic border-t border-dashed mt-10">
-                            감사합니다. Dead Bug 운영팀 드림.
-                        </div>
+                        <div className="text-[18px] leading-[2.2] whitespace-pre-line">{currentNoticeData.content}</div>
+                        <div className="pt-20 text-sm text-muted-foreground italic border-t border-dashed mt-10">감사합니다. Dead Bug 운영팀 드림.</div>
                     </div>
                 )}
             </Modal>

@@ -25,10 +25,10 @@ const AppRouter = () => {
         <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {/* 로그인된 사용자만 접근할 수 있는 영역 */}
-         <Route element={<ProtectedRoute />} />
+        <Route element={<ProtectedRoute />}>
           {/* Nested Routing */}
           {/* 메인 영역 */}
-          <Route element={<MainLayout />}>  
+          <Route element={<MainLayout />}>
             <Route index element={<MainFeed />} />
 
 
@@ -49,13 +49,14 @@ const AppRouter = () => {
               <Route index element={<ProfileCard />} />
               {/* 타인 프로필 정보 탭 라우트 추가 예정 */}
             </Route>
-          
+
             {/* 관리자 영역 */}
             <Route path='admin'>
               <Route index element={<AdminDashboard />} />
             </Route>
           </Route>
-      </Routes> 
+        </Route>
+      </Routes>
     </BrowserRouter>
   )
 }

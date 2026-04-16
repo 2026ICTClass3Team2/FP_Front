@@ -6,8 +6,6 @@ import jwtAxios from '../../api/jwtAxios';
 import ConfirmationModal from '../common/ConfirmationModal';
 import CommunityPostDetail from './CommunityPostDetail';
 
-const testURI = 'http://localhost:8090/api/';
-
 // 백엔드 Spring Data JPA Slice 응답 인터페이스
 interface SliceResponse {
   content: Post[];
@@ -64,7 +62,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
 
     try {
       // URL 및 파라미터 조합
-      let url = `${testURI}posts?size=10`;
+      let url = `posts?size=10`;
       if (lastPostIdRef.current) {
         url += `&lastPostId=${lastPostIdRef.current}`;
       }

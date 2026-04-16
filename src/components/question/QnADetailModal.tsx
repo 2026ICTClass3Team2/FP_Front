@@ -174,7 +174,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
   // Share (copy to clipboard)
   const handleShare = async () => {
-    const url = `${window.location.origin}/qna/${localPost.qnaId}`;
+    const url = `${window.location.origin}/qna?qnaId=${localPost.qnaId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('클립보드에 복사되었습니다.');

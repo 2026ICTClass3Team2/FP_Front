@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getChoseong } from 'es-hangul';
-
+import ReactMarkdown from 'react-markdown';
 const StudyPage = () => {
     // 상태 선언
     const [incomingLanguages, setIncomingLanguages] = useState([]);
@@ -22,11 +22,12 @@ const StudyPage = () => {
         const fetchDBData = async () => {
             setIsLoading(true);
             try {
-                const res = await fetch("http://localhost:5678/webhook/study-data", {
+                const res = await fetch("http://localhost:5679/webhook/study-data", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
+                    
                     body: JSON.stringify({})
                 });
 
@@ -37,14 +38,14 @@ const StudyPage = () => {
                 const data = await res.json();
 
                 // ★★★ n8n에서 어떤 데이터가 오는지 확인용 ★★★
-                console.log("🔍 n8n에서 받은 원본 데이터:", data);
-
+                
+                const result = Array.isArray(data) ? data[0] : data;
                 // 안전하게 배열로 변환
-                setIncomingLanguages(Array.isArray(data.languages) ? data.languages : []);
-                setIncomingChapters(Array.isArray(data.chapters) ? data.chapters : []);
+                setIncomingLanguages(Array.isArray(result.languages) ? result.languages : []);
+                setIncomingChapters(Array.isArray(result.chapters) ? result.chapters : []);
 
             } catch (err) {
-                console.error("데이터 로드 실패:", err);
+               
                 // 에러 발생 시 빈 배열로 설정 (화면 크래시 방지)
                 setIncomingLanguages([]);
                 setIncomingChapters([]);
@@ -83,7 +84,7 @@ const StudyPage = () => {
     // 언어 추가
     const handleAddLanguage = async () => {
         try {
-            const res = await fetch("http://localhost:5678/webhook/add-language", {
+            const res = await fetch("http://localhost:5679/webhook/add-language", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -95,7 +96,7 @@ const StudyPage = () => {
             if (!res.ok) throw new Error("추가 실패");
 
             // 추가 후 데이터 다시 불러오기
-            const reload = await fetch("http://localhost:5678/webhook/study-data", {
+            const reload = await fetch("http://localhost:5679/webhook/study-data", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({})
@@ -110,7 +111,7 @@ const StudyPage = () => {
             setNewLangUrl("");
 
         } catch (err) {
-            console.error("언어 추가 실패:", err);
+           
         }
     };
 
@@ -146,7 +147,7 @@ const StudyPage = () => {
         return (
             <div className="h-full w-full flex items-center justify-center bg-background">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
-                <p className="ml-4 font-bold">데이터 불러오는 중...</p>
+                <span className="ml-4 font-bold">데이터 불러오는 중...</span>
             </div>
         );
     }
@@ -241,9 +242,11 @@ const StudyPage = () => {
                                 <h1 className="text-4xl font-black">{selectedChapter.title}</h1>
                             </header>
                             <div className="min-h-[40rem] w-full bg-surface border-2 border-border rounded-[4rem] p-20 shadow-sm">
-                                <p className="text-xl font-bold leading-relaxed">
+                                <div className="text-xl leading-relaxed">
+                                    <ReactMarkdown>
                                     {selectedChapter.content}
-                                </p>
+                                    </ReactMarkdown>
+                                </div>
                             </div>
                         </article>
                     ) : (

@@ -33,7 +33,7 @@ const NavBar = () => {
     <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0 select-none">
       {/* 1. 상단 프로필 구역 */}
       <div className="p-5 flex flex-col gap-4">
-        <Link to="/profile" className="flex items-center gap-3 
+        <Link to="/mypage" className="flex items-center gap-3 
         hover:bg-foreground/10 rounded-lg p-2 -m-2 transition-colors">
           {/* 프로필 이미지 placeholder (이미지와 동일한 파란색 느낌) */}
           <div className="w-9 h-9 bg-primary rounded-2xl flex items-center 

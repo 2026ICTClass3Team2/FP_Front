@@ -163,7 +163,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
   // 낙관적 업데이트 - 북마크
   const handleBookmark = async () => {
-    const originalBookmarked = localPost.isBookmarked || localPost.bookmarked;
+    const originalBookmarked = localPost.isBookmarked || localPost.bookmarked || false;
     
     setLocalPost(prev => ({
       ...prev,

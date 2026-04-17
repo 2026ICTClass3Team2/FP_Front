@@ -12,6 +12,9 @@ interface CommentItemProps {
   resourcePath?: string;
   depth?: number;
   currentUser: any;
+  postAuthorUsername?: string;
+  postResolved?: boolean;
+  onAcceptAnswer?: (commentId: number) => Promise<void>;
   onRefresh: () => void;
   onOptimisticDelete?: (commentId: number) => void;
   onCommentCountChange?: (delta: number) => void;
@@ -27,11 +30,25 @@ const getAllReplies = (comment: CommentResponse): CommentResponse[] => {
   return replies;
 };
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath = 'posts', depth = 0, currentUser, onRefresh, onOptimisticDelete, onCommentCountChange }) => {
+const CommentItem: React.FC<CommentItemProps> = ({
+  comment,
+  postId,
+  resourcePath = 'posts',
+  depth = 0,
+  currentUser,
+  postAuthorUsername,
+  postResolved = false,
+  onAcceptAnswer,
+  onRefresh,
+  onOptimisticDelete,
+  onCommentCountChange,
+}) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isAcceptConfirmModalOpen, setIsAcceptConfirmModalOpen] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for reply expansion and pagination
@@ -44,6 +61,11 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
   const isAuthor = currentUser?.username === comment.authorUsername || currentUser?.nickname === comment.authorNickname;
   const isDeleted = comment.status === 'deleted';
   const isRootComment = depth === 0;
+  const isQnaContext = resourcePath === 'qna';
+  const isPostOwner = currentUser?.username && postAuthorUsername
+    ? currentUser.username === postAuthorUsername
+    : false;
+  const canAcceptAnswer = isQnaContext && isPostOwner && !postResolved && !isDeleted && !comment.isAnswer;
 
   // 외부 클릭 및 ESC 키 감지를 위한 useEffect
   useEffect(() => {
@@ -129,6 +151,21 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
       onRefresh();
     } catch (error) {
       alert('오류가 발생했습니다.');
+    }
+  };
+
+  const handleAcceptAnswer = async () => {
+    if (!onAcceptAnswer) return;
+
+    setIsAccepting(true);
+    try {
+      await onAcceptAnswer(comment.id);
+      setIsAcceptConfirmModalOpen(false);
+      onRefresh();
+    } catch (error) {
+      alert('채택 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsAccepting(false);
     }
   };
 
@@ -238,10 +275,19 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
                   </button>
                 )}
-                <button onClick={() => setIsReplying(!isReplying)} className="relative group flex items-center p-1.5 hover:bg-secondary rounded-full hover:text-foreground transition-colors">
-                  <FiCornerDownRight size={16} />
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
-                </button>
+                {comment.isAnswer && (
+                  <span className="px-2 py-1 text-[11px] font-semibold rounded-md bg-primary/10 text-primary border border-primary/20">
+                    채택된 답변
+                  </span>
+                )}
+                {canAcceptAnswer && (
+                  <button
+                    onClick={() => setIsAcceptConfirmModalOpen(true)}
+                    className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    채택하기
+                  </button>
+                )}
               </div>
             </>
           ) : (
@@ -272,6 +318,16 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
         message="정말로 이 댓글을 삭제하시겠습니까? 삭제된 댓글은 되돌릴 수 없습니다."
       />
 
+      <ConfirmationModal
+        isOpen={isAcceptConfirmModalOpen}
+        onClose={() => {
+          if (!isAccepting) setIsAcceptConfirmModalOpen(false);
+        }}
+        onConfirm={handleAcceptAnswer}
+        title="답변 채택"
+        message="이 댓글을 채택하시겠습니까? 채택하면 질문이 해결 상태로 변경되고 포인트가 지급됩니다."
+      />
+
       {/* Render replies only if it's a root comment */}
       {isRootComment && allReplies.length > 0 && (
         <div className="flex flex-col">
@@ -280,8 +336,12 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
               key={reply.id}
               comment={reply}
               postId={postId}
+              resourcePath={resourcePath}
               depth={1} // All replies have depth 1
               currentUser={currentUser}
+              postAuthorUsername={postAuthorUsername}
+              postResolved={postResolved}
+              onAcceptAnswer={onAcceptAnswer}
               onRefresh={onRefresh}
               onOptimisticDelete={onOptimisticDelete}
               onCommentCountChange={onCommentCountChange}

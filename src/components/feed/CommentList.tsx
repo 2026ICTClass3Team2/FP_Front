@@ -9,9 +9,20 @@ interface CommentListProps {
   commentCount?: number;
   onCommentCountChange?: (delta: number) => void;
   resourcePath?: string;
+  postAuthorUsername?: string;
+  postResolved?: boolean;
+  onAcceptAnswer?: (commentId: number) => Promise<void>;
 }
 
-const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onCommentCountChange, resourcePath = 'posts' }) => {
+const CommentList: React.FC<CommentListProps> = ({
+  postId,
+  commentCount = 0,
+  onCommentCountChange,
+  resourcePath = 'posts',
+  postAuthorUsername,
+  postResolved = false,
+  onAcceptAnswer,
+}) => {
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +121,9 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
               postId={postId}
               resourcePath={resourcePath}
               currentUser={currentUser}
+              postAuthorUsername={postAuthorUsername}
+              postResolved={postResolved}
+              onAcceptAnswer={onAcceptAnswer}
               onRefresh={fetchComments}
               onOptimisticDelete={handleOptimisticDelete}
               onCommentCountChange={onCommentCountChange}

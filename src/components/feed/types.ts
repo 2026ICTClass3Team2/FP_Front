@@ -7,7 +7,12 @@ export interface CommentResponse {
   status: string; // 'active' | 'deleted'
   createdAt: string;
   authorNickname: string;
-  authorUsername?: string; // 본인 확인용 (localStorage의 username과 비교)
+  authorUsername?: string;
+  authorUserId?: number | null;
+  authorId?: number | null;
+  author_id?: number | null;
+  userId?: number | null;
+  user_id?: number | null;
   authorProfilePicUrl: string | null;
   parentId: number | null;
   children: CommentResponse[];

@@ -53,6 +53,7 @@ export const AuthProvider = ({ children }) => {
 
     const data = await response.json();
     const userProfile = {
+      userId: data.userId ?? data.user_id ?? data.id ?? null,
       username: data.username,
       nickname: data.username.split('@')[0], // 이메일 앞부분을 닉네임으로 임시 사용
     };
@@ -64,8 +65,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 소셜 로그인 처리 로직 (OAuthCallback에서 호출)
-  const handleOAuthLogin = useCallback((token, username) => {
+  const handleOAuthLogin = useCallback((token, username, userId = null) => {
     const userProfile = {
+      userId,
       username: username,
       nickname: username.split('@')[0], 
     };

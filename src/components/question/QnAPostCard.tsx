@@ -15,6 +15,11 @@ export interface QnAPost {
   authorProfileImageUrl?: string | null;
   nickname: string;
   username: string;
+  authorUserId?: number | null;
+  authorId?: number | null;
+  author_id?: number | null;
+  userId?: number | null;
+  user_id?: number | null;
   
   likeCount?: number;
   likes?: number;
@@ -206,7 +211,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsDropdownOpen(false);
-    if (onDelete && window.confirm('정말 삭제하시겠습니까?')) {
+    if (onDelete) {
       onDelete(localPost.qnaId);
     }
   };
@@ -278,7 +283,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
 
                 {/* Dropdown menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-32 bg-surface border border-border rounded-lg shadow-lg z-50">
+                  <div className="absolute right-0 mt-1 w-28 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
                     <button
                       onClick={handleEditClick}
                       className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
@@ -287,7 +292,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
                     </button>
                     <button
                       onClick={handleDeleteClick}
-                      className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors border-t border-border"
+                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
                     >
                       삭제
                     </button>

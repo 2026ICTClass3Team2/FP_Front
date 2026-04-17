@@ -9,7 +9,7 @@ interface CommentListProps {
   commentCount?: number;
   onCommentCountChange?: (delta: number) => void;
   resourcePath?: string;
-  postAuthorUsername?: string;
+  postAuthorUserId?: number | null;
   postResolved?: boolean;
   onAcceptAnswer?: (commentId: number) => Promise<void>;
 }
@@ -19,7 +19,7 @@ const CommentList: React.FC<CommentListProps> = ({
   commentCount = 0,
   onCommentCountChange,
   resourcePath = 'posts',
-  postAuthorUsername,
+  postAuthorUserId,
   postResolved = false,
   onAcceptAnswer,
 }) => {
@@ -121,7 +121,7 @@ const CommentList: React.FC<CommentListProps> = ({
               postId={postId}
               resourcePath={resourcePath}
               currentUser={currentUser}
-              postAuthorUsername={postAuthorUsername}
+              postAuthorUserId={postAuthorUserId}
               postResolved={postResolved}
               onAcceptAnswer={onAcceptAnswer}
               onRefresh={fetchComments}

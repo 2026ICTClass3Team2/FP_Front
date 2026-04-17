@@ -330,7 +330,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
         onClose={() => setIsReportModalOpen(false)}
         targetType="post"
         targetId={localPost.postId}
-        onSuccess={(reportData) => {
+        onSuccess={(reportData: any) => {
           onReportSuccess?.(reportData);
         }}
       />

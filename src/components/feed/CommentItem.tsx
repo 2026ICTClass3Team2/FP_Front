@@ -12,7 +12,7 @@ interface CommentItemProps {
   resourcePath?: string;
   depth?: number;
   currentUser: any;
-  postAuthorUsername?: string;
+  postAuthorUserId?: number | null;
   postResolved?: boolean;
   onAcceptAnswer?: (commentId: number) => Promise<void>;
   onRefresh: () => void;
@@ -36,7 +36,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   resourcePath = 'posts',
   depth = 0,
   currentUser,
-  postAuthorUsername,
+  postAuthorUserId,
   postResolved = false,
   onAcceptAnswer,
   onRefresh,
@@ -58,12 +58,16 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const initialBriefCount = 0; // 대댓글 기본 숨김 처리
   const repliesChunkSize = 10; // Number of replies to add when "더 보기" is clicked
 
-  const isAuthor = currentUser?.username === comment.authorUsername || currentUser?.nickname === comment.authorNickname;
+  const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
+  const commentAuthorUserId = comment.authorUserId ?? comment.authorId ?? comment.author_id ?? comment.userId ?? comment.user_id ?? null;
   const isDeleted = comment.status === 'deleted';
   const isRootComment = depth === 0;
   const isQnaContext = resourcePath === 'qna';
-  const isPostOwner = currentUser?.username && postAuthorUsername
-    ? currentUser.username === postAuthorUsername
+  const isAuthor = currentUserId !== null && commentAuthorUserId !== null
+    ? currentUserId === commentAuthorUserId
+    : false;
+  const isPostOwner = currentUserId !== null && postAuthorUserId !== null
+    ? currentUserId === postAuthorUserId
     : false;
   const canAcceptAnswer = isQnaContext && isPostOwner && !postResolved && !isDeleted && !comment.isAnswer;
 
@@ -339,7 +343,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               resourcePath={resourcePath}
               depth={1} // All replies have depth 1
               currentUser={currentUser}
-              postAuthorUsername={postAuthorUsername}
+              postAuthorUserId={postAuthorUserId}
               postResolved={postResolved}
               onAcceptAnswer={onAcceptAnswer}
               onRefresh={onRefresh}

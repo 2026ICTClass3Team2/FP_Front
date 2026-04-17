@@ -71,7 +71,9 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
           if (!isCancelled) {
             const detailData = response.data || {};
             setLocalPost({
+              ...post,
               ...detailData,
+              authorUserId: detailData.authorUserId ?? detailData.authorId ?? detailData.author_id ?? detailData.userId ?? detailData.user_id ?? post.authorUserId ?? post.authorId ?? post.author_id ?? post.userId ?? post.user_id ?? null,
               techStacks: detailData.techStacks ?? detailData.tags ?? post.techStacks ?? post.tags ?? [],
               tags: detailData.tags ?? detailData.techStacks ?? post.tags ?? post.techStacks ?? [],
             });
@@ -365,7 +367,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
             postId={localPost.qnaId} 
             resourcePath="qna"
             commentCount={commentCount}
-            postAuthorUsername={localPost.username}
+            postAuthorUserId={localPost.authorUserId ?? localPost.authorId ?? localPost.author_id ?? localPost.userId ?? localPost.user_id ?? null}
             postResolved={localPost.resolved === true}
             onAcceptAnswer={handleAcceptAnswer}
             onCommentCountChange={(delta) => setLocalPost(prev => ({ 

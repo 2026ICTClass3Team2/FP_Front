@@ -1,118 +1,180 @@
 import React, { useEffect, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import Modal from '../common/Modal';
- 
 
 const NoticeBar = () => {
-  const [dynamicNotices, setDynamicNotices] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+    const [dynamicNotices, setDynamicNotices] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedNotice, setSelectedNotice] = useState(null);
 
-  const [selectedNotice, setSelectedNotice] = useState(null); // 모달용 상태, pdf에 불러올 데이터 
+    useEffect(() => {
+        const fetchPdfText = async () => {
+            try {
+                // 외부 CDN에서 호출한 엔진 (연산 로직 포함)
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-  useEffect(() => {
-    const fetchPdfText = async () => {
-      try {
-        // console.log("--- PDF 정찰 시작 ---");
-        // 워커 설정
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-        // 2. "/notice.pdf" 대신 임포트한 pdfFile 변수를 사용합니다.
-        const response = await fetch("/notice.pdf");
-        
-        if (!response.ok) {
-          throw new Error("PDF 보급로 차단됨 (파일 응답 실패)");
-        }
+                const response = await fetch("/notice.pdf");
+                const arrayBuffer = await response.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
+                // 비정형 데이터 
+                const textContent = await page.getTextContent();
+                {/* 반정형 데이터 시작*/}
+                const lines = {};
+                textContent.items.forEach(item => {
+                    const y = Math.round(item.transform[5]);
+                    if (!lines[y]) {
+                        lines[y] = [];
+                    }
+                    lines[y].push({ x: item.transform[4], str: item.str.trim() });
+                });
 
-        const arrayBuffer = await response.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-        const pdf = await loadingTask.promise;
-        
-        const page = await pdf.getPage(1);
-        const textContent = await page.getTextContent();
+                const sortedLines = Object.keys(lines)
+                    .sort((a, b) => b - a)
+                    .map(y => lines[y].sort((a, b) => a.x - b.x).map(obj => obj.str).join(" ").trim())
+                    .filter(line => 
+                        line !== "" && 
+                        line !== "관리자" && 
+                        !line.includes("공지사항")
+                    );
+                {/* 반정형 데이터 끝*/}
 
-        // 텍스트 추출
-        const rawItems = textContent.items.map(item => item.str.trim()).filter(s => s !== "");
-        // console.log("정찰 성공! 원본 데이터:", rawItems);
+                {/* 정형 데이터 시작 */}
+                let pdfNotices = [];
+                let tempNotice = null;
+                const tagKeywords = ["일반", "이벤트", "가이드라인", "유지보수"];
 
-        // [필터링 시작] "공지사항"이라는 단어가 몇 번째 칸에 있는지 찾습니다.
-        const noticeStart = rawItems.findIndex(text => text.includes("공지사항"));
+                for (let i = 0; i < sortedLines.length; i++) {
+                    const line = sortedLines[i];
+                    const isTag = tagKeywords.includes(line);
 
-        // "공지사항" 글자 이후의 데이터만 남깁니다. (그 전의 '닉네임', '홈' 등은 버림)
-        const noticeData = noticeStart !== -1 ? rawItems.slice(noticeStart + 1) : rawItems;
+                    if (isTag === true) {
+                        if (tempNotice) {
+                            pdfNotices.push(tempNotice);
+                        }
+                        tempNotice = {
+                            id: `pdf-${pdfNotices.length}`,
+                            tag: line,
+                            title: "",
+                            content: "",
+                            date: "방금 전",
+                            views: "조회수 0"
+                        };
+                        continue;
+                    }
 
-        // 3. 데이터 가공 로직 (이미지 구성에 맞게 4개씩 끊기)
-        const testNotices = [];
-        const cleanItems = rawItems[0] === "공지사항" ? rawItems.slice(1) : rawItems;
-        
-        for (let i = 0; i < cleanItems.length; i += 4) {
-         if (noticeData[i] && noticeData[i].length > 2) {
-    if (noticeData[i] === "로그아웃" || noticeData[i] === "홈") break;
+                    if (!tempNotice) {
+                        continue;
+                    }
 
-    testNotices.push({
-      id: `notice-${i}`,
-      title: noticeData[i],         // 예: Dead Bug 커뮤니티...
-      content: noticeData[i+1],      // 예: 안녕하세요! Dead Bug...
-      date: noticeData[i+2],         // 예: 2시간 전
-      views: noticeData[i+3]         // 예: 조회수 1234
-    });
-  }
-}
- setDynamicNotices(testNotices);
-      } catch (error) {
-        console.error("정찰 실패:", error.message);
-      } finally {
-        setIsLoading(false);
-      }
+                    if (!tempNotice.title) {
+                        tempNotice.title = line;
+                    } else if (line.includes("전") || (line.includes("일") && line.length < 10)) {
+                        tempNotice.date = line;
+                    } else if (line.includes("조회수")) {
+                        tempNotice.views = line;
+                    } else if (!line.includes("내용을 확인합니다")) {
+                        tempNotice.content += (tempNotice.content ? "\n" : "") + line;
+                    }
+                }
+
+                if (tempNotice) {
+                    pdfNotices.push(tempNotice);
+                }
+                setDynamicNotices(pdfNotices.slice(0, 5));
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchPdfText();
+    }, []);
+     {/* 정형 데이터 끝 */}
+    const handleNoticeClick = (notice) => {
+        setSelectedNotice(notice);
+        setDynamicNotices((prev) => 
+            prev.map((n) => {
+                if (n.id === notice.id) {
+                    const currentViews = parseInt(n.views.replace(/[^0-9]/g, "")) || 0;
+                    return { ...n, views: `조회수 ${(currentViews + 1).toLocaleString()}` };
+                }
+                return n;
+            })
+        );
     };
 
-    fetchPdfText();
-  }, []);
+    const currentNoticeData = dynamicNotices.find(n => n.id === selectedNotice?.id);
 
-  return (
-    <aside className="w-50 border-l border-border flex flex-col h-full bg-background shrink-0">
-      
-      <div className="p-6">
-        <h2 className="text-lg font-black text-foreground">공지사항</h2>
-      </div>
-      
-      <div className="flex-1 flex flex-col gap-4 p-6 overflow-y-auto scrollbar-hide">
-        {isLoading ? (
-          <div className="text-sm text-muted-foreground animate-pulse">데이터 확보 중...</div>
-        ) : dynamicNotices.length > 0 ? (
-          dynamicNotices.map((notice, index) => (
-            <div key={index} className="rounded-xl border p-4 hover:bg-accent/50 transition-colors">
-              <h3 className="font-bold text-foreground line-clamp-1">{notice.title}</h3>
-              <p className="text-sm text-gray-500 mt-1 line-clamp-2">{notice.content}</p>
+    return (
+        <aside className="w-80 border-l border-border flex flex-col h-full bg-background shrink-0">
+            <div className="p-10 pb-6">
+                <h2 className="text-2xl font-black tracking-tighter">공지사항</h2>
             </div>
-          ))
-        ) : (
-          <p className="text-sm text-muted-foreground">현재 등록된 공지가 없습니다.</p>
-        )}
-      </div>
 
-      {/* ✅ [포인트 2] 상원님이 만드신 Modal 컴포넌트에 데이터를 불러와서 보여줍니다. */}
-      {/* isOpen: 데이터가 담기면(selectedNotice가 있으면) true
-          onClose: 닫으면 다시 바구니를 비움(null)
-          title: PDF에서 긁어온 제목을 넘겨줌
-      */}
-      <Modal 
-        isOpen={!!selectedNotice} 
-        onClose={() => setSelectedNotice(null)} 
-        title={selectedNotice?.title}
-      >
-        {selectedNotice && (
-          <div className="space-y-4">
-            <div className="text-xs text-muted-foreground pb-2 border-b">
-              {selectedNotice.date} | {selectedNotice.views}
+            <div className="flex-1 flex flex-col gap-10 p-10 pt-0 overflow-y-auto scrollbar-hide">
+                {isLoading === true ? (
+                    <div className="text-sm text-muted-foreground animate-pulse text-center mt-10 font-bold">로딩 중...</div>
+                ) : (
+                      // 모달창 띄우기전 클릭 기능 
+                    dynamicNotices.map((notice) => (
+                        <div 
+                            key={notice.id} 
+                            className="rounded-[32px] border border-border/50 p-8 hover:bg-accent/40 transition-all cursor-pointer group shadow-sm"
+                            onClick={() => handleNoticeClick(notice)}
+                        >
+                            <span className="inline-block px-3 py-1 rounded-full bg-pink-50 text-pink-500 text-[11px] font-bold mb-5">{notice.tag}</span>
+                            <h3 className="font-bold text-xl mb-4 line-clamp-2 group-hover:text-primary transition-colors leading-tight">{notice.title}</h3>
+                            <p className="text-[14px] text-muted-foreground leading-relaxed line-clamp-2 mb-8 whitespace-pre-line">{notice.content}</p>
+                            <div className="flex justify-between items-center text-[12px] text-muted-foreground pt-6 border-t border-dashed">
+                                <span>{notice.date}</span>
+                                <span className="text-primary font-bold text-sm">{notice.views}</span>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
-            {/* PDF의 줄바꿈을 살리기 위해 whitespace-pre-wrap 사용 */}
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-              {selectedNotice.content}
-            </p>
-          </div>
-        )}
-      </Modal>
-    </aside>
-  );
+
+            <Modal 
+                isOpen={!!selectedNotice} 
+                onClose={() => setSelectedNotice(null)} 
+                title="" 
+            >
+                {currentNoticeData && (
+                    <div className="p-4 pt-2">
+                        <div className="mb-6">
+                            <span className="px-3 py-1 rounded-md bg-pink-50 text-pink-500 text-xs font-bold inline-block">
+                                {currentNoticeData.tag}
+                            </span>
+                        </div>
+
+                        <h2 className="text-3xl font-black mb-6 leading-tight tracking-tight text-foreground">
+                            {currentNoticeData.title}
+                        </h2>
+
+                        <div className="pb-8 border-b border-dashed mb-10">
+                            <div className="flex gap-4 text-sm text-muted-foreground items-center">
+                                <span className="flex items-center gap-1.5">관리자 {currentNoticeData.date}</span>
+                                <span className="opacity-30">|</span>
+                                <span className="text-primary font-bold flex items-center gap-1.5">
+                                    👁️ {currentNoticeData.views}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div className="text-[18px] leading-[2.2] text-foreground/80 whitespace-pre-line break-keep tracking-tight">
+                            {currentNoticeData.content}
+                        </div>
+
+                        <div className="pt-20 text-sm text-muted-foreground italic border-t border-dashed mt-10">
+                            감사합니다. Dead Bug 운영팀 드림.
+                        </div>
+                    </div>
+                )}
+            </Modal>
+        </aside>
+    );
 };
 
 export default NoticeBar;

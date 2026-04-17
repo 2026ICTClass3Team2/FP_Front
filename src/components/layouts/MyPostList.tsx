@@ -124,12 +124,12 @@ const MyPostList = () => {
       </div>
 
       {/* 게시글 리스트 렌더링 */}
-      {error && <div className="text-destructive text-center py-4 bg-destructive/10 rounded-2xl mb-4">{error}</div>}
+      {error && <div className="text-red-500 text-center py-4 bg-red-500/10 rounded-2xl mb-4">{error}</div>}
       
       {loading ? (
         <div className="text-center py-10 text-muted-foreground">목록을 불러오는 중입니다...</div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground bg-card border border-border rounded-3xl">
+        <div className="text-center py-12 text-muted-foreground bg-surface border border-border rounded-3xl">
           작성한 게시글이 없습니다.
         </div>
       ) : (

@@ -15,63 +15,72 @@ const StudyPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newLangName, setNewLangName] = useState("");
     const [selectedFile, setSelectedFile] = useState(null);
+    const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
-    // 데이터 불러오기
     const fetchDBData = async () => {
         setIsLoading(true);
         try {
-            // 1. n8n이 POST만 허용하므로 다시 POST로 복구합니다.
             const res = await fetch("http://localhost:5679/webhook/study-data", {
                 method: "POST",
-                // 2. 중요: 'Content-Type' 헤더를 명시하지 않거나 빈 객체를 보냅니다.
-                // n8n Webhook 설정에 따라 특정 헤더가 Preflight(CORS) 에러를 일으킬 수 있습니다.
                 headers: {
-                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
                 },
-                body: JSON.stringify({}), // 빈 데이터를 보내서 POST 규격을 맞춥니다.
+                body: JSON.stringify({ user_id: 1 }),
             });
-
-            if (!res.ok) throw new Error(`HTTP 오류: ${res.status}`);
 
             const data = await res.json();
-            console.log("📥 n8n에서 받은 데이터:", data);
+            console.log("n8n 원본 데이터:", data); // 브라우저 콘솔에서 구조 확인용
 
-            // n8n 데이터 구조 대응
-            const result = Array.isArray(data) ? data[0] : data;
+            // [방어 코드 추가] n8n 응답 구조에 따른 데이터 추출
+            let result = {};
+            if (Array.isArray(data) && data.length > 0) {
+                // [{ json: { languages, ... } }] 형태일 때
+                result = data[0].json || data[0];
+            } else {
+                // { languages, ... } 형태일 때
+                result = data.json || data;
+            }
 
-            // result가 비어있을 경우를 대비한 방어 코드
-            const languagesRaw = result?.languages || [];
-            const chaptersRaw = result?.chapters || [];
+            // result가 languages를 가지고 있는지 확인 (없으면 빈 배열로 초기화)
+            const resRaw = result?.languages || [];
+            const oriRaw = result?.chapters || [];
+            const transRaw = result?.translated || [];
 
-            const langMap = {};
-            languagesRaw.forEach(lang => {
-                const id = lang.language_id || lang.id;
-                if (id) langMap[id] = lang.name;
+            const resourceMap = {};
+            resRaw.forEach(r => {
+                if (r.resource_id) resourceMap[r.resource_id] = r.name;
             });
 
-            const chapters = chaptersRaw.map((ch, idx) => ({
-                id: ch.chapter_id || ch.id || `chapter-${idx}`,
-                title: ch.title || "제목 없음",
-                content: ch.content || "",
-                language: langMap[ch.language_id] || "",
-                order_index: ch.order_index,
-            }));
+            const chapters = oriRaw.map(ori => {
+                const trans = transRaw.find(t => t.original_id === ori.original_id && t.language === 'ko');
 
-            setIncomingLanguages(languagesRaw.map(l => l.name));
+                return {
+                    id: ori.original_id,
+                    title: trans ? trans.title : ori.title,
+                    content: trans ? trans.content : ori.content,
+                    rawContent: ori.content,
+                    resourceName: resourceMap[ori.resource_id] || "미분류",
+                    order: ori.index_order,
+                    status: ori.is_translated ? "번역됨" : "원문",
+                    language: resourceMap[ori.resource_id] || "미분류",
+                };
+            });
+
+            setIncomingLanguages(resRaw.map(r => r.name));
             setIncomingChapters(chapters);
+
         } catch (err) {
-            console.error("데이터 불러오기 실패:", err);
-            setIncomingLanguages([]);
-            setIncomingChapters([]);
+            console.error("데이터 로드 실패:", err);
         } finally {
             setIsLoading(false);
         }
     };
+
     useEffect(() => {
         fetchDBData();
     }, []);
 
-    // 언어 선택
     const handleLanguageSelect = (lang) => {
         setSelectedLanguage(lang);
         const firstChapter = incomingChapters.find(c => c.language === lang);
@@ -94,6 +103,25 @@ const StudyPage = () => {
         setIsSearching(false);
     };
 
+    const handleSearchKeyDown = (e) => {
+        if (!isSearching || suggestions.length === 0) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setActiveSuggestionIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActiveSuggestionIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (activeSuggestionIndex >= 0) {
+                handleItemSelect(suggestions[activeSuggestionIndex]);
+            } else {
+                handleItemSelect(suggestions[0]);
+            }
+        }
+    };
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -103,7 +131,6 @@ const StudyPage = () => {
         }
     };
 
-    // 언어 추가 (GitHub URL 제거 + 성공 후 자동 새로고침)
     const handleAddLanguage = async () => {
         if (!newLangName) return alert("언어 이름을 입력해주세요.");
         if (!selectedFile) return alert("MD 파일을 업로드해주세요.");
@@ -126,10 +153,7 @@ const StudyPage = () => {
                 setNewLangName("");
                 setSelectedFile(null);
 
-                // 성공하면 바로 DB 다시 불러와서 화면에 반영
                 await fetchDBData();
-
-                // 추가된 언어로 바로 이동
                 setSelectedLanguage(newLangName);
             } else {
                 throw new Error("HTTP error");
@@ -137,6 +161,13 @@ const StudyPage = () => {
         } catch (error) {
             console.error("저장 실패:", error);
             alert("저장에 실패했습니다.");
+        }
+    };
+
+    const handleDeleteLanguage = (e, lang) => {
+        e.stopPropagation();
+        if (window.confirm(`정말 '${lang}' 언어를 삭제하시겠습니까?`)) {
+            alert(`'${lang}' 삭제 요청 완료! (n8n 삭제 Webhook 연동이 필요합니다)`);
         }
     };
 
@@ -169,6 +200,7 @@ const StudyPage = () => {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => { setSearchQuery(e.target.value); setIsSearching(true); }}
+                            onKeyDown={handleSearchKeyDown}
                             placeholder="검색..."
                             className="w-full h-14 pl-14 bg-background border-2 border-border rounded-2xl"
                         />
@@ -176,7 +208,6 @@ const StudyPage = () => {
                             <div className="absolute left-10 right-10 top-[6.5rem] bg-surface border border-border rounded-2xl shadow-2xl z-50 overflow-hidden">
                                 {suggestions.map((item, idx) => (
                                     <button
-                                        // item이 겹칠 수 있으므로 index와 함께 조합해서 유일성 보장
                                         key={`search-item-${idx}-${item}`}
                                         onClick={() => handleItemSelect(item)}
                                         className="w-full text-left px-6 py-4 hover:bg-secondary"
@@ -191,18 +222,27 @@ const StudyPage = () => {
                     <div className="flex-1 overflow-y-auto p-6 space-y-10">
                         <section>
                             <h3 className="text-lg font-black mb-6 px-4">언어 선택</h3>
-                            {/* StudyPage.jsx 195라인 근처 언어 선택 부분 */}
                             <div className="space-y-2">
-                                {/* (lang) 뒤에 , idx 를 추가해야 idx 변수를 사용할 수 있습니다! */}
                                 {incomingLanguages.map((lang, idx) => (
-                                    <button
+                                    <div
                                         key={`lang-select-${idx}-${lang}`}
                                         onClick={() => handleLanguageSelect(lang)}
-                                        className={`w-full text-left px-6 py-5 rounded-2xl ${selectedLanguage === lang ?
-                                            "bg-primary text-white" : "hover:bg-secondary"}`}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handleLanguageSelect(lang); }}
+                                        tabIndex={0}
+                                        className={`group flex items-center justify-between w-full px-6 py-5 rounded-2xl cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary ${selectedLanguage === lang ? "bg-primary text-white" : "hover:bg-secondary"
+                                            }`}
                                     >
-                                        {lang}
-                                    </button>
+                                        <span>{lang}</span>
+                                        {isAdmin && (
+                                            <button
+                                                onClick={(e) => handleDeleteLanguage(e, lang)}
+                                                className="hidden group-hover:block text-red-500 hover:text-red-700 font-bold px-2 transition-transform hover:scale-110"
+                                                title="언어 삭제"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         </section>
@@ -214,7 +254,6 @@ const StudyPage = () => {
                             <div className="space-y-2">
                                 {currentChapters.map((chapter, idx) => (
                                     <button
-                                        // chapter.id가 없으면 index라도 써서 강제로 유일하게 만듦
                                         key={chapter.id || `chapter-list-${idx}`}
                                         onClick={() => setSelectedChapter(chapter)}
                                         className={`w-full text-left px-6 py-5 rounded-2xl border-2 ${selectedChapter?.id === chapter.id ?
@@ -262,7 +301,6 @@ const StudyPage = () => {
                         </div>
                     )}
 
-                    {/* 언어 추가 모달 (GitHub URL 제거) */}
                     {isModalOpen && (
                         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
                             <div className="bg-surface p-8 rounded-2xl w-full max-w-md border border-border">
@@ -280,7 +318,7 @@ const StudyPage = () => {
                                         type="file"
                                         accept=".md"
                                         onChange={handleFileChange}
-                                        className="w-full p-2 text-sm border border-dashed border-primary rounded-xl"
+                                        className="w-full p-2 text-sm border border-dashed border-primary rounded-xl cursor-pointer hover:bg-primary/5 transition-colors duration-200"
                                     />
                                     {selectedFile && <p className="text-xs text-primary mt-1">✅ 파일이 준비되었습니다.</p>}
                                 </div>

@@ -30,7 +30,7 @@ function MainLayout() {
         </main>
       </div>
 
-      {/* <NoticeBar /> */}
+      <NoticeBar />
       
       {/* Global write button with popup options */}
       <GlobalWriteButton />

@@ -242,6 +242,7 @@ const QuestionBoard = () => {
                       authorProfileImageUrl: item.authorProfileImageUrl,
                       nickname: item.nickname,
                       username: item.username,
+                      authorUserId: item.authorUserId ?? item.authorId ?? item.author_id ?? item.userId ?? item.user_id ?? null,
                       likeCount: item.likeCount,
                       likes: item.likes,
                       dislikeCount: item.dislikeCount,
@@ -349,9 +350,9 @@ const QuestionBoard = () => {
       <ConfirmationModal
         isOpen={isConfirmModalOpen}
         title="게시글 삭제"
-        message="정말 이 게시글을 삭제하시겠습니까?"
+        message="정말로 이 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
         onConfirm={confirmDeletePost}
-        onCancel={() => {
+        onClose={() => {
           setPostToDelete(null);
           setIsConfirmModalOpen(false);
         }}

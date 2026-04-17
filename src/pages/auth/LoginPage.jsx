@@ -85,10 +85,10 @@ const LoginPage = () => {
           </button>
         </form>
         
-        <div className="flex items-center my-6">
-          <div className="flex-1 border-t border-border"></div>
-          <span className="px-4 text-sm text-muted">또는 소셜 로그인</span>
-          <div className="flex-1 border-t border-border"></div>
+        <div className="flex items-center my-4">
+          <div className="flex-1 h-px bg-border"></div>
+            <span className="px-3 text-sm text-muted-foreground">또는 소셜 로그인</span>
+          <div className="flex-1 h-px bg-border"></div>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -124,7 +124,7 @@ const LoginPage = () => {
           </a>
         </div>
         
-        <div className="mt-6 text-center text-sm text-muted">
+        <div className="mt-6 text-center text-sm text-muted-foreground">
           계정이 없으신가요? <Link to="/register" className="text-primary font-semibold hover:underline ml-1">회원가입</Link>
         </div>
       </div>

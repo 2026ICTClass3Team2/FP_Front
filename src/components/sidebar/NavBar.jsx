@@ -38,7 +38,7 @@ const NavBar = () => {
 
         {/* 포인트 버튼 및 테마 토글 - 나란히 배치 */}
         <div className="flex gap-2">
-          <button className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border 
+          <button className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 
           border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors">
             <span className="text-2xl">
                 <svg xmlns="http://www.w3.org/2000/svg" 
@@ -62,7 +62,7 @@ const NavBar = () => {
 
           <button
             onClick={toggleTheme}
-            className="flex items-center justify-center px-3 py-2 bg-background border 
+            className="flex items-center justify-center px-3 py-2 bg-background border-2 
             border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors"
             title={isDarkMode ? '라이트 모드' : '다크 모드'}
           >

@@ -19,7 +19,8 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
       setTitle(postToEdit.title || '');
       setContent(postToEdit.body || ''); // body가 없으면 빈 문자열로
       setTags(postToEdit.tags?.join(', ') || '');
-      setAttachedUrl(postToEdit.attachedUrls && postToEdit.attachedUrls.length > 0 ? postToEdit.attachedUrls[0] : '');
+      // attachedUrls가 배열로 올 수 있으므로, 첫 번째 요소만 문자열로 설정합니다.
+      setAttachedUrl(Array.isArray(postToEdit.attachedUrls) && postToEdit.attachedUrls.length > 0 ? postToEdit.attachedUrls[0] : '');
     } else {
       // 새 글 작성 모드일 때 폼 초기화
       setTitle('');
@@ -59,7 +60,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
 
     const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-    const filteredUrls = attachedUrl.trim() ? [attachedUrl.trim()] : [];
+    const attachedUrlValue = attachedUrl.trim(); // 백엔드가 단일 문자열을 기대하므로, 배열이 아닌 문자열 자체를 보냅니다.
 
     // 백엔드에 보낼 데이터
     const postData = {
@@ -68,8 +69,8 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
       contentType: 'feed',
       // channelId: 1, // 필요 시 설정
       thumbnailUrl: null, // 백엔드 명세에 맞추기 위해 썸네일 기본값 추가
-      tags: tagArray,
-      attachedUrls: filteredUrls,
+      tags: tagArray, // 태그는 여전히 배열로 보냅니다.
+      attachedUrls: attachedUrlValue, // 단일 문자열로 보냅니다.
       author: currentUser.username || currentUser.nickname || '익명'
     };
 
@@ -171,7 +172,15 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              <span className="text-sm font-semibold truncate">{attachedUrl}</span>
+              <a
+                href={attachedUrl.startsWith('http') ? attachedUrl : `https://${attachedUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm font-semibold truncate hover:underline"
+              >
+                첨부 링크
+              </a>
               <button 
                 type="button" 
                 onClick={(e) => { e.stopPropagation(); setAttachedUrl(''); setIsUrlFocused(true); }}

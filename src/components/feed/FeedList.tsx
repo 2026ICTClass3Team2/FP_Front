@@ -28,7 +28,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
-  const pageRef = useRef(0);
+  const lastPostIdRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false); // 무한 스크롤 옵저버 내에서 최신 로딩 상태를 확인하기 위한 Ref
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -52,6 +52,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     }
   };
 
+  // API 요청 함수
   const fetchPosts = async (isRefresh = false) => {
     if (isLoadingRef.current || !hasNextPage) return;
 
@@ -69,15 +70,15 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
       const response = await jwtAxios.get(url);
       const data: SliceResponse = response.data;
 
-      // 데이터 추가 및 페이지 갱신
+      // 데이터 추가 및 커서(마지막 ID) 갱신
       if (data.content && data.content.length > 0) {
         if (isRefresh) {
           setPosts(data.content);
-          pageRef.current = 1;
         } else {
           setPosts((prev) => [...prev, ...data.content]);
-          pageRef.current += 1;
         }
+        const lastPost = data.content[data.content.length - 1];
+        lastPostIdRef.current = String(lastPost.postId); 
       }
       
       // 마지막 페이지 여부에 따라 추가 로딩 가능 상태 변경
@@ -115,7 +116,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     refresh: () => {
       setPosts([]);
       setHasNextPage(true);
-      pageRef.current = 0;
+      lastPostIdRef.current = null;
       // fetchPosts를 isRefresh 플래그와 함께 호출하여 목록을 새로고침
       fetchPosts(true);
     }
@@ -170,6 +171,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
               setSelectedPost(post);
               setAutoScrollToComment(true);
             }}
+            onReportSuccess={handleReportSuccess}
           />
         ))}
       </div>

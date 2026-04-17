@@ -9,7 +9,6 @@ const MyPageLayout = () => {
   
   // userId가 없으면 마이페이지(내꺼)라고 판별합니다.
   const isMyPage = !userId; 
-  const navigate = useNavigate();
 
   // 활성화된 탭 스타일을 지정하는 함수
   const getNavLinkClass = ({ isActive }) =>

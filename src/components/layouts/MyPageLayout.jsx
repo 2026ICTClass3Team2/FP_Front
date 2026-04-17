@@ -5,10 +5,19 @@ const MyPageLayout = () => {
   // 주소창에서 userId 파라미터를 가져옵니다. 
   // (예: /user/123 으로 들어오면 userId는 '123', /mypage 로 들어오면 undefined)
   const { userId } = useParams(); 
+  const navigate = useNavigate();
   
   // userId가 없으면 마이페이지(내꺼)라고 판별합니다.
   const isMyPage = !userId; 
   const navigate = useNavigate();
+
+  // 활성화된 탭 스타일을 지정하는 함수
+  const getNavLinkClass = ({ isActive }) =>
+    `pb-3 px-2 text-sm font-medium transition-colors border-b-2 ${
+      isActive
+        ? 'border-primary text-primary'
+        : 'border-transparent text-muted-foreground hover:text-foreground'
+    }`;
 
   // 활성화된 탭 스타일을 지정하는 함수
   const getNavLinkClass = ({ isActive }) =>

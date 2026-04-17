@@ -24,13 +24,13 @@ export interface Post {
   shareCount: number;
   
   isLiked: boolean;
-  liked?: boolean; // Jackson 직렬화 시 isLiked가 liked로 올 수 있음 대응
+  liked?: boolean;
   isDisliked: boolean;
   disliked?: boolean;
   isBookmarked: boolean;
   bookmarked?: boolean; 
   isAuthor: boolean;
-  author?: boolean;
+  author?: boolean; 
   attachedUrls?: string[];
   thumbnailUrl?: string;
 }
@@ -238,6 +238,25 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
               </div>
             )}
           </div>
+        </div>
+
+        {/* 본문 영역: 제목과 우측 첨부 링크 */}
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-xl font-extrabold text-foreground leading-snug break-words flex-1">{post.title}</h2>
+          
+          {/* 첨부 링크 영역 */}
+          {localPost.attachedUrls && Array.isArray(localPost.attachedUrls) && localPost.attachedUrls.length > 0 && localPost.attachedUrls[0].trim() !== '' && (
+            <a
+              href={localPost.attachedUrls[0].startsWith('http') ? localPost.attachedUrls[0] : `https://${localPost.attachedUrls[0]}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg border border-border/50 hover:bg-muted transition-colors shrink-0 mt-0.5"
+            >
+              <FiLink size={14} className="text-muted-foreground shrink-0" />
+              <span className="text-xs text-primary font-medium whitespace-nowrap">첨부 링크</span>
+            </a>
+          )}
         </div>
 
         {/* 본문 영역: 오직 제목만 굵게 표시 */}

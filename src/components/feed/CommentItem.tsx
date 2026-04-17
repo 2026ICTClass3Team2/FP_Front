@@ -155,22 +155,22 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
   };
 
   // 깊이에 따른 마진 설정 (최대 깊이를 넘어가더라도 시각적으로 구분되도록 여백 부여)
-  const depthClass = depth > 0 ? 'ml-4 md:ml-8 lg:ml-12 border-l-2 border-gray-100 pl-4 mt-4' : 'mt-6';
+  const depthClass = depth > 0 ? 'ml-4 md:ml-8 lg:ml-12 border-l-2 border-border pl-4 mt-4' : 'mt-6';
 
   return (
     <>
       {/* The actual comment body */}
       <div className={depthClass}>
         <div className="flex items-start gap-3 relative">
-        {depth > 0 && <FiCornerDownRight className="text-gray-300 mt-2 flex-shrink-0" size={16} />}
+        {depth > 0 && <FiCornerDownRight className="text-muted-foreground mt-2 flex-shrink-0" size={16} />}
         
         {/* 프로필 이미지 */}
         {!isDeleted && (
-          <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 mt-1">
+          <div className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0 mt-1">
             {comment.authorProfilePicUrl ? (
               <img src={comment.authorProfilePicUrl} alt="profile" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-500 font-bold text-sm">
+              <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
                 {comment.authorNickname?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
@@ -182,19 +182,19 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
             <>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-gray-900 text-sm">{comment.authorNickname}</span>
-                  <span className="text-xs text-gray-400">{formatTimeAgo(comment.createdAt)}</span>
+                  <span className="font-semibold text-foreground text-sm">{comment.authorNickname}</span>
+                  <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.createdAt)}</span>
                 </div>
                 
                 {isAuthor && (
                   <div className="relative" ref={dropdownRef}>
-                    <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors">
+                    <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-secondary transition-colors">
                       <FiMoreVertical size={16} />
                     </button>
                     {isDropdownOpen && (
-                      <div className="absolute right-0 mt-1 w-24 bg-white border border-gray-200 shadow-lg rounded-xl overflow-hidden z-10">
-                        <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors">수정</button>
-                        <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">삭제</button>
+                      <div className="absolute right-0 mt-1 w-24 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
+                        <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
+                        <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
                       </div>
                     )}
                   </div>
@@ -210,30 +210,30 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
                 />
               ) : (
                 <div 
-                  className="text-gray-800 text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-h-24 [&_img]:align-middle"
+                  className="text-foreground text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-h-24 [&_img]:align-middle"
                   dangerouslySetInnerHTML={{ __html: comment.content }}
                 />
               )}
 
-              <div className="flex items-center gap-4 mt-2 text-gray-500">
-                <button onClick={handleLike} className="relative group flex items-center gap-1 p-1.5 hover:bg-gray-100 rounded-full hover:text-blue-500 transition-colors">
+              <div className="flex items-center gap-4 mt-2 text-muted-foreground">
+                <button onClick={handleLike} className="relative group flex items-center gap-1 p-1.5 hover:bg-secondary rounded-full hover:text-blue-500 transition-colors">
                   <FiThumbsUp size={16} />
                   <span className="text-xs font-medium">{comment.likeCount}</span>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">좋아요</span>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">좋아요</span>
                 </button>
-                <button onClick={handleDislike} className="relative group flex items-center gap-1 p-1.5 hover:bg-gray-100 rounded-full hover:text-red-500 transition-colors">
+                <button onClick={handleDislike} className="relative group flex items-center gap-1 p-1.5 hover:bg-secondary rounded-full hover:text-red-500 transition-colors">
                   <FiThumbsDown size={16} />
                   <span className="text-xs font-medium">{comment.dislikeCount}</span>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
                 </button>
-                <button onClick={() => setIsReplying(!isReplying)} className="relative group flex items-center p-1.5 hover:bg-gray-100 rounded-full hover:text-gray-800 transition-colors">
+                <button onClick={() => setIsReplying(!isReplying)} className="relative group flex items-center p-1.5 hover:bg-secondary rounded-full hover:text-foreground transition-colors">
                   <FiCornerDownRight size={16} />
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
                 </button>
               </div>
             </>
           ) : (
-            <p className="text-gray-400 italic text-sm py-2">
+            <p className="text-muted-foreground italic text-sm py-2">
               삭제된 댓글입니다.
             </p>
           )}

@@ -117,7 +117,7 @@ const NoticeBar = () => {
                     dynamicNotices.map((notice) => (
                         <div 
                             key={notice.id} 
-                            className="rounded-[32px] border border-border/50 p-8 hover:bg-accent/40 transition-all cursor-pointer group shadow-sm"
+                            className="rounded-[32px] border border-border p-8 hover:bg-accent/40 transition-all cursor-pointer group shadow-sm"
                             onClick={() => handleNoticeClick(notice)}
                         >
                             <span className="inline-block px-3 py-1 rounded-full bg-pink-50 text-pink-500 text-[11px] font-bold mb-5">{notice.tag}</span>

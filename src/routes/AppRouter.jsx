@@ -14,6 +14,7 @@ import ProtectedRoute from './ProtectedRoute';
 import OAuthCallback from '../pages/auth/OAuthCallback';
 import MyPostList from '../components/layouts/MyPostList';
 import MyBookmarkList from '../components/layouts/MyBookmarkList';
+import BlockList from '../components/profile/BlockList';
 
 const AppRouter = () => {
   return (
@@ -44,6 +45,7 @@ const AppRouter = () => {
               <Route index element={<MyProfile />} />
               <Route path="posts" element={<MyPostList />} />
               <Route path="bookmarks" element={<MyBookmarkList />} />
+              <Route path='blocks' element={<BlockList />} />
             </Route>
             <Route path="user/:userId" element={<MyPageLayout />}>
               <Route index element={<ProfileCard />} />

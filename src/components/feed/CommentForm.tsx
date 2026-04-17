@@ -83,7 +83,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
             type="button"
             onClick={onCancel}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-secondary rounded-xl hover:bg-secondary/80 transition-colors disabled:opacity-50"
           >
             취소
           </button>
@@ -91,7 +91,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
         <button
           type="submit"
           disabled={isLoading || content.replace(/<(.|\n)*?>/g, '').trim().length === 0}
-          className="px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 shadow-md"
+          className="px-4 py-2 text-sm font-bold text-primary-foreground bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-md"
         >
           {isLoading ? '저장 중...' : (initialValue ? '수정 완료' : '댓글 작성')}
         </button>

@@ -1,85 +1,96 @@
 @import "tailwindcss";
-
-@theme {
-  /* ============================================= */
-  /* Semantic Color System - Exact match to image  */
-  /* ============================================= */
-
-  /* Main light area (feed + right sidebar) */
-  --color-background: #ffffff; /* Main feed + right announcements background */
-
-  /* Primary text in light area */
-  --color-foreground: #0a0a0a; /* Main dark text */
-
-  /* Surface - cards and input backgrounds (slightly lighter than background) */
-  --color-surface: #f5f5f5; /* Card backgrounds, text input areas */
-  --color-surface-foreground: #0a0a0a;
-
-  /* Secondary - hover states (slightly darker than background) */
-  --color-secondary: #d4d4d4; /* Hover backgrounds */
-  --color-secondary-foreground: #0a0a0a;
-
-  /* Muted / additional text */
-  --color-muted: #d4d4d4; /* Subtle gray text for timestamps, counts, descriptions */
-  --color-muted-foreground: #525252;
-
-  /* Light borders & dividers */
-  --color-border: #a3a3a3; /* Subtle card borders */
-
-  /* Focus rings */
-  --color-ring: #0a0a0a; /* Primary ring */
-
-  /* Primary button - black background with white text */
-  --color-primary: #0a0a0a; /* Primary button background */
-  --color-primary-foreground: #ffffff; /* White text on primary buttons */
-  --color-primary-hover: #262626; /* Hover state for primary button */
-
-  /* Left sidebar - 진한 다크 모드 (exact slate-950 계열) */
-  --color-sidebar: #020617; /* Left sidebar background - deep dark slate-950 */
-  --color-sidebar-foreground: #f8fafc; /* Almost white text in sidebar */
-  --color-sidebar-muted: #64748b; /* Muted text in sidebar navigation */
-  --color-sidebar-border: #334155; /* Dark divider lines in sidebar */
-
-  /* ============================================= */
-  /* Radius - clean modern rounded corners */
-  /* ============================================= */
-  --radius-sm: 0.5rem;
-  --radius: 0.75rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem; /* Used for cards and buttons - matches image's rounded-xl feel */
-
-  /* ============================================= */
-  /* Shadows - subtle professional depth */
-  /* ============================================= */
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
-  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
-  --shadow-lg: 0 25px 50px -12px rgb(0 0 0 / 0.12); /* Stronger shadow for floating button */
-
-  /* ============================================= */
-  /* Typography - clean, modern sans (system stack) */
-  /* ============================================= */
-  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans KR", sans-serif;
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-}
+@config "../../../tailwind.config.js";
 
 /* ============================================= */
 /* Base layer - global resets & defaults */
 /* ============================================= */
 @layer base {
   :root {
+    /* ============================================= */
+    /* Semantic Color System - Light Mode            */
+    /* ============================================= */
+    --color-background: #ffffff;
+    --color-foreground: #0a0a0a;
+    --color-surface: #f5f5f5;
+    --color-surface-foreground: #0a0a0a;
+    --color-secondary: #d4d4d4;
+    --color-secondary-foreground: #0a0a0a;
+    --color-muted: #d4d4d4;
+    --color-muted-foreground: #525252;
+    --color-border: #a3a3a3;
+    --color-ring: #0a0a0a;
+    --color-primary: #0a0a0a;
+    --color-primary-foreground: #ffffff;
+    --color-primary-hover: #262626;
+    
+    /* Left sidebar */
+    --color-sidebar: #020617;
+    --color-sidebar-foreground: #f8fafc;
+    --color-sidebar-muted: #64748b;
+    --color-sidebar-border: #334155;
+
+    /* Radius */
+    --radius-sm: 0.5rem;
+    --radius: 0.75rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+    --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 25px 50px -12px rgb(0 0 0 / 0.12);
+
+    /* Typography */
+    --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans KR", sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+
     font-family: var(--font-family-sans);
+  }
+
+  .dark {
+    /* ============================================= */
+    /* Semantic Color System - Dark Mode             */
+    /* ============================================= */
+    --color-background: #0a0a0a;
+    --color-foreground: #ffffff;
+    --color-surface: #171717;
+    --color-surface-foreground: #ffffff;
+    --color-secondary: #262626;
+    --color-secondary-foreground: #ffffff;
+    --color-muted: #262626;
+    --color-muted-foreground: #a3a3a3;
+    --color-border: #404040;
+    --color-ring: #ffffff;
+    --color-primary: #ffffff;
+    --color-primary-foreground: #0a0a0a;
+    --color-primary-hover: #e5e5e5;
+    
+    /* Sidebar typically stays dark across both modes in this design */
+    --color-sidebar: #020617;
+    --color-sidebar-foreground: #f8fafc;
+    --color-sidebar-muted: #64748b;
+    --color-sidebar-border: #334155;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+  }
+
+  /* 테마 전환 시 부드러운 색상 전환을 위한 전역 트랜지션 */
+  *,
+  *::before,
+  *::after {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
   }
 
   /* Top navbar & left sidebar use dark theme */
@@ -115,7 +126,8 @@
   }
 
   .btn-primary:active {
-    background-color: #000000;
+    transform: scale(0.98);
+    opacity: 0.9;
   }
 
   /* Feed cards (post cards in main area) */
@@ -191,8 +203,17 @@
   }
 
   .search-input:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgb(14 165 233 / 0.2);
+    border-color: var(--color-ring);
+    box-shadow: 0 0 0 1px var(--color-ring);
+  }
+
+  /* Quill Editor Code Block Override */
+  .ql-editor pre.ql-syntax {
+    background-color: var(--color-surface) !important;
+    color: var(--color-foreground) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 1rem !important;
   }
 }
 

@@ -232,19 +232,16 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, postId, resourcePath
                   <span className="text-xs font-medium">{comment.dislikeCount}</span>
                   <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
                 </button>
-<<<<<<< HEAD
                 {isRootComment && (
                   <button onClick={() => setIsReplying(!isReplying)} className="relative group flex items-center p-1.5 hover:bg-gray-100 rounded-full hover:text-gray-800 transition-colors">
                     <FiCornerDownRight size={16} />
                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
                   </button>
                 )}
-=======
                 <button onClick={() => setIsReplying(!isReplying)} className="relative group flex items-center p-1.5 hover:bg-secondary rounded-full hover:text-foreground transition-colors">
                   <FiCornerDownRight size={16} />
                   <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
                 </button>
->>>>>>> 859e6751e2d53d61b6f490cfbe571dc73e6b18b2
               </div>
             </>
           ) : (

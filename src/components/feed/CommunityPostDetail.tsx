@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle } from 'react-icons/fi';
+import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
 import jwtAxios from '../../api/jwtAxios';
@@ -243,13 +243,13 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         backdropClickRef.current = false; // 상태 초기화
       }}
     >
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
+      <div className="relative w-full max-w-2xl bg-background rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
         
         {/* 우측 상단 닫기 버튼 */}
         <button 
           onClick={handleClose}
-          className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
+          className="absolute top-5 right-5 p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
           aria-label="닫기"
         >
           <FiX size={24} />
@@ -297,7 +297,7 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
   const initial = post.authorNickname ? post.authorNickname.charAt(0).toUpperCase() : 'U';
   return (
     <div className="flex items-center gap-4 mb-6">
-      <div className="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden">
+      <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden">
         {post.authorProfileImageUrl ? (
           <img src={post.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
         ) : (
@@ -305,15 +305,15 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
         )}
       </div>
       <div className="flex flex-col">
-        <span className="font-bold text-gray-900">{post.isAuthor ? post.authorNickname : (post.authorNickname || '익명')}</span>
-        <span className="text-sm text-gray-400">@{post.authorUsername || 'unknown'}</span>
-        <span className="text-xs text-gray-400 mt-0.5">{formatTimeAgo(post.createdAt)}</span>
+        <span className="font-bold text-foreground">{post.isAuthor ? post.authorNickname : (post.authorNickname || '익명')}</span>
+        <span className="text-sm text-muted-foreground">@{post.authorUsername || 'unknown'}</span>
+        <span className="text-xs text-muted-foreground mt-0.5">{formatTimeAgo(post.createdAt)}</span>
       </div>
       <div className="flex-grow" />
       {!post.isAuthor && (
         <button 
           onClick={onReport}
-          className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"
+          className="p-2 text-muted-foreground hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors"
           aria-label="게시글 신고"
         >
           <FiAlertTriangle size={20} />
@@ -326,25 +326,42 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
 // 2. 본문 영역 (Content)
 const PostContent = ({ post }: { post: Post }) => (
   <div className="mb-6">
-    <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 my-4">{post.title}</h1>
+    <h1 className="text-2xl md:text-3xl font-extrabold text-foreground my-4">{post.title}</h1>
     <div 
-      className="text-gray-800 text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-96 [&_img]:inline-block"
+      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-96 [&_img]:inline-block"
       dangerouslySetInnerHTML={{ __html: post.body || '' }}
     />
     <div className="flex flex-wrap gap-2">
       {post.tags && post.tags.map(tag => (
-        <span key={tag} className="px-4 py-1.5 bg-white border border-gray-200 rounded-full text-sm text-gray-600 font-medium">
+        <span key={tag} className="px-4 py-1.5 bg-background border border-border rounded-full text-sm text-muted-foreground font-medium">
           #{tag}
         </span>
       ))}
     </div>
+    {post.attachedUrls && post.attachedUrls.length > 0 && (
+      <div className="mt-6 flex flex-col gap-2 p-4 bg-muted/20 rounded-xl border border-border/50">
+        <span className="text-sm font-semibold text-muted-foreground mb-1">첨부된 링크</span>
+        {post.attachedUrls.map((url, idx) => (
+          <a 
+            key={idx} 
+            href={url.startsWith('http') ? url : `https://${url}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80 hover:underline flex items-center gap-2 break-all"
+          >
+            <FiLink size={16} className="shrink-0" />
+            {url}
+          </a>
+        ))}
+      </div>
+    )}
   </div>
 );
 
 // 3. 상호작용 버튼 영역 (Actions)
 const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare }: { post: Post, onLike: () => void, onDislike: () => void, onBookmark: () => void, onShare: () => void }) => {
-  const buttonClass = "relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-white border border-gray-200 rounded-full hover:bg-gray-50 text-gray-500 transition-colors shrink-0";
-  const iconOnlyClass = "relative group flex items-center justify-center w-10 h-10 bg-white border border-gray-200 rounded-full hover:bg-gray-50 text-gray-500 transition-colors shrink-0";
+  const buttonClass = "relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0";
+  const iconOnlyClass = "relative group flex items-center justify-center w-10 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0";
   const isLiked = post.isLiked || post.liked;
   const isDisliked = post.isDisliked || post.disliked;
   const isBookmarked = post.isBookmarked || post.bookmarked;
@@ -352,35 +369,35 @@ const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare }: { post:
   return (
     <div className="flex justify-between items-center mb-8 px-2">
       <div className="flex gap-2">
-        <button onClick={onLike} className={`${buttonClass} ${isLiked ? 'text-rose-500 border-rose-200 bg-rose-50' : ''}`}>
+        <button onClick={onLike} className={`${buttonClass} ${isLiked ? 'text-rose-500 border-rose-500/20 bg-rose-500/10' : ''}`}>
           <FiHeart size={18} className={isLiked ? 'fill-current' : ''} />
           <span className="text-sm font-semibold">{post.likeCount || 0}</span>
-          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">좋아요</span>
+          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">좋아요</span>
         </button>
-        <button onClick={onDislike} className={`${buttonClass} ${isDisliked ? 'text-purple-500 border-purple-200 bg-purple-50' : ''}`}>
+        <button onClick={onDislike} className={`${buttonClass} ${isDisliked ? 'text-purple-500 border-purple-500/20 bg-purple-500/10' : ''}`}>
           <FiThumbsDown size={18} className={isDisliked ? 'fill-current' : ''} />
           <span className="text-sm font-semibold">{post.dislikeCount || 0}</span>
-          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
+          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
         </button>
         <button className={buttonClass}>
           <FiMessageCircle size={18} />
           <span className="text-sm font-semibold">{post.commentCount || 0}</span>
-          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">댓글</span>
+          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">댓글</span>
         </button>
-        <div className="relative group flex items-center justify-center gap-1.5 px-3 h-10 text-gray-400 shrink-0">
+        <div className="relative group flex items-center justify-center gap-1.5 px-3 h-10 text-muted-foreground shrink-0">
           <FiEye size={18} />
           <span className="text-sm font-semibold">{post.viewCount || 0}</span>
-          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">조회수</span>
+          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">조회수</span>
         </div>
       </div>
       <div className="flex gap-2">
         <button onClick={onShare} className={iconOnlyClass}>
           <FiShare2 size={18} />
-          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">공유</span>
+          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">공유</span>
         </button>
-        <button onClick={onBookmark} className={`${iconOnlyClass} ${isBookmarked ? 'text-amber-500 border-amber-200 bg-amber-50' : ''}`}>
+        <button onClick={onBookmark} className={`${iconOnlyClass} ${isBookmarked ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : ''}`}>
           <FiBookmark size={18} className={isBookmarked ? 'fill-current' : ''} />
-          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">북마크</span>
+          <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">북마크</span>
         </button>
       </div>
     </div>

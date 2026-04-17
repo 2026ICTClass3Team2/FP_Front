@@ -9,52 +9,47 @@ const MyPageLayout = () => {
   
   // userId가 없으면 마이페이지(내꺼)라고 판별합니다.
   const isMyPage = !userId; 
+  const navigate = useNavigate();
 
-  const navLinkClass = ({ isActive }) =>
-    `inline-block py-3 px-1 text-base ${isActive ? 'border-b-2 border-primary text-primary font-bold' : 'border-b-2 border-transparent text-muted-foreground hover:text-foreground'}`;
+  // 활성화된 탭 스타일을 지정하는 함수
+  const getNavLinkClass = ({ isActive }) =>
+    `pb-3 px-2 text-sm font-medium transition-colors border-b-2 ${
+      isActive
+        ? 'border-primary text-primary'
+        : 'border-transparent text-muted-foreground hover:text-foreground'
+    }`;
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4">
-      {/* 1. 상단 타이틀 및 뒤로가기 영역 */}
-      <header className="flex items-center mb-8">
-        {!isMyPage && (
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mr-4 p-2 rounded-full hover:bg-accent transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-        )}
-        <h2 className="text-3xl font-bold">{isMyPage ? '마이페이지' : '프로필'}</h2>
+    <section className="max-w-[1200px] min-w-[900px] mx-auto w-full px-4 py-8 min-h-screen bg-background">
+      {/* 1. 상단 타이틀 */}
+      <header className="mb-8">
+        <h2 className="text-3xl font-bold text-foreground">{isMyPage ? '마이페이지' : '프로필'}</h2>
       </header>
 
       {/* 2. 조건부 탭 메뉴 영역 */}
-      <nav className="mb-8 border-b border-border">
-        <ul className="flex items-center gap-8 -mb-px">
-          {isMyPage ? (
-            <>
-              <li><NavLink to="/mypage" end className={navLinkClass}>프로필</NavLink></li>
-              <li><NavLink to="/mypage/posts" className={navLinkClass}>내 게시글</NavLink></li>
-              <li><NavLink to="/mypage/bookmarks" className={navLinkClass}>북마크</NavLink></li>
-              <li><NavLink to="/mypage/blocks" className={navLinkClass}>차단 목록</NavLink></li>
-            </>
-          ) : (
-            <>
-              <li><NavLink to={`/user/${userId}`} end className={navLinkClass}>피드</NavLink></li>
-              <li><NavLink to={`/user/${userId}/info`} className={navLinkClass}>프로필</NavLink></li>
-            </>
-          )}
-        </ul>
+      <nav className="flex gap-4 border-b border-border mb-6">
+        {isMyPage ? (
+          /* --- [마이페이지일 때 보여줄 리스트] --- */
+          <>
+            <NavLink to="/mypage" end className={getNavLinkClass}>내 프로필</NavLink>
+            <NavLink to="/mypage/posts" className={getNavLinkClass}>내 게시글</NavLink>
+            <NavLink to="/mypage/bookmarks" className={getNavLinkClass}>내 북마크</NavLink>
+            <NavLink to="/mypage/blocks" className={getNavLinkClass}>차단 목록</NavLink>
+          </>
+        ) : (
+          /* --- [타인 프로필일 때 보여줄 리스트] --- */
+          <>
+            <NavLink to={`/user/${userId}`} end className={getNavLinkClass}>피드</NavLink>
+            <NavLink to={`/user/${userId}/info`} className={getNavLinkClass}>프로필</NavLink>
+          </>
+        )}
       </nav>
 
       {/* 3. 실제 컨텐츠가 들어갈 자리 */}
-      <main>
+      <main className="py-4">
         <Outlet />
       </main>
-    </div>
+    </section>
   );
 };
 

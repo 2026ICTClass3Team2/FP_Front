@@ -8,13 +8,15 @@ const OAuthCallback = () => {
   const { handleOAuthLogin } = useAuth();
 
   useEffect(() => {
-    // URL에서 파라미터 추출 (예: /oauth/callback?token=eyJ...&username=test)
+    // URL에서 파라미터 추출 (예: /oauth/callback?token=eyJ...&username=test&userId=1)
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const username = params.get('username') || '소셜유저'; 
+    const userIdParam = params.get('userId') || params.get('user_id') || params.get('id');
+    const userId = userIdParam ? Number(userIdParam) : null;
 
     if (token) {
-      handleOAuthLogin(token, username);
+      handleOAuthLogin(token, username, Number.isNaN(userId) ? null : userId);
       
       const redirectUrl = sessionStorage.getItem('redirectUrl');
       if (redirectUrl) {

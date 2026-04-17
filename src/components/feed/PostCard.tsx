@@ -259,9 +259,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
           )}
         </div>
 
-        {/* 본문 영역: 오직 제목만 굵게 표시 */}
-        <h2 className="text-xl font-extrabold text-foreground leading-snug">{post.title}</h2>
-
         {/* 태그 영역 */}
         <div className="flex flex-wrap gap-2 mt-1">
           {tags.map((tag, idx) => (

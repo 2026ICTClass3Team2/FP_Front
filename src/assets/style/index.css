@@ -84,6 +84,11 @@
     @apply bg-background text-foreground antialiased;
   }
 
+  /* 전역 placeholder 색상 다크 모드 동기화 */
+  ::placeholder {
+    color: var(--color-muted-foreground);
+  }
+
   /* 테마 전환 시 부드러운 색상 전환을 위한 전역 트랜지션 */
   *,
   *::before,

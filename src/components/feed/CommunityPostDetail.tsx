@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle } from 'react-icons/fi';
+import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
 import jwtAxios from '../../api/jwtAxios';
@@ -85,6 +85,10 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         }
       };
       fetchDetailsAndUpdateViewCount();
+    } else {
+      // 이미 조회수를 올렸거나, post.id가 없는 경우
+      // post 데이터가 이미 있다면 로딩을 바로 끝냅니다.
+      setIsLoadingDetails(false);
     }
     // 클린업 함수: 컴포넌트 언마운트 또는 postId 변경 시 해당 postId 기록 삭제
     return () => {
@@ -326,7 +330,21 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
 // 2. 본문 영역 (Content)
 const PostContent = ({ post }: { post: Post }) => (
   <div className="mb-6">
-    <h1 className="text-2xl md:text-3xl font-extrabold text-foreground my-4">{post.title}</h1>
+    <div className="flex items-start justify-between gap-4 my-4">
+      <h1 className="text-2xl md:text-3xl font-extrabold text-foreground break-words flex-1">{post.title}</h1>
+      {/* 첨부 링크 영역 */}
+      {post.attachedUrls && Array.isArray(post.attachedUrls) && post.attachedUrls.length > 0 && post.attachedUrls[0].trim() !== '' && (
+        <a
+          href={post.attachedUrls[0].startsWith('http') ? post.attachedUrls[0] : `https://${post.attachedUrls[0]}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-2 bg-muted/50 rounded-lg border border-border/50 hover:bg-muted transition-colors shrink-0 mt-1"
+        >
+          <FiLink size={16} className="text-muted-foreground shrink-0" />
+          <span className="text-sm text-primary font-medium whitespace-nowrap">첨부 링크</span>
+        </a>
+      )}
+    </div>
     <div 
       className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-96 [&_img]:inline-block"
       dangerouslySetInnerHTML={{ __html: post.body || '' }}
@@ -338,6 +356,23 @@ const PostContent = ({ post }: { post: Post }) => (
         </span>
       ))}
     </div>
+    {post.attachedUrls && post.attachedUrls.length > 0 && (
+      <div className="mt-6 flex flex-col gap-2 p-4 bg-muted/20 rounded-xl border border-border/50">
+        <span className="text-sm font-semibold text-muted-foreground mb-1">첨부된 링크</span>
+        {post.attachedUrls.map((url, idx) => (
+          <a 
+            key={idx} 
+            href={url.startsWith('http') ? url : `https://${url}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80 hover:underline flex items-center gap-2 break-all"
+          >
+            <FiLink size={16} className="shrink-0" />
+            {url}
+          </a>
+        ))}
+      </div>
+    )}
   </div>
 );
 

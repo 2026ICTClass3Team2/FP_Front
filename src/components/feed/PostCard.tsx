@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark, FiAlertTriangle } from 'react-icons/fi';
+import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark, FiAlertTriangle, FiLink } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
 import ReportModal from '../common/ReportModal';
@@ -24,13 +24,14 @@ export interface Post {
   shareCount: number;
   
   isLiked: boolean;
-  liked?: boolean; // Jackson 직렬화 시 isLiked가 liked로 올 수 있음 대응
+  liked?: boolean;
   isDisliked: boolean;
   disliked?: boolean;
   isBookmarked: boolean;
   bookmarked?: boolean; 
   isAuthor: boolean;
-  author?: boolean;
+  author?: boolean; 
+  attachedUrls?: string[];
   thumbnailUrl?: string;
 }
 
@@ -239,8 +240,24 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
           </div>
         </div>
 
-        {/* 본문 영역: 오직 제목만 굵게 표시 */}
-        <h2 className="text-xl font-extrabold text-foreground leading-snug">{post.title}</h2>
+        {/* 본문 영역: 제목과 우측 첨부 링크 */}
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-xl font-extrabold text-foreground leading-snug break-words flex-1">{post.title}</h2>
+          
+          {/* 첨부 링크 영역 */}
+          {localPost.attachedUrls && Array.isArray(localPost.attachedUrls) && localPost.attachedUrls.length > 0 && localPost.attachedUrls[0].trim() !== '' && (
+            <a
+              href={localPost.attachedUrls[0].startsWith('http') ? localPost.attachedUrls[0] : `https://${localPost.attachedUrls[0]}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-lg border border-border/50 hover:bg-muted transition-colors shrink-0 mt-0.5"
+            >
+              <FiLink size={14} className="text-muted-foreground shrink-0" />
+              <span className="text-xs text-primary font-medium whitespace-nowrap">첨부 링크</span>
+            </a>
+          )}
+        </div>
 
         {/* 태그 영역 */}
         <div className="flex flex-wrap gap-2 mt-1">
@@ -251,6 +268,26 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
           ))}
         </div>
       </div> {/* 메인 컨텐츠 영역 끝 */}
+
+      {/* 첨부 링크 영역 */}
+      {localPost.attachedUrls && localPost.attachedUrls.length > 0 && (
+        <div className="flex flex-col gap-1.5 mt-2 p-3 bg-muted/20 border border-border/50 rounded-xl">
+          <span className="text-xs font-semibold text-muted-foreground">첨부된 링크</span>
+          {localPost.attachedUrls.map((url, idx) => (
+            <a 
+              key={idx} 
+              href={url.startsWith('http') ? url : `https://${url}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-blue-500 hover:text-blue-600 hover:underline flex items-center gap-1.5 truncate transition-colors"
+              onClick={(e) => e.stopPropagation()} // 클릭 시 모달창 열림 방지
+            >
+              <FiLink size={14} className="shrink-0" />
+              {url}
+            </a>
+          ))}
+        </div>
+      )}
 
       {/* 하단 액션 바 */}
       <div className="flex items-center justify-between pt-4 border-t border-border mt-2 text-muted-foreground">

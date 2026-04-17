@@ -17,7 +17,7 @@ const MyPageLayout = () => {
         ? 'border-primary text-primary'
         : 'border-transparent text-muted-foreground hover:text-foreground'
     }`;
-
+    
   return (
     <section className="max-w-[1200px] min-w-[900px] mx-auto w-full px-4 py-8 min-h-screen bg-background">
       {/* 1. 상단 타이틀 */}

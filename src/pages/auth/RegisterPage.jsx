@@ -393,7 +393,7 @@ const RegisterPage = () => {
           onToggle={handleTechStackToggle} 
         />
 
-        <div className="mt-6 text-center text-sm text-muted">
+        <div className="text-sm text-muted-foreground">
           이미 계정이 있으신가요? <Link to="/login" className="text-primary font-semibold hover:underline ml-1">로그인</Link>
         </div>
       </div>

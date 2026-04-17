@@ -1,11 +1,23 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Header from './Header'
 import { Outlet } from 'react-router-dom'
 import Footer from './Footer'
 import NavBar from '../sidebar/NavBar'
 import NoticeBar from '../sidebar/NoticeBar'
 import GlobalWriteButton from '../common/GlobalWriteButton'
+import useThemeStore from '../../../useThemeStore'
+
 function MainLayout() {
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (isDarkMode) {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  }, [isDarkMode]);
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       <NavBar />                    

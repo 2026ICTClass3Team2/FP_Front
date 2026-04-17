@@ -104,40 +104,40 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
   }, []);
 
   return (
-    <div className={`relative flex flex-col border border-gray-300 dark:border-gray-700 rounded-xl bg-transparent transition-shadow ${className}`}>
+    <div className={`relative flex flex-col border border-border rounded-xl bg-transparent transition-shadow ${className}`}>
       
       {/* 커스텀 툴바 */}
-      <div id={toolbarId} className="flex flex-wrap items-center gap-1 p-2 bg-transparent border-b border-gray-300 dark:border-gray-700 rounded-t-xl z-10" style={{ display: 'flex' }}>
+      <div id={toolbarId} className="flex flex-wrap items-center gap-1 p-2 bg-transparent border-b border-border rounded-t-xl z-10" style={{ display: 'flex' }}>
         <span className="ql-formats !mr-2">
           <span className="relative group inline-block">
             <button className="ql-bold"></button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">굵게</span>
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">굵게</span>
           </span>
           <span className="relative group inline-block">
             <button className="ql-code-block"></button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">코드 블록</span>
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">코드 블록</span>
           </span>
         </span>
         <span className="ql-formats !mr-2">
           <span className="relative group inline-block">
             <button className="ql-link"></button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">링크</span>
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">링크</span>
           </span>
         </span>
         <span className="ql-formats !mr-2">
           <span className="relative group inline-block">
             <button className="ql-image"></button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">이미지</span>
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">이미지</span>
           </span>
         </span>
         <span className="ql-formats">
           <button 
             type="button" 
             onClick={() => setIsStickerPickerOpen(prev => !prev)}
-            className="relative group !w-auto !p-1 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:text-blue-500 transition-colors" 
+            className="relative group !w-auto !p-1 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors" 
           >
             <FiSmile size={18} />
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">스티커</span>
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">스티커</span>
           </button>
         </span>
       </div>
@@ -159,16 +159,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
         <>
           {/* 외부 클릭 시 닫히도록 투명 배경 추가 */}
           <div className="fixed inset-0 z-40" onClick={() => setIsStickerPickerOpen(false)} />
-          <div className="absolute z-50 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-2xl p-4 right-2 top-14 w-72 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700 pb-3 mb-3">
-              <h4 className="font-bold text-gray-800 dark:text-gray-200 text-sm">이모티콘 목록</h4>
-              <button type="button" onClick={() => setIsStickerPickerOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg leading-none">
+        <div className="absolute z-50 bg-surface border border-border rounded-xl shadow-2xl p-4 right-2 top-14 w-72 animate-in fade-in zoom-in duration-200">
+          <div className="flex justify-between items-center border-b border-border pb-3 mb-3">
+            <h4 className="font-bold text-foreground text-sm">이모티콘 목록</h4>
+            <button type="button" onClick={() => setIsStickerPickerOpen(false)} className="text-muted-foreground hover:text-foreground text-lg leading-none">
                 &times;
               </button>
             </div>
             <div className="grid grid-cols-3 gap-3 max-h-[300px] overflow-y-auto">
               {STICKER_LIST.map((sticker) => (
-                <button key={sticker.id} type="button" onClick={() => handleStickerSelect(sticker.url)} className="w-full p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-600 focus:outline-none" title={sticker.name}>
+              <button key={sticker.id} type="button" onClick={() => handleStickerSelect(sticker.url)} className="w-full p-2 rounded-xl hover:bg-secondary transition-all border border-transparent hover:border-border focus:outline-none" title={sticker.name}>
                   <img src={sticker.url} alt={sticker.name} className="w-full h-auto object-contain drop-shadow-sm" />
                 </button>
               ))}

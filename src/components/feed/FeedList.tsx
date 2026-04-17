@@ -157,7 +157,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
 
   return (
     <div className="relative max-w-2xl mx-auto w-full pb-20 pt-4 px-4">
-      {error && <div className="text-center text-red-500 bg-red-50 p-4 rounded-xl mb-4">{error}</div>}
+      {error && <div className="text-center text-red-500 bg-red-500/10 p-4 rounded-xl mb-4">{error}</div>}
 
       <div className="flex flex-col gap-5">
         {posts.map((post) => (
@@ -177,12 +177,12 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
       </div>
 
       {posts.length === 0 && !isLoading && !error && (
-        <div className="text-center py-10 text-gray-500">작성된 게시글이 없습니다.</div>
+        <div className="text-center py-10 text-muted-foreground">작성된 게시글이 없습니다.</div>
       )}
 
       {/* 무한 스크롤 감지용 타겟 요소 */}
       <div ref={observerTarget} className="h-14 flex items-center justify-center mt-4">
-        {isLoading && <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
+        {isLoading && <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>}
       </div>
 
       {/* 상세 보기 모달 렌더링 */}

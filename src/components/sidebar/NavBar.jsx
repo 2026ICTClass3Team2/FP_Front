@@ -2,31 +2,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import useThemeStore from '../../../useThemeStore';
 
 const NavBar = () => {
   const [subscribedOpen, setSubscribedOpen] = useState(false);
   const [popularOpen, setPopularOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return document.documentElement.classList.contains('dark');
-  });
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useThemeStore();
 
   const handleLogout = async () => {
     await logout?.();
     navigate('/login');
-  };
-
-  const handleThemeToggle = () => {
-    const html = document.documentElement;
-    if (isDarkMode) {
-      html.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
-    setIsDarkMode(!isDarkMode);
   };
 
   return (
@@ -39,7 +26,7 @@ const NavBar = () => {
           <div className="w-9 h-9 bg-primary rounded-2xl flex items-center 
           justify-center text-2xl text-primary-foreground flex-shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" 
-            fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
+            fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
             className="lucide lucide-code-xml-icon lucide-code-xml"><path d="m18 16 4-4-4-4"/>
             <path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
           </div>
@@ -74,7 +61,7 @@ const NavBar = () => {
           </button>
 
           <button
-            onClick={handleThemeToggle}
+            onClick={toggleTheme}
             className="flex items-center justify-center px-3 py-2 bg-background border 
             border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors"
             title={isDarkMode ? '라이트 모드' : '다크 모드'}

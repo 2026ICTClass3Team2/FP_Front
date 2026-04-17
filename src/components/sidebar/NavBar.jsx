@@ -2,44 +2,31 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import useThemeStore from '../../../useThemeStore';
 
 const NavBar = () => {
   const [subscribedOpen, setSubscribedOpen] = useState(false);
   const [popularOpen, setPopularOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return document.documentElement.classList.contains('dark');
-  });
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useThemeStore();
 
   const handleLogout = async () => {
     await logout?.();
     navigate('/login');
   };
 
-  const handleThemeToggle = () => {
-    const html = document.documentElement;
-    if (isDarkMode) {
-      html.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
-    setIsDarkMode(!isDarkMode);
-  };
-
   return (
     <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0 select-none">
       {/* 1. 상단 프로필 구역 */}
       <div className="p-5 flex flex-col gap-4">
-        <Link to="/profile" className="flex items-center gap-3 
+        <Link to="/mypage" className="flex items-center gap-3 
         hover:bg-foreground/10 rounded-lg p-2 -m-2 transition-colors">
           {/* 프로필 이미지 placeholder (이미지와 동일한 파란색 느낌) */}
           <div className="w-9 h-9 bg-primary rounded-2xl flex items-center 
           justify-center text-2xl text-primary-foreground flex-shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" 
-            fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
+            fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
             className="lucide lucide-code-xml-icon lucide-code-xml"><path d="m18 16 4-4-4-4"/>
             <path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
           </div>
@@ -51,7 +38,7 @@ const NavBar = () => {
 
         {/* 포인트 버튼 및 테마 토글 - 나란히 배치 */}
         <div className="flex gap-2">
-          <button className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border 
+          <button className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 
           border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors">
             <span className="text-2xl">
                 <svg xmlns="http://www.w3.org/2000/svg" 
@@ -74,8 +61,8 @@ const NavBar = () => {
           </button>
 
           <button
-            onClick={handleThemeToggle}
-            className="flex items-center justify-center px-3 py-2 bg-background border 
+            onClick={toggleTheme}
+            className="flex items-center justify-center px-3 py-2 bg-background border-2 
             border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors"
             title={isDarkMode ? '라이트 모드' : '다크 모드'}
           >

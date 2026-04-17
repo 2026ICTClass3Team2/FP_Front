@@ -5,6 +5,7 @@ import CommentList from '../feed/CommentList';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
 
+//QnA 상세 모달 컴포넌트
 interface QnADetailModalProps {
   post: QnAPost;
   onClose: (updatedPost?: QnAPost) => void;
@@ -60,28 +61,37 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
   // Load post details and increment view count
   useEffect(() => {
+    let isCancelled = false;
+
     if (post?.qnaId && !viewCountIncrementedRef.current.has(post.qnaId)) {
       const fetchDetailsAndUpdateViewCount = async () => {
         setIsLoadingDetails(true);
         try {
           const response = await jwtAxios.get(`qna/${post.qnaId}`);
-          setLocalPost(response.data);
+          if (!isCancelled) {
+            setLocalPost(response.data);
+          }
         } catch (error) {
-          console.error("게시글 상세 정보 로딩 실패:", error);
-          alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
-          onClose(post);
+          if (!isCancelled) {
+            console.error("게시글 상세 정보 로딩 실패:", error);
+            alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
+            onClose(post);
+          }
         } finally {
-          setIsLoadingDetails(false);
-          viewCountIncrementedRef.current.add(post.qnaId);
+          if (!isCancelled) {
+            setIsLoadingDetails(false);
+            viewCountIncrementedRef.current.add(post.qnaId);
+          }
         }
       };
       fetchDetailsAndUpdateViewCount();
     }
     
     return () => {
+      isCancelled = true;
       if (post?.qnaId) viewCountIncrementedRef.current.delete(post.qnaId);
     };
-  }, [post?.qnaId, onClose]);
+  }, [post?.qnaId]);
 
   // Auto scroll to comment section
   useEffect(() => {
@@ -174,7 +184,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
   // Share (copy to clipboard)
   const handleShare = async () => {
-    const url = `${window.location.origin}/qna/${localPost.qnaId}`;
+    const url = `${window.location.origin}/qna?qnaId=${localPost.qnaId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('클립보드에 복사되었습니다.');

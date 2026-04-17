@@ -8,11 +8,13 @@ import MainFeed from '../pages/feed/MainFeed';
 import MyPageLayout from '../components/layouts/MyPageLayout';
 import ProfileCard from '../components/profile/ProfileCard';
 import QuestionBoard from '../pages/question/QuestionBoard';
-import QuestionDetail from '../pages/question/QuestionDetail';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ProtectedRoute from './ProtectedRoute';
 import OAuthCallback from '../pages/auth/OAuthCallback';
+import MyPostList from '../components/layouts/MyPostList';
+import MyBookmarkList from '../components/layouts/MyBookmarkList';
+import BlockList from '../components/profile/BlockList';
 
 const AppRouter = () => {
   return (
@@ -24,39 +26,39 @@ const AppRouter = () => {
         <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {/* 로그인된 사용자만 접근할 수 있는 영역 */}
-         <Route element={<ProtectedRoute />} />
+        <Route element={<ProtectedRoute />}>
           {/* Nested Routing */}
           {/* 메인 영역 */}
-          <Route element={<MainLayout />}>  
+          <Route element={<MainLayout />}>
             <Route index element={<MainFeed />} />
 
 
-          {/* 질문게시판 - 여기서 연결 */}
+          {/* 질문게시판 */}
           <Route path="qna" element={<QuestionBoard />} />
-          <Route path="qna/:qnaId" element={<QuestionDetail />} />
 
-            {/* 학습 페이지 - 여기서 연결 */}
+            {/* 학습 페이지 */}
             <Route path="study" element={<StudyPage />} />
 
 
-
-          <Route element={<MyPageLayout />}>
-            {/* 마이페이지 영역 */}
-            <Route path='profile'>
+            {/* 마이페이지 & 타인 프로필 영역 */}
+            <Route path="mypage" element={<MyPageLayout />}>
               <Route index element={<MyProfile />} />
+              <Route path="posts" element={<MyPostList />} />
+              <Route path="bookmarks" element={<MyBookmarkList />} />
+              <Route path='blocks' element={<BlockList />} />
+            </Route>
+            <Route path="user/:userId" element={<MyPageLayout />}>
+              <Route index element={<ProfileCard />} />
+              {/* 타인 프로필 정보 탭 라우트 추가 예정 */}
             </Route>
 
-              <Route path='user/:userId'>
-                <Route index element={<ProfileCard />} />
-              </Route>
-            </Route>
-          
             {/* 관리자 영역 */}
             <Route path='admin'>
               <Route index element={<AdminDashboard />} />
             </Route>
           </Route>
-      </Routes> 
+        </Route>
+      </Routes>
     </BrowserRouter>
   )
 }

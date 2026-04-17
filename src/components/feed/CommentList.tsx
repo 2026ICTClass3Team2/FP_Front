@@ -35,7 +35,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
     } finally {
       setIsLoading(false);
     }
-  }, [postId]);
+  }, [postId, resourcePath]);
 
   useEffect(() => {
     fetchComments();

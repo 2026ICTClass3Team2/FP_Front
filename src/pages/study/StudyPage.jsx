@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getChoseong } from 'es-hangul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -16,6 +16,9 @@ const StudyPage = () => {
     const [newLangName, setNewLangName] = useState("");
     const [selectedFile, setSelectedFile] = useState(null);
     const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+    // 추가: 버튼에 포커스를 주기 위한 Ref
+    const addButtonRef = useRef(null);
 
     const fetchDBData = async () => {
         setIsLoading(true);
@@ -65,7 +68,14 @@ const StudyPage = () => {
                     status: ori.is_translated ? "번역됨" : "원문",
                     language: resourceMap[ori.resource_id] || "미분류",
                 };
-            });
+            })
+                .filter(ch =>
+                    ch.title &&
+                    ch.title.trim() !== "" &&
+                    ch.title.trim() !== "/" &&
+                    ch.content &&
+                    ch.content.trim() !== ""
+                );
 
             setIncomingLanguages(resRaw.map(r => r.name));
             setIncomingChapters(chapters);
@@ -124,11 +134,33 @@ const StudyPage = () => {
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => setSelectedFile(event.target.result);
-            reader.readAsText(file);
+        if (!file) return;
+
+        // 1. 파일 확장자 추출 및 검사
+        const fileName = file.name.toLowerCase();
+        const isMdFile = fileName.endsWith('.md');
+
+        if (!isMdFile) {
+            alert("MD 파일(.md)만 업로드할 수 있습니다. 확장자를 확인해 주세요.");
+
+            // 중요: 잘못된 파일을 선택했을 때 input의 값을 비워줘야 합니다.
+            // 그래야 사용자가 다시 올바른 파일을 선택했을 때 'change' 이벤트가 정상 작동합니다.
+            e.target.value = "";
+            setSelectedFile(null);
+            return;
         }
+
+        // 2. MD 파일일 경우에만 읽기 시작
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setSelectedFile(event.target.result);
+
+            // 파일 로드 완료 후 '추가' 버튼으로 포커스 이동
+            if (addButtonRef.current) {
+                addButtonRef.current.focus();
+            }
+        };
+        reader.readAsText(file);
     };
 
     const handleAddLanguage = async () => {
@@ -199,7 +231,7 @@ const StudyPage = () => {
                         <input
                             type="text"
                             value={searchQuery}
-                            onChange={(e) => { setSearchQuery(e.target.value); setIsSearching(true); }}
+                            onChange={(e) => { setSearchQuery(e.target.value); setIsSearching(true); setActiveSuggestionIndex(-1); }}
                             onKeyDown={handleSearchKeyDown}
                             placeholder="검색..."
                             className="w-full h-14 pl-14 bg-background border-2 border-border rounded-2xl"
@@ -210,7 +242,9 @@ const StudyPage = () => {
                                     <button
                                         key={`search-item-${idx}-${item}`}
                                         onClick={() => handleItemSelect(item)}
-                                        className="w-full text-left px-6 py-4 hover:bg-secondary"
+                                        // 현재 선택된 인덱스일 경우 bg-secondary 강제 적용 (방향키 피드백)
+                                        className={`w-full text-left px-6 py-4 transition-colors ${activeSuggestionIndex === idx ? 'bg-secondary' : 'hover:bg-secondary'
+                                            }`}
                                     >
                                         {item}
                                     </button>
@@ -330,6 +364,7 @@ const StudyPage = () => {
                                         취소
                                     </button>
                                     <button
+                                        ref={addButtonRef}
                                         onClick={handleAddLanguage}
                                         className="flex-1 p-3 bg-primary text-white rounded-xl"
                                     >

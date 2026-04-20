@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const Header = () => {
   return (
-    <header className="h-16 border-b border-border bg-background flex items-center px-4 md:px-6 z-50 shrink-0">
+    <header className="h-16 border-b border-border bg-background flex items-center px-4 md:px-6 shrink-0">
       
       <Link to="/" className="flex items-center gap-3 min-w-[200px] text-foreground">
         {/* 앱 아이콘 */}

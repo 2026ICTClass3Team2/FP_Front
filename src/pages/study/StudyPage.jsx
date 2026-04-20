@@ -16,6 +16,7 @@ const StudyPage = () => {
     const [newLangName, setNewLangName] = useState("");
     const [selectedFile, setSelectedFile] = useState(null);
     const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 추가: 버튼에 포커스를 주기 위한 Ref
     const addButtonRef = useRef(null);
@@ -164,6 +165,9 @@ const StudyPage = () => {
     };
 
     const handleAddLanguage = async () => {
+        // 1. 이미 제출 중이면 중단 (연속 엔터 방지)
+        if (isSubmitting) return;
+
         if (!newLangName) return alert("언어 이름을 입력해주세요.");
         if (!selectedFile) return alert("MD 파일을 업로드해주세요.");
 
@@ -171,6 +175,9 @@ const StudyPage = () => {
             name: newLangName,
             content: selectedFile
         };
+
+        // 2. 제출 시작 시 상태를 true로 변경
+        setIsSubmitting(true);
 
         try {
             const res = await fetch("http://localhost:5679/webhook/add-language", {
@@ -193,6 +200,9 @@ const StudyPage = () => {
         } catch (error) {
             console.error("저장 실패:", error);
             alert("저장에 실패했습니다.");
+        } finally {
+            // 3. 성공하든 실패하든 처리가 끝났으므로 다시 false로 변경
+            setIsSubmitting(false);
         }
     };
 
@@ -303,37 +313,39 @@ const StudyPage = () => {
             </aside>
 
             {/* 메인 콘텐츠 */}
-            <main className="flex-1 overflow-y-auto p-16 pt-20 bg-background" onClick={() => setIsSearching(false)}>
-                {isAdmin && (
-                    <div className="mb-6 flex justify-end">
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="px-6 py-3 bg-primary text-white rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95"
-                        >
-                            언어 추가
-                        </button>
-                    </div>
-                )}
+            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background" onClick={() => setIsSearching(false)}>
+    {isAdmin && (
+        <div className="mb-6 flex justify-end">
+            <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-6 py-3 bg-primary text-white rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95"
+            >
+                언어 추가
+            </button>
+        </div>
+    )}
 
-                <div className="max-w-5xl ml-16">
-                    {selectedChapter ? (
-                        <article className="space-y-24">
-                            <header>
-                                <h1 className="text-4xl font-black">{selectedChapter.title}</h1>
-                            </header>
-                            <div className="min-h-[40rem] w-full bg-surface border-2 border-border rounded-[4rem] p-20 shadow-sm">
-                                <div className="text-xl leading-relaxed">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {selectedChapter.content}
-                                    </ReactMarkdown>
-                                </div>
-                            </div>
-                        </article>
-                    ) : (
-                        <div className="flex items-center justify-center h-96 text-gray-500">
-                            왼쪽에서 언어와 챕터를 선택해주세요.
-                        </div>
-                    )}
+    {/* max-w-5xl은 유지하되, ml-16 대신 mx-auto를 사용하여 중앙 정렬 */}
+    <div className="max-w-5xl mx-auto w-full"> 
+        {selectedChapter ? (
+            <article className="space-y-12 md:space-y-24">
+                <header>
+                    <h1 className="text-2xl md:text-4xl font-black break-words">{selectedChapter.title}</h1>
+                </header>
+                {/* 패딩(p)과 라운드(rounded)를 반응형으로 조절 */}
+                <div className="min-h-[30rem] md:min-h-[40rem] w-full bg-surface border-2 border-border rounded-[2rem] md:rounded-[4rem] p-6 md:p-12 lg:p-20 shadow-sm">
+                    <div className="text-base md:text-xl leading-relaxed prose prose-slate max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {selectedChapter.content}
+                        </ReactMarkdown>
+                    </div>
+                </div>
+            </article>
+        ) : (
+            <div className="flex items-center justify-center h-96 text-gray-500">
+                왼쪽에서 언어와 챕터를 선택해주세요.
+            </div>
+        )}
 
                     {isModalOpen && (
                         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -366,9 +378,13 @@ const StudyPage = () => {
                                     <button
                                         ref={addButtonRef}
                                         onClick={handleAddLanguage}
-                                        className="flex-1 p-3 bg-primary text-white rounded-xl"
+                                        disabled={isSubmitting} // 제출 중이면 클릭/엔터 막기
+                                        className={`flex-1 p-3 rounded-xl transition-colors ${isSubmitting
+                                            ? "bg-gray-400 cursor-not-allowed" // 비활성화 스타일
+                                            : "bg-primary text-white hover:bg-primary/90"
+                                            }`}
                                     >
-                                        추가
+                                        {isSubmitting ? "추가 중..." : "추가"}
                                     </button>
                                 </div>
                             </div>

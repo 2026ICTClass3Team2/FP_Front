@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getChoseong } from 'es-hangul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -16,6 +16,10 @@ const StudyPage = () => {
     const [newLangName, setNewLangName] = useState("");
     const [selectedFile, setSelectedFile] = useState(null);
     const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // 추가: 버튼에 포커스를 주기 위한 Ref
+    const addButtonRef = useRef(null);
 
     const fetchDBData = async () => {
         setIsLoading(true);
@@ -65,7 +69,14 @@ const StudyPage = () => {
                     status: ori.is_translated ? "번역됨" : "원문",
                     language: resourceMap[ori.resource_id] || "미분류",
                 };
-            });
+            })
+                .filter(ch =>
+                    ch.title &&
+                    ch.title.trim() !== "" &&
+                    ch.title.trim() !== "/" &&
+                    ch.content &&
+                    ch.content.trim() !== ""
+                );
 
             setIncomingLanguages(resRaw.map(r => r.name));
             setIncomingChapters(chapters);
@@ -124,14 +135,39 @@ const StudyPage = () => {
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => setSelectedFile(event.target.result);
-            reader.readAsText(file);
+        if (!file) return;
+
+        // 1. 파일 확장자 추출 및 검사
+        const fileName = file.name.toLowerCase();
+        const isMdFile = fileName.endsWith('.md');
+
+        if (!isMdFile) {
+            alert("MD 파일(.md)만 업로드할 수 있습니다. 확장자를 확인해 주세요.");
+
+            // 중요: 잘못된 파일을 선택했을 때 input의 값을 비워줘야 합니다.
+            // 그래야 사용자가 다시 올바른 파일을 선택했을 때 'change' 이벤트가 정상 작동합니다.
+            e.target.value = "";
+            setSelectedFile(null);
+            return;
         }
+
+        // 2. MD 파일일 경우에만 읽기 시작
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setSelectedFile(event.target.result);
+
+            // 파일 로드 완료 후 '추가' 버튼으로 포커스 이동
+            if (addButtonRef.current) {
+                addButtonRef.current.focus();
+            }
+        };
+        reader.readAsText(file);
     };
 
     const handleAddLanguage = async () => {
+        // 1. 이미 제출 중이면 중단 (연속 엔터 방지)
+        if (isSubmitting) return;
+
         if (!newLangName) return alert("언어 이름을 입력해주세요.");
         if (!selectedFile) return alert("MD 파일을 업로드해주세요.");
 
@@ -139,6 +175,9 @@ const StudyPage = () => {
             name: newLangName,
             content: selectedFile
         };
+
+        // 2. 제출 시작 시 상태를 true로 변경
+        setIsSubmitting(true);
 
         try {
             const res = await fetch("http://localhost:5679/webhook/add-language", {
@@ -161,6 +200,9 @@ const StudyPage = () => {
         } catch (error) {
             console.error("저장 실패:", error);
             alert("저장에 실패했습니다.");
+        } finally {
+            // 3. 성공하든 실패하든 처리가 끝났으므로 다시 false로 변경
+            setIsSubmitting(false);
         }
     };
 
@@ -199,7 +241,7 @@ const StudyPage = () => {
                         <input
                             type="text"
                             value={searchQuery}
-                            onChange={(e) => { setSearchQuery(e.target.value); setIsSearching(true); }}
+                            onChange={(e) => { setSearchQuery(e.target.value); setIsSearching(true); setActiveSuggestionIndex(-1); }}
                             onKeyDown={handleSearchKeyDown}
                             placeholder="검색..."
                             className="w-full h-14 pl-14 bg-background border-2 border-border rounded-2xl"
@@ -210,7 +252,9 @@ const StudyPage = () => {
                                     <button
                                         key={`search-item-${idx}-${item}`}
                                         onClick={() => handleItemSelect(item)}
-                                        className="w-full text-left px-6 py-4 hover:bg-secondary"
+                                        // 현재 선택된 인덱스일 경우 bg-secondary 강제 적용 (방향키 피드백)
+                                        className={`w-full text-left px-6 py-4 transition-colors ${activeSuggestionIndex === idx ? 'bg-secondary' : 'hover:bg-secondary'
+                                            }`}
                                     >
                                         {item}
                                     </button>
@@ -269,37 +313,39 @@ const StudyPage = () => {
             </aside>
 
             {/* 메인 콘텐츠 */}
-            <main className="flex-1 overflow-y-auto p-16 pt-20 bg-background" onClick={() => setIsSearching(false)}>
-                {isAdmin && (
-                    <div className="mb-6 flex justify-end">
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="px-6 py-3 bg-primary text-white rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95"
-                        >
-                            언어 추가
-                        </button>
-                    </div>
-                )}
+            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background" onClick={() => setIsSearching(false)}>
+    {isAdmin && (
+        <div className="mb-6 flex justify-end">
+            <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-6 py-3 bg-primary text-white rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95"
+            >
+                언어 추가
+            </button>
+        </div>
+    )}
 
-                <div className="max-w-5xl ml-16">
-                    {selectedChapter ? (
-                        <article className="space-y-24">
-                            <header>
-                                <h1 className="text-4xl font-black">{selectedChapter.title}</h1>
-                            </header>
-                            <div className="min-h-[40rem] w-full bg-surface border-2 border-border rounded-[4rem] p-20 shadow-sm">
-                                <div className="text-xl leading-relaxed">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {selectedChapter.content}
-                                    </ReactMarkdown>
-                                </div>
-                            </div>
-                        </article>
-                    ) : (
-                        <div className="flex items-center justify-center h-96 text-gray-500">
-                            왼쪽에서 언어와 챕터를 선택해주세요.
-                        </div>
-                    )}
+    {/* max-w-5xl은 유지하되, ml-16 대신 mx-auto를 사용하여 중앙 정렬 */}
+    <div className="max-w-5xl mx-auto w-full"> 
+        {selectedChapter ? (
+            <article className="space-y-12 md:space-y-24">
+                <header>
+                    <h1 className="text-2xl md:text-4xl font-black break-words">{selectedChapter.title}</h1>
+                </header>
+                {/* 패딩(p)과 라운드(rounded)를 반응형으로 조절 */}
+                <div className="min-h-[30rem] md:min-h-[40rem] w-full bg-surface border-2 border-border rounded-[2rem] md:rounded-[4rem] p-6 md:p-12 lg:p-20 shadow-sm">
+                    <div className="text-base md:text-xl leading-relaxed prose prose-slate max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {selectedChapter.content}
+                        </ReactMarkdown>
+                    </div>
+                </div>
+            </article>
+        ) : (
+            <div className="flex items-center justify-center h-96 text-gray-500">
+                왼쪽에서 언어와 챕터를 선택해주세요.
+            </div>
+        )}
 
                     {isModalOpen && (
                         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -330,10 +376,15 @@ const StudyPage = () => {
                                         취소
                                     </button>
                                     <button
+                                        ref={addButtonRef}
                                         onClick={handleAddLanguage}
-                                        className="flex-1 p-3 bg-primary text-white rounded-xl"
+                                        disabled={isSubmitting} // 제출 중이면 클릭/엔터 막기
+                                        className={`flex-1 p-3 rounded-xl transition-colors ${isSubmitting
+                                            ? "bg-gray-400 cursor-not-allowed" // 비활성화 스타일
+                                            : "bg-primary text-white hover:bg-primary/90"
+                                            }`}
                                     >
-                                        추가
+                                        {isSubmitting ? "추가 중..." : "추가"}
                                     </button>
                                 </div>
                             </div>

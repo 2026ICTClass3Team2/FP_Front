@@ -1,29 +1,33 @@
-import React from 'react'
-import Header from './Header'
-import { Outlet } from 'react-router-dom'
-import Footer from './Footer'
-import NavBar from '../sidebar/NavBar'
-import NoticeBar from '../sidebar/NoticeBar'
-import GlobalWriteButton from '../common/GlobalWriteButton'
+import React, { useState } from 'react';
+import Header from './Header';
+import { Outlet } from 'react-router-dom';
+import NavBar from '../sidebar/NavBar';
+import NoticeBar from '../sidebar/NoticeBar';
+import GlobalWriteButton from '../common/GlobalWriteButton';
+
 function MainLayout() {
+  // 🔴 스위치: true면 열림, false면 닫힘
+  const [isNoticeOpen, setIsNoticeOpen] = useState(true);
+
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       <NavBar />                    
       
-      <div className="flex-1 flex flex-col min-w-0 bg-background">  {/* bg-white → bg-background로만 통일 (색상 동일) */}
-        <Header />                
+      <div className="flex-1 flex flex-col min-w-0 bg-background">
+        {/* 🔴 Header에 클릭 시 실행할 함수(onMenuClick) 전달 */}
+        <Header onMenuClick={() => setIsNoticeOpen(!isNoticeOpen)} />                
+        
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scrollbar-hide">
           <Outlet />
-          
         </main>
       </div>
 
-      <NoticeBar />                 
+      {/* 🔴 NoticeBar에 현재 상태(isOpen) 전달 */}
+      <NoticeBar isOpen={isNoticeOpen} />                 
       
-      {/* Global write button with popup options */}
       <GlobalWriteButton />
     </div>
-  )
+  );
 }
 
-export default MainLayout
+export default MainLayout;

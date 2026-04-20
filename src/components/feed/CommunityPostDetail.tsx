@@ -356,23 +356,6 @@ const PostContent = ({ post }: { post: Post }) => (
         </span>
       ))}
     </div>
-    {post.attachedUrls && post.attachedUrls.length > 0 && (
-      <div className="mt-6 flex flex-col gap-2 p-4 bg-muted/20 rounded-xl border border-border/50">
-        <span className="text-sm font-semibold text-muted-foreground mb-1">첨부된 링크</span>
-        {post.attachedUrls.map((url, idx) => (
-          <a 
-            key={idx} 
-            href={url.startsWith('http') ? url : `https://${url}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-primary hover:text-primary/80 hover:underline flex items-center gap-2 break-all"
-          >
-            <FiLink size={16} className="shrink-0" />
-            {url}
-          </a>
-        ))}
-      </div>
-    )}
   </div>
 );
 

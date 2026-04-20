@@ -269,26 +269,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
         </div>
       </div> {/* 메인 컨텐츠 영역 끝 */}
 
-      {/* 첨부 링크 영역 */}
-      {localPost.attachedUrls && localPost.attachedUrls.length > 0 && (
-        <div className="flex flex-col gap-1.5 mt-2 p-3 bg-muted/20 border border-border/50 rounded-xl">
-          <span className="text-xs font-semibold text-muted-foreground">첨부된 링크</span>
-          {localPost.attachedUrls.map((url, idx) => (
-            <a 
-              key={idx} 
-              href={url.startsWith('http') ? url : `https://${url}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-blue-500 hover:text-blue-600 hover:underline flex items-center gap-1.5 truncate transition-colors"
-              onClick={(e) => e.stopPropagation()} // 클릭 시 모달창 열림 방지
-            >
-              <FiLink size={14} className="shrink-0" />
-              {url}
-            </a>
-          ))}
-        </div>
-      )}
-
       {/* 하단 액션 바 */}
       <div className="flex items-center justify-between pt-4 border-t border-border mt-2 text-muted-foreground">
         <div className="flex gap-4">

@@ -9,9 +9,20 @@ interface CommentListProps {
   commentCount?: number;
   onCommentCountChange?: (delta: number) => void;
   resourcePath?: string;
+  postAuthorUsername?: string;
+  postResolved?: boolean;
+  onAcceptAnswer?: (commentId: number) => Promise<void>;
 }
 
-const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onCommentCountChange, resourcePath = 'posts' }) => {
+const CommentList: React.FC<CommentListProps> = ({
+  postId,
+  commentCount = 0,
+  onCommentCountChange,
+  resourcePath = 'posts',
+  postAuthorUsername,
+  postResolved = false,
+  onAcceptAnswer,
+}) => {
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +46,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
     } finally {
       setIsLoading(false);
     }
-  }, [postId]);
+  }, [postId, resourcePath]);
 
   useEffect(() => {
     fetchComments();
@@ -87,19 +98,19 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
   };
 
   return (
-    <section className="w-full mt-10 pt-8 border-t border-gray-100">
+    <section className="w-full mt-10 pt-8 border-t border-border">
       {/* 메인 댓글 작성 폼 */}
-      {currentUser.username ? ( <CommentForm onSubmit={handleMainCommentSubmit} /> ) : ( <div className="p-4 mb-6 text-center bg-gray-50 border border-gray-200 rounded-xl"> <p className="text-sm text-gray-500"> 댓글을 작성하려면 <a href="/login" className="font-semibold text-blue-500 hover:underline">로그인</a>이 필요합니다. </p> </div> )}
+      {currentUser.username ? ( <CommentForm onSubmit={handleMainCommentSubmit} /> ) : ( <div className="p-4 mb-6 text-center bg-surface border border-border rounded-xl"> <p className="text-sm text-muted-foreground"> 댓글을 작성하려면 <a href="/login" className="font-semibold text-primary hover:underline">로그인</a>이 필요합니다. </p> </div> )}
 
-      <h3 className="text-lg font-bold text-gray-900 mt-8 mb-6 flex items-center gap-1.5">
-        댓글 <span className="text-blue-500">{commentCount}</span>
+      <h3 className="text-lg font-bold text-foreground mt-8 mb-6 flex items-center gap-1.5">
+        댓글 <span className="text-primary">{commentCount}</span>
       </h3>
 
-      {error && <div className="text-red-500 text-sm mb-4 p-4 bg-red-50 rounded-xl">{error}</div>}
+      {error && <div className="text-red-500 text-sm mb-4 p-4 bg-red-500/10 rounded-xl">{error}</div>}
 
       {isLoading && comments.length === 0 ? (
         <div className="flex justify-center py-10">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : comments.length > 0 ? (
         <div className="flex flex-col">
@@ -110,6 +121,9 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
               postId={postId}
               resourcePath={resourcePath}
               currentUser={currentUser}
+              postAuthorUsername={postAuthorUsername}
+              postResolved={postResolved}
+              onAcceptAnswer={onAcceptAnswer}
               onRefresh={fetchComments}
               onOptimisticDelete={handleOptimisticDelete}
               onCommentCountChange={onCommentCountChange}
@@ -121,7 +135,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
             {canExpand && (
               <button
                 onClick={handleExpandComments}
-                className="px-5 py-2 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-600 rounded-full transition-colors border border-gray-200 shadow-sm"
+                className="px-5 py-2 text-sm font-semibold text-muted-foreground bg-surface hover:bg-secondary hover:text-primary rounded-full transition-colors border border-border shadow-sm"
               >
                 댓글 더보기
               </button>
@@ -129,7 +143,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
             {canLoadMore && (
               <button
                 onClick={handleShowMoreComments}
-                className="px-5 py-2 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-600 rounded-full transition-colors border border-gray-200 shadow-sm"
+                className="px-5 py-2 text-sm font-semibold text-muted-foreground bg-surface hover:bg-secondary hover:text-primary rounded-full transition-colors border border-border shadow-sm"
               >
                 댓글 더보기
               </button>
@@ -137,7 +151,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
             {canCollapse && (
               <button
                 onClick={handleCollapseComments}
-                className="px-5 py-2 text-sm font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-600 rounded-full transition-colors border border-gray-200 shadow-sm"
+                className="px-5 py-2 text-sm font-semibold text-muted-foreground bg-surface hover:bg-secondary hover:text-primary rounded-full transition-colors border border-border shadow-sm"
               >
                 간략히
               </button>
@@ -145,7 +159,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId, commentCount = 0, onC
           </div>
         </div>
       ) : (
-        <div className="text-center py-10 text-gray-500">작성된 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</div>
+        <div className="text-center py-10 text-muted-foreground">작성된 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</div>
       )}
     </section>
   );

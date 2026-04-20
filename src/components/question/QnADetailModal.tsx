@@ -5,6 +5,7 @@ import CommentList from '../feed/CommentList';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
 
+//QnA 상세 모달 컴포넌트
 interface QnADetailModalProps {
   post: QnAPost;
   onClose: (updatedPost?: QnAPost) => void;
@@ -60,28 +61,42 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
   // Load post details and increment view count
   useEffect(() => {
+    let isCancelled = false;
+
     if (post?.qnaId && !viewCountIncrementedRef.current.has(post.qnaId)) {
       const fetchDetailsAndUpdateViewCount = async () => {
         setIsLoadingDetails(true);
         try {
           const response = await jwtAxios.get(`qna/${post.qnaId}`);
-          setLocalPost(response.data);
+          if (!isCancelled) {
+            const detailData = response.data || {};
+            setLocalPost({
+              ...detailData,
+              techStacks: detailData.techStacks ?? detailData.tags ?? post.techStacks ?? post.tags ?? [],
+              tags: detailData.tags ?? detailData.techStacks ?? post.tags ?? post.techStacks ?? [],
+            });
+          }
         } catch (error) {
-          console.error("게시글 상세 정보 로딩 실패:", error);
-          alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
-          onClose(post);
+          if (!isCancelled) {
+            console.error("게시글 상세 정보 로딩 실패:", error);
+            alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
+            onClose(post);
+          }
         } finally {
-          setIsLoadingDetails(false);
-          viewCountIncrementedRef.current.add(post.qnaId);
+          if (!isCancelled) {
+            setIsLoadingDetails(false);
+            viewCountIncrementedRef.current.add(post.qnaId);
+          }
         }
       };
       fetchDetailsAndUpdateViewCount();
     }
     
     return () => {
+      isCancelled = true;
       if (post?.qnaId) viewCountIncrementedRef.current.delete(post.qnaId);
     };
-  }, [post?.qnaId, onClose]);
+  }, [post?.qnaId]);
 
   // Auto scroll to comment section
   useEffect(() => {
@@ -183,6 +198,16 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
     }
   };
 
+  const handleAcceptAnswer = async (commentId: number) => {
+    // Expected backend endpoint for accepting an answer comment in QnA.
+    await jwtAxios.post(`qna/${localPost.qnaId}/comments/${commentId}/accept`);
+
+    setLocalPost(prev => ({
+      ...prev,
+      resolved: true,
+    }));
+  };
+
   if (isLoadingDetails) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -230,7 +255,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
         </button>
 
         {/* Author header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-3 pr-16">
           <div className="w-12 h-12 rounded-full bg-background text-foreground flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden border border-border">
             {localPost.authorProfileImageUrl ? (
               <img src={localPost.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
@@ -243,20 +268,20 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
             <span className="text-sm text-muted-foreground">@{localPost.username || 'unknown'}</span>
             <span className="text-xs text-muted-foreground mt-0.5">{formatTimeAgo(localPost.createdAt)}</span>
           </div>
-          
-          {/* Status badge */}
-          {localPost.resolved !== undefined && (
-            <div className="ml-auto">
-              <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${
-                localPost.resolved 
-                  ? 'bg-secondary text-foreground' 
-                  : 'bg-background text-muted-foreground border border-border'
-              }`}>
-                {localPost.resolved ? '해결됨' : '미해결'}
-              </span>
-            </div>
-          )}
         </div>
+
+        {/* Status badge */}
+        {localPost.resolved !== undefined && (
+          <div className="mb-6 mt-1">
+            <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${
+              localPost.resolved
+                ? 'bg-secondary text-foreground'
+                : 'bg-background text-muted-foreground border border-border'
+            }`}>
+              {localPost.resolved ? '해결됨' : '미해결'}
+            </span>
+          </div>
+        )}
 
         {/* Content */}
         <div className="mb-6">
@@ -340,6 +365,9 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
             postId={localPost.qnaId} 
             resourcePath="qna"
             commentCount={commentCount}
+            postAuthorUsername={localPost.username}
+            postResolved={localPost.resolved === true}
+            onAcceptAnswer={handleAcceptAnswer}
             onCommentCountChange={(delta) => setLocalPost(prev => ({ 
               ...prev, 
               commentCount: Math.max(0, (prev.commentCount ?? 0) + delta),

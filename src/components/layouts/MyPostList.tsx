@@ -68,24 +68,23 @@ const MyPostList = () => {
 
   // 모달이 닫힐 때 호출될 함수. 모달에서 변경된 데이터(조회수, 좋아요 등)를 리스트에 반영합니다.
   const handleModalClose = (updatedPost?: any) => {
+    setSelectedPost(null);
     if (updatedPost) {
       setPosts(prevPosts =>
         prevPosts.map(p => {
           // feed 게시글(postId) 또는 qna 게시글(qnaId)의 ID를 비교합니다.
           if (p.id === (updatedPost.postId || updatedPost.qnaId)) {
             // 기존 post 객체(p)를 기반으로 변경된 값만 업데이트합니다.
-            return {
-              ...p,
-              likeCount: updatedPost.likeCount ?? p.likeCount,
-              commentCount: updatedPost.commentCount ?? p.commentCount,
-              viewCount: updatedPost.viewCount ?? p.viewCount,
-            };
+            return { ...p, ...updatedPost, id: p.id };
           }
           return p;
         })
       );
+    } else {
+      // updatedPost가 없으면, 게시글이 삭제/숨김/차단 처리되었을 가능성이 있으므로
+      // 목록을 새로고침하여 최신 상태를 반영합니다.
+      fetchPosts();
     }
-    setSelectedPost(null);
   };
 
   return (
@@ -125,12 +124,12 @@ const MyPostList = () => {
       </div>
 
       {/* 게시글 리스트 렌더링 */}
-      {error && <div className="text-destructive text-center py-4 bg-destructive/10 rounded-2xl mb-4">{error}</div>}
+      {error && <div className="text-red-500 text-center py-4 bg-red-500/10 rounded-2xl mb-4">{error}</div>}
       
       {loading ? (
         <div className="text-center py-10 text-muted-foreground">목록을 불러오는 중입니다...</div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground bg-card border border-border rounded-3xl">
+        <div className="text-center py-12 text-muted-foreground bg-surface border border-border rounded-3xl">
           작성한 게시글이 없습니다.
         </div>
       ) : (

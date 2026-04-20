@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
-import Header from './Header';
-import { Outlet } from 'react-router-dom';
-import NavBar from '../sidebar/NavBar';
-import NoticeBar from '../sidebar/NoticeBar';
-import GlobalWriteButton from '../common/GlobalWriteButton';
-
+import React from 'react'
+import Header from './Header'
+import { Outlet } from 'react-router-dom'
+import Footer from './Footer'
+import NavBar from '../sidebar/NavBar'
+import NoticeBar from '../sidebar/NoticeBar'
+import GlobalWriteButton from '../common/GlobalWriteButton'
 function MainLayout() {
-  // 🔴 스위치: true면 열림, false면 닫힘
-  const [isNoticeOpen, setIsNoticeOpen] = useState(true);
-
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       <NavBar />                    
@@ -22,8 +19,7 @@ function MainLayout() {
         </main>
       </div>
 
-      {/* 🔴 NoticeBar에 현재 상태(isOpen) 전달 */}
-      <NoticeBar isOpen={isNoticeOpen} />                 
+      <NoticeBar />                 
       
       <GlobalWriteButton />
     </div>

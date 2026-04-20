@@ -134,6 +134,7 @@ const NoticeBar = ({ isOpen }) => {
     };
 
     return (
+<<<<<<< HEAD
         <aside className={`${isOpen ? 'w-80 opacity-100 border-l' : 'w-0 opacity-0 pointer-events-none'} transition-all duration-500 ease-in-out h-full bg-background overflow-hidden shrink-0`}>
             <div className="min-w-[320px] flex flex-col h-full">
                 <div className="p-10 pb-6 flex justify-between items-center">
@@ -154,6 +155,28 @@ const NoticeBar = ({ isOpen }) => {
                                     <span>{notice.date}</span>
                                     <span className="text-primary font-bold">{notice.views}</span>
                                 </div>
+=======
+        <aside className="w-80 border-l border-border flex flex-col h-full bg-background shrink-0">
+            <div className="p-10 pb-6">
+                <h2 className="text-2xl font-black tracking-tighter">공지사항</h2>
+            </div>
+            <div className="flex-1 flex flex-col gap-10 p-10 pt-0 overflow-y-auto scrollbar-hide">
+                {isLoading ? (
+                    <div className="text-sm text-muted-foreground animate-pulse text-center mt-10 font-bold">로딩 중...</div>
+                ) : (
+                    dynamicNotices.map((notice) => (
+                        <div 
+                            key={notice.id} 
+                            className="rounded-[32px] border border-border p-8 hover:bg-accent/40 transition-all cursor-pointer group shadow-sm"
+                            onClick={() => handleNoticeClick(notice)}
+                        >
+                            <span className="inline-block px-3 py-1 rounded-full bg-pink-50 text-pink-500 text-[11px] font-bold mb-5">{notice.tag}</span>
+                            <h3 className="font-bold text-xl mb-4 line-clamp-2 group-hover:text-primary transition-colors leading-tight">{notice.title}</h3>
+                            <p className="text-[14px] text-muted-foreground leading-relaxed line-clamp-2 mb-8 whitespace-pre-line">{notice.content}</p>
+                            <div className="flex justify-between items-center text-[12px] text-muted-foreground pt-6 border-t border-dashed">
+                                <span>{notice.date}</span>
+                                <span className="text-primary font-bold text-sm">{notice.views}</span>
+>>>>>>> 0bde3d95c6909148f24f17d34c33295382e2b3a4
                             </div>
                         ))
                     )}

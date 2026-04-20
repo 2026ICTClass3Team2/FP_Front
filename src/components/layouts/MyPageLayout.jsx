@@ -9,15 +9,7 @@ const MyPageLayout = () => {
   
   // userId가 없으면 마이페이지(내꺼)라고 판별합니다.
   const isMyPage = !userId; 
-  const navigate = useNavigate();
 
-  // 활성화된 탭 스타일을 지정하는 함수
-  const getNavLinkClass = ({ isActive }) =>
-    `pb-3 px-2 text-sm font-medium transition-colors border-b-2 ${
-      isActive
-        ? 'border-primary text-primary'
-        : 'border-transparent text-muted-foreground hover:text-foreground'
-    }`;
 
   // 활성화된 탭 스타일을 지정하는 함수
   const getNavLinkClass = ({ isActive }) =>

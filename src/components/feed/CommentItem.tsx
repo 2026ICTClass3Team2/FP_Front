@@ -5,7 +5,6 @@ import { CommentResponse } from './types';
 import CommentForm from './CommentForm';
 import { formatTimeAgo } from '../../utils/time';
 import ConfirmationModal from '../common/ConfirmationModal';
-import ReportModal from '../common/ReportModal';
 
 interface CommentItemProps {
   comment: CommentResponse;
@@ -19,6 +18,7 @@ interface CommentItemProps {
   onRefresh: () => void;
   onOptimisticDelete?: (commentId: number) => void;
   onCommentCountChange?: (delta: number) => void;
+  onReportRequest?: (type: 'post' | 'comment' | 'user', id: number, authorUserId?: number | null) => void;
 }
 
 // Helper to get all descendants of a comment in a flat list (depth-first)
@@ -43,6 +43,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onRefresh,
   onOptimisticDelete,
   onCommentCountChange,
+  onReportRequest,
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -50,18 +51,20 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isAcceptConfirmModalOpen, setIsAcceptConfirmModalOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for reply expansion and pagination
   const [isExpanded, setIsExpanded] = useState(false); // True if replies are expanded, false if brief
   const [visibleRepliesCount, setVisibleRepliesCount] = useState(10); // How many replies are visible when expanded
 
+  const isReported = comment.isReported || false;
+  const [showReportedContent, setShowReportedContent] = useState(false);
+
   const initialBriefCount = 0; // 대댓글 기본 숨김 처리
   const repliesChunkSize = 10; // Number of replies to add when "더 보기" is clicked
 
-  const currentUserId = currentUser?.userId ?? null;
-  const commentAuthorUserId = comment.authorUserId ?? null;
+  const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
+  const commentAuthorUserId = comment.authorUserId ?? comment.authorId ?? comment.author_id ?? comment.userId ?? comment.user_id ?? null;
   const isDeleted = comment.status === 'deleted';
   const isRootComment = depth === 0;
   const isQnaContext = resourcePath === 'qna';
@@ -235,25 +238,23 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.createdAt)}</span>
                 </div>
                 
-                {currentUserId !== null && (
-                  <div className="relative" ref={dropdownRef}>
-                    <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-secondary transition-colors">
-                      <FiMoreVertical size={16} />
-                    </button>
-                    {isDropdownOpen && (
-                      <div className="absolute right-0 mt-1 w-24 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
-                        {isAuthor ? (
-                          <>
-                            <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
-                            <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
-                          </>
-                        ) : (
-                          <button onClick={() => { setIsReportModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">신고</button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="relative" ref={dropdownRef}>
+                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-secondary transition-colors">
+                    <FiMoreVertical size={16} />
+                  </button>
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-1 w-24 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
+                      {isAuthor ? (
+                        <>
+                          <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
+                          <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
+                        </>
+                      ) : (
+                        <button onClick={() => { if(onReportRequest) onReportRequest('comment', comment.id, comment.authorUserId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">신고</button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {isEditing ? (
@@ -264,10 +265,27 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   isReply
                 />
               ) : (
-                <div 
-                  className="text-foreground text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-h-24 [&_img]:align-middle"
-                  dangerouslySetInnerHTML={{ __html: comment.content }}
-                />
+                isReported && !showReportedContent ? (
+                  <div className="flex items-center gap-2 mb-2 p-3 bg-surface border border-border rounded-xl">
+                    <p className="text-sm text-muted-foreground italic">신고한 댓글입니다.</p>
+                    <button
+                      onClick={() => setShowReportedContent(true)}
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      [내용 보기]
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div 
+                      className="text-foreground text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-h-24 [&_img]:align-middle"
+                      dangerouslySetInnerHTML={{ __html: comment.content }}
+                    />
+                    {isReported && showReportedContent && (
+                      <button onClick={() => setShowReportedContent(false)} className="text-xs font-semibold text-muted-foreground hover:underline mb-1">[숨기기]</button>
+                    )}
+                  </>
+                )
               )}
 
               <div className="flex items-center gap-4 mt-2 text-muted-foreground">
@@ -340,14 +358,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
         message="이 댓글을 채택하시겠습니까? 채택하면 질문이 해결 상태로 변경되고 포인트가 지급됩니다."
       />
 
-      <ReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        targetType="comment"
-        targetId={comment.id}
-        onSuccess={() => setIsReportModalOpen(false)}
-      />
-
       {/* Render replies only if it's a root comment */}
       {isRootComment && allReplies.length > 0 && (
         <div className="flex flex-col">
@@ -365,6 +375,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               onRefresh={onRefresh}
               onOptimisticDelete={onOptimisticDelete}
               onCommentCountChange={onCommentCountChange}
+              onReportRequest={onReportRequest}
             />
           ))}
           {/* Reply action buttons */}

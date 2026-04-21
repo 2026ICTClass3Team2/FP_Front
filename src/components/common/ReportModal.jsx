@@ -64,14 +64,13 @@ const ReportModal = ({ isOpen, onClose, targetType, targetId, onSuccess }) => {
 
     // 추가 옵션 적용
     if (isPostType) {
-      // 3. 게시물 신고 시 기본적으로 해당 게시물이 보이지 않도록 합니다.
       payload.blockPost = true;
-      // 체크박스 선택 시 해당 작성자의 모든 게시글이 안 보이게 합니다.
+      payload.blockUser = additionalAction;
+    } else if (targetType === 'comment') {
       payload.blockUser = additionalAction;
     } else if (targetType === 'user') {
       payload.blockUser = additionalAction;
     }
-    // comment의 경우 서버에 신고 후, 프론트에서 상태 조작으로 숨김 처리(onSuccess 호출 시)
 
     try {
       // API 호출 시 주소는 백엔드 명세에 맞춰 수정하세요
@@ -137,16 +136,21 @@ const ReportModal = ({ isOpen, onClose, targetType, targetId, onSuccess }) => {
             />
           </div>
 
-          {/* 3. & 5. 대상에 따른 추가 액션 (체크박스) */}
+          {/* 3. & 4. & 5. 대상에 따른 추가 액션 (체크박스) */}
           {(() => {
             const isPostType = ['post', 'feed', 'qna'].includes(targetType);
-            return (isPostType || targetType === 'user') && (
-            <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-xl cursor-pointer hover:bg-secondary transition-colors">
-              <input type="checkbox" checked={additionalAction} onChange={(e) => setAdditionalAction(e.target.checked)} className="w-5 h-5 rounded border-border text-red-600 focus:ring-red-500" />
-              <span className="text-sm font-semibold text-foreground">
-                {isPostType ? '이 작성자의 모든 게시글 차단하기' : '이 유저 차단하기 (게시글, 댓글 숨김)'}
-              </span>
-            </label>
+            const isCommentType = targetType === 'comment';
+            const isUserType = targetType === 'user';
+            if (!isPostType && !isCommentType && !isUserType) return null;
+            let label = '';
+            if (isPostType) label = '이 작성자의 모든 게시글 차단하기';
+            else if (isCommentType) label = '이 댓글 작성자 차단하기 (게시글, 댓글 숨김)';
+            else label = '이 유저 차단하기 (게시글, 댓글 숨김)';
+            return (
+              <label className="flex items-center gap-3 p-3 bg-surface border border-border rounded-xl cursor-pointer hover:bg-secondary transition-colors">
+                <input type="checkbox" checked={additionalAction} onChange={(e) => setAdditionalAction(e.target.checked)} className="w-5 h-5 rounded border-border text-red-600 focus:ring-red-500" />
+                <span className="text-sm font-semibold text-foreground">{label}</span>
+              </label>
             );
           })()}
 

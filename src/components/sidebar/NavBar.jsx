@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import useThemeStore from '../../../useThemeStore';
+import Modal from '../../components/common/Modal';
+import PointShopModal from '../../pages/shop/PointShopModal';
 
 const NavBar = () => {
   const [subscribedOpen, setSubscribedOpen] = useState(false);
@@ -10,6 +12,9 @@ const NavBar = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useThemeStore();
+
+
+  const [isShopOpen, setIsShopOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout?.();
@@ -25,10 +30,10 @@ const NavBar = () => {
           {/* 프로필 이미지 placeholder (이미지와 동일한 파란색 느낌) */}
           <div className="w-9 h-9 bg-primary rounded-2xl flex items-center 
           justify-center text-2xl text-primary-foreground flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" 
-            fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
-            className="lucide lucide-code-xml-icon lucide-code-xml"><path d="m18 16 4-4-4-4"/>
-            <path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="lucide lucide-code-xml-icon lucide-code-xml"><path d="m18 16 4-4-4-4" />
+              <path d="m6 8-4 4 4 4" /><path d="m14.5 4-5 16" /></svg>
           </div>
           <div className="flex flex-col">
             <span className="text-foreground font-semibold text-lg leading-none">{currentUser?.nickname || '닉네임'}</span>
@@ -38,26 +43,31 @@ const NavBar = () => {
 
         {/* 포인트 버튼 및 테마 토글 - 나란히 배치 */}
         <div className="flex gap-2">
-          <button className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 
-          border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors">
+          <button
+            onClick={() => setIsShopOpen(true)}
+            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 
+            border-border rounded-xl shadow-sm transition-all duration-200
+          hover:bg-muted/10 hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-md
+          active:scale-95"
+          >
             <span className="text-2xl">
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                  width="24" 
-                  height="24" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="#f0b100" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  className="lucide lucide-coins-icon lucide-coins">
-                  <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/>
-                  <path d="M15 6h1v4"/>
-                  <path d="m6.134 14.768.866-.5 2 3.464"/>
-                  <circle cx="16" cy="8" r="6"/>
-                </svg>
+              <svg xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#f0b100"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-coins-icon lucide-coins">
+                <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48" />
+                <path d="M15 6h1v4" />
+                <path d="m6.134 14.768.866-.5 2 3.464" />
+                <circle cx="16" cy="8" r="6" />
+              </svg>
             </span>
-            <span className="font-semibold text-foreground text-base">1250</span>
+            <span className="font-semibold text-foreground text-base">포인트샵</span>
           </button>
 
           <button
@@ -67,24 +77,24 @@ const NavBar = () => {
             title={isDarkMode ? '라이트 모드' : '다크 모드'}
           >
             {isDarkMode ? (
-              <svg className="w-5 h-5 text-foreground" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
+              <svg className="w-5 h-5 text-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
                 strokeLinejoin="round">
                 <circle cx="12" cy="12" r="5" />
                 <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 
                 12h6m6 0h6M4.22 19.78l4.24-4.24m2.12-2.12l4.24-4.24M19 12l.01.01" />
               </svg>
             ) : (
-              <svg className="w-5 h-5 text-foreground" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
+              <svg className="w-5 h-5 text-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
                 strokeLinejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
@@ -111,8 +121,8 @@ const NavBar = () => {
             stroke="currentColor"
             strokeWidth="2.5"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" 
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1v-5m10-10l2 
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1v-5m10-10l2 
             2m-2-2v10a1 1 0 01-1 1v-5m-6 0a1 1 0 001-1v5" />
           </svg>
           <span>홈</span>
@@ -132,9 +142,9 @@ const NavBar = () => {
             stroke="currentColor"
             strokeWidth="2.5"
           >
-            <path strokeLinecap="round" 
-            strokeLinejoin="round" 
-            d="M8 10h.01M12 10h.01M16 10h.01M9 
+            <path strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M8 10h.01M12 10h.01M16 10h.01M9 
             16H5a2 2 0 01-2-2V6a2 2 0 012-2 2 2 0 01-2-2 2 2 0 
             012-2 2 2 0 01-2-2z" />
           </svg>
@@ -155,9 +165,9 @@ const NavBar = () => {
             stroke="currentColor"
             strokeWidth="2.5"
           >
-            <path strokeLinecap="round" 
-            strokeLinejoin="round" 
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 
+            <path strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 
             5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 
             18 7.5 18 9.246 18 10.832 18.477 12 19.253zm0-13C13.168 
             5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 
@@ -175,9 +185,8 @@ const NavBar = () => {
           >
             구독한 채널
             <span
-              className={`text-lg leading-none transition-transform duration-200 ${
-                subscribedOpen ? 'rotate-180' : ''
-              }`}
+              className={`text-lg leading-none transition-transform duration-200 ${subscribedOpen ? 'rotate-180' : ''
+                }`}
             >
               ▾
             </span>
@@ -198,9 +207,8 @@ const NavBar = () => {
           >
             인기 채널
             <span
-              className={`text-lg leading-none transition-transform duration-200 ${
-                popularOpen ? 'rotate-180' : ''
-              }`}
+              className={`text-lg leading-none transition-transform duration-200 ${popularOpen ? 'rotate-180' : ''
+                }`}
             >
               ▾
             </span>
@@ -223,7 +231,7 @@ const NavBar = () => {
 
       {/* 하단 로그아웃 */}
       <div className="mt-auto p-4 border-t border-border">
-        <button 
+        <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center 
           gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-foreground/10 
@@ -243,6 +251,13 @@ const NavBar = () => {
           로그아웃
         </button>
       </div>
+      <Modal
+        isOpen={isShopOpen}
+        onClose={() => setIsShopOpen(false)}
+        title="포인트 상점"
+      >
+        <PointShopModal />
+      </Modal>
     </aside>
   );
 };

@@ -8,7 +8,7 @@ import ReportModal from '../common/ReportModal';
 
 interface CommunityPostDetailProps {
   post: Post;
-  onClose: (updatedPost?: Post, wasBlocked?: boolean) => void;
+  onClose: (updatedPost?: Post) => void;
   autoScrollToComment?: boolean;
 }
 
@@ -19,8 +19,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   const commentSectionRef = useRef<HTMLDivElement>(null); // 스크롤 타겟용 Ref
   const backdropClickRef = useRef(false); // 배경 클릭 여부 추적용 Ref
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment' | 'user', id: number, authorUserId?: number | null } | null>(null);
-  const commentListRef = useRef<any>(null);
+  const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment' | 'user', id: number } | null>(null);
 
   const handleClose = () => {
     onClose(localPost);
@@ -107,34 +106,26 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
     }
   }, [isLoadingDetails, autoScrollToComment]);
 
-  const openReportModal = (type: 'post' | 'comment' | 'user', id: number, authorUserId?: number | null) => {
-    setReportTarget({ type, id, authorUserId });
+  const openReportModal = (type: 'post' | 'comment' | 'user', id: number) => {
+    setReportTarget({ type, id });
     setIsReportModalOpen(true);
   };
 
-  // 차단된 유저가 현재 게시글의 작성자인지 확인하여 모달을 닫는 핸들러
+  // 댓글에서 유저를 차단했을 때: 차단된 유저가 이 게시글 작성자이면 모달을 닫아 피드에서 제거
   const handleBlockUserFromComment = (blockedUserId: number) => {
     if (localPost.authorUserId != null && localPost.authorUserId === blockedUserId) {
-      onClose(undefined, true); // 차단으로 인해 닫힘을 알림 (FeedList에서 refresh 하도록)
+      onClose();
     }
   };
 
   const handleReportSuccess = (reportData: any) => {
     // 게시글 자체를 신고했거나, 작성자를 차단했다면 모달을 닫고 부모에게 리프레시를 위임합니다.
-    if (reportData.targetType.toUpperCase() === 'POST') {
+    if (reportData.targetType.toUpperCase() === 'POST' || reportData.additionalAction) {
       // 부모 컴포넌트(FeedList 등)에서 이 게시글을 목록에서 제거하거나,
       // 전체 목록을 새로고침하도록 onClose를 호출합니다. (updatedPost 없이)
-      onClose(undefined, reportData.additionalAction);
-    } else if (reportData.targetType.toUpperCase() === 'COMMENT') {
-      setIsReportModalOpen(false);
-      if (reportData.additionalAction && reportTarget?.authorUserId) {
-        // 댓글 작성자를 차단한 경우, CommentList 내부의 상태 업데이트 함수 호출
-        commentListRef.current?.handleBlockUser(reportTarget.authorUserId);
-      } else if (reportTarget?.id) {
-        // 유저 차단 없이 댓글만 신고한 경우, 해당 댓글만 숨김 처리
-        commentListRef.current?.handleReportComment(reportTarget.id);
-      }
+      onClose();
     } else {
+      // 댓글만 신고된 경우, CommentList가 내부적으로 re-render 하므로 모달만 닫습니다.
       setIsReportModalOpen(false);
     }
   };
@@ -288,11 +279,10 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         
         {/* 댓글 리스트 컴포넌트 (여기로 스크롤 이동) */}
         <div ref={commentSectionRef}>
-          <CommentList 
-            ref={commentListRef}
-            postId={localPost.postId} 
+          <CommentList
+            postId={localPost.postId}
             commentCount={localPost.commentCount || 0}
-            onCommentCountChange={(delta) => 
+            onCommentCountChange={(delta) =>
               setLocalPost(prev => ({ ...prev, commentCount: Math.max(0, (prev.commentCount || 0) + delta) }))
             }
             onReportRequest={openReportModal}
@@ -348,6 +338,12 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
 // 2. 본문 영역 (Content)
 const PostContent = ({ post }: { post: Post }) => (
   <div className="mb-6">
+    {/* 썸네일 이미지 */}
+    {post.thumbnailUrl && (
+      <div className="w-full rounded-2xl overflow-hidden border border-border mb-4">
+        <img src={post.thumbnailUrl} alt="썸네일" className="w-full max-h-80 object-cover" />
+      </div>
+    )}
     <div className="flex items-start justify-between gap-4 my-4">
       <h1 className="text-2xl md:text-3xl font-extrabold text-foreground break-words flex-1">{post.title}</h1>
       {/* 첨부 링크 영역 */}

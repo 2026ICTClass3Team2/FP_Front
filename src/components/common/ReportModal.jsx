@@ -50,6 +50,7 @@ const ReportModal = ({ isOpen, onClose, targetType, targetId, onSuccess }) => {
     // 백엔드 Enum에 맞게 targetType을 변환 (e.g. 'comment' -> 'comments', 대문자 변환 제거)
     const getApiTargetType = (type) => {
       if (type === 'comment') return 'comments';
+      if (type === 'feed' || type === 'qna') return 'post';
       return type; // 'post', 'user'는 그대로 사용
     };
 

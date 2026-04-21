@@ -259,6 +259,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
           )}
         </div>
 
+        {/* 썸네일 이미지 */}
+        {localPost.thumbnailUrl && (
+          <div className="w-full rounded-xl overflow-hidden border border-border">
+            <img src={localPost.thumbnailUrl} alt="썸네일" className="w-full max-h-60 object-cover" />
+          </div>
+        )}
+
         {/* 태그 영역 */}
         <div className="flex flex-wrap gap-2 mt-1">
           {tags.map((tag, idx) => (

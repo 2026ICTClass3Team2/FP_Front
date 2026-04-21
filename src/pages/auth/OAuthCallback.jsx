@@ -24,7 +24,7 @@ const OAuthCallback = () => {
         sessionStorage.removeItem('redirectUrl');
         window.location.href = redirectUrl;
       } else {
-        navigate('/', { replace: true });
+        window.location.replace('/');
       }
     } else {
       alert('로그인에 실패했습니다.');

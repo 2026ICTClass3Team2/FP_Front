@@ -190,14 +190,14 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
         <CommunityPostDetail
           post={selectedPost}
           autoScrollToComment={autoScrollToComment}
-          onClose={(updatedPost?: Post) => {
+          onClose={(updatedPost?: Post, wasBlocked: boolean = false) => {
             if (updatedPost) {
               setPosts(prevPosts =>
                 prevPosts.map(p => (p.postId === updatedPost.postId ? updatedPost : p))
               );
             } else {
-              // updatedPost가 없으면, 게시글이 숨김/차단 처리되었을 수 있으므로 목록을 새로고침합니다.
-              ref.current?.refresh();
+              // updatedPost가 없거나 차단(wasBlocked)으로 인해 닫힌 경우 피드를 새로고침
+              if (wasBlocked || !updatedPost) ref.current?.refresh();
             }
             setSelectedPost(null);
             setAutoScrollToComment(false);

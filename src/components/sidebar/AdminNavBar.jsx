@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import useThemeStore from '../../../useThemeStore';
 import { FiHome, FiMessageCircle, FiBookOpen, FiPlus, FiLogOut, FiMoon, FiSun } from 'react-icons/fi';
 import CreateChannelModal from '../channel/CreateChannelModal';
+import PointShopAdminModal from '../../pages/shop/PointShopAdminModal';
 
 const AdminNavBar = () => {
   const { currentUser, logout } = useAuth();
@@ -11,6 +12,7 @@ const AdminNavBar = () => {
   const location = useLocation();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
+  const [isPointShopOpen, setIsPointShopOpen]         = useState(false);
 
   const getNavClass = (path, isExact = false) => {
     const isActive = isExact 
@@ -46,8 +48,12 @@ const AdminNavBar = () => {
         </Link>
 
         <div className="flex gap-2">
-          <button className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors">
-            <span className="text-2xl">
+          <button
+            onClick={() => setIsPointShopOpen(true)}
+            title="포인트 샵 관리"
+            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm transition-all duration-150 hover:border-foreground/30 hover:bg-foreground/5 group"
+          >
+            <span className="transition-transform duration-150 group-hover:scale-110">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="none" stroke="#f0b100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/>
@@ -55,7 +61,7 @@ const AdminNavBar = () => {
                 <circle cx="16" cy="8" r="6"/>
               </svg>
             </span>
-            <span className="font-semibold text-foreground text-base">무제한</span>
+            <span className="font-semibold text-foreground text-base">무한대</span>
           </button>
 
           <button
@@ -113,7 +119,12 @@ const AdminNavBar = () => {
       <CreateChannelModal
         isOpen={isCreateChannelOpen}
         onClose={() => setIsCreateChannelOpen(false)}
-        onSuccess={() => {}} // 관리자 네비게이션에는 채널 목록이 없으므로 빈 함수 전달
+        onSuccess={() => {}}
+      />
+
+      <PointShopAdminModal
+        isOpen={isPointShopOpen}
+        onClose={() => setIsPointShopOpen(false)}
       />
 
       {/* 하단 로그아웃 */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import jwtAxios from '../../api/jwtAxios';
 import { useAuth } from '../../components/sidebar/AuthContext';
 import { FiUsers, FiAlertTriangle, FiMessageSquare, FiMonitor, FiFileText, FiHelpCircle } from 'react-icons/fi';
 import UserManagementTab from './UserManagementTab';
@@ -20,9 +20,7 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('http://localhost:8090/admin/stats', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await jwtAxios.get('admin/stats');
       setStats(response.data);
     } catch (error) {
       console.error('Failed to fetch admin stats:', error);

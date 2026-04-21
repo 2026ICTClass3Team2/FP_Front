@@ -373,6 +373,7 @@ const PostContent = ({ post }: { post: Post }) => (
   </div>
 );
 
+
 // 3. 상호작용 버튼 영역 (Actions)
 const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare }: { post: Post, onLike: () => void, onDislike: () => void, onBookmark: () => void, onShare: () => void }) => {
   const buttonClass = "relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0";

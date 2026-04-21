@@ -330,6 +330,12 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
 // 2. 본문 영역 (Content)
 const PostContent = ({ post }: { post: Post }) => (
   <div className="mb-6">
+    {/* 썸네일 이미지 */}
+    {post.thumbnailUrl && (
+      <div className="w-full rounded-2xl overflow-hidden border border-border mb-4">
+        <img src={post.thumbnailUrl} alt="썸네일" className="w-full max-h-80 object-cover" />
+      </div>
+    )}
     <div className="flex items-start justify-between gap-4 my-4">
       <h1 className="text-2xl md:text-3xl font-extrabold text-foreground break-words flex-1">{post.title}</h1>
       {/* 첨부 링크 영역 */}

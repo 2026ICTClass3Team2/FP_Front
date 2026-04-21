@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import jwtAxios from '../../api/jwtAxios';
 import { FiImage, FiX } from 'react-icons/fi';
 import { Post } from './PostCard';
@@ -33,20 +34,26 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
     }
   }, [postToEdit]);
 
-  // 파일 업로드 처리
+  // 파일 업로드 처리 (S3 presigned URL 방식)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     setIsUploading(true);
     try {
-      const response = await jwtAxios.post('upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      // 1. 백엔드에서 presigned URL과 public URL 발급
+      const presignedRes = await jwtAxios.get('s3/presigned-url', {
+        params: { filename: file.name },
       });
-      setThumbnailUrl(response.data.url); // API 스펙에 맞춰 객체의 url 필드 참조
+      const { presignedUrl, publicUrl } = presignedRes.data;
+
+      // 2. 파일을 S3에 직접 PUT 업로드
+      await axios.put(presignedUrl, file, {
+        headers: { 'Content-Type': file.type },
+      });
+
+      // 3. 공개 URL을 썸네일로 설정
+      setThumbnailUrl(publicUrl);
     } catch (err) {
       alert('파일 업로드에 실패했습니다.');
     } finally {

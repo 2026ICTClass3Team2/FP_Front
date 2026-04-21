@@ -360,7 +360,7 @@ const PostContent = ({ post }: { post: Post }) => (
       )}
     </div>
     <div 
-      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-96 [&_img]:inline-block"
+      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-28 [&_img]:inline-block [&_img]:align-middle [&_img]:mx-1"
       dangerouslySetInnerHTML={{ __html: post.body || '' }}
     />
     <div className="flex flex-wrap gap-2">

@@ -244,6 +244,13 @@ const NavBar = () => {
           로그아웃
         </button>
       </div>
+      <Modal
+        isOpen={isShopOpen}
+        onClose={() => setIsShopOpen(false)}
+        title="포인트 상점"
+      >
+        <PointShopModal />
+      </Modal>
     </aside>
   );
 };

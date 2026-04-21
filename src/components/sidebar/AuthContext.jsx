@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const testURI = import.meta.env.DEV ? 'http://localhost:8090/api/' : '/api/';
+  const backendBaseURL = import.meta.env.DEV ? 'http://localhost:8090' : '';
 
   // 앱 진입/새로고침 시 스토리지에서 인증 정보 복구
   useEffect(() => {
@@ -34,6 +35,7 @@ export const AuthProvider = ({ children }) => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
+      credentials: 'include',
       body: body.toString(),
     });
 
@@ -81,14 +83,21 @@ export const AuthProvider = ({ children }) => {
 
   // 로그아웃 로직
   const logout = async () => {
+    // 로컬 상태를 먼저 동기적으로 정리
     setCurrentUser(null);
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    sessionStorage.removeItem('redirectUrl'); // 사용자가 직접 로그아웃 시 저장된 돌아갈 주소 삭제
-    
-    // 라우터나 인터셉터가 주소를 다시 낚아채는 것을 방지하는 팻말 달기
+    sessionStorage.removeItem('redirectUrl');
     sessionStorage.setItem('isLoggingOut', 'true');
+
+    // 서버 측 refresh token 무효화 (실패해도 무관)
+    try {
+      await fetch(`${backendBaseURL}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (e) {}
   };
 
   const value = {

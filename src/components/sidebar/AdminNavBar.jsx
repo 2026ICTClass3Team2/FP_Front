@@ -25,7 +25,7 @@ const AdminNavBar = () => {
 
   const handleLogout = async () => {
     await logout?.();
-    navigate('/login');
+    window.location.replace('/login');
   };
 
   return (

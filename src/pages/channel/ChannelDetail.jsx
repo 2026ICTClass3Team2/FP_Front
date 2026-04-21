@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiAlertTriangle, FiUsers, FiX } from 'react-icons/fi';
+import { FiAlertTriangle, FiUsers, FiEdit2 } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import PostCard from '../../components/feed/PostCard';
 import CommunityPostDetail from '../../components/feed/CommunityPostDetail';
 import ReportModal from '../../components/common/ReportModal';
 import Modal from '../../components/common/Modal';
+import EditChannelModal from '../../components/channel/EditChannelModal';
 
 const ChannelDetail = () => {
   const { channelId } = useParams();
@@ -24,12 +25,21 @@ const ChannelDetail = () => {
   const isLoadingRef = useRef(false);
   const observerTarget = useRef(null);
 
+  const [myEmail, setMyEmail] = useState(null);
+
+  useEffect(() => {
+    jwtAxios.get('mypage/profile')
+      .then((res) => setMyEmail(res.data.email))
+      .catch(() => setMyEmail(null));
+  }, []);
+
   // 모달 상태
   const [selectedPost, setSelectedPost] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isSubscribersOpen, setIsSubscribersOpen] = useState(false);
   const [subscribers, setSubscribers] = useState([]);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const fetchChannelDetail = useCallback(async () => {
     try {
@@ -207,18 +217,29 @@ const ChannelDetail = () => {
 
         {/* 액션 버튼 */}
         <div className="flex items-center gap-2 mt-5">
-          {/* 구독 / 구독 취소 */}
-          <button
-            onClick={handleSubscribe}
-            disabled={subscribeLoading}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-50 ${
-              channel.subscribed
-                ? 'bg-muted text-foreground hover:bg-muted/80 border border-border'
-                : 'btn-primary'
-            }`}
-          >
-            {subscribeLoading ? '처리 중...' : channel.subscribed ? '구독 취소' : '구독하기'}
-          </button>
+          {myEmail && myEmail === channel.ownerEmail ? (
+            /* 소유자: 수정 버튼 */
+            <button
+              onClick={() => setIsEditOpen(true)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm border border-border text-foreground hover:bg-muted/5 transition-colors"
+            >
+              <FiEdit2 size={15} />
+              채널 수정
+            </button>
+          ) : (
+            /* 비소유자: 구독 / 구독 취소 */
+            <button
+              onClick={handleSubscribe}
+              disabled={subscribeLoading}
+              className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-50 ${
+                channel.subscribed
+                  ? 'bg-muted text-foreground hover:bg-muted/80 border border-border'
+                  : 'btn-primary'
+              }`}
+            >
+              {subscribeLoading ? '처리 중...' : channel.subscribed ? '구독 취소' : '구독하기'}
+            </button>
+          )}
 
           {/* 구독자 목록 */}
           <button
@@ -229,14 +250,16 @@ const ChannelDetail = () => {
             구독자
           </button>
 
-          {/* 신고 */}
-          <button
-            onClick={() => setIsReportOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-red-500 hover:border-red-300 transition-colors text-sm font-semibold"
-          >
-            <FiAlertTriangle size={16} />
-            신고
-          </button>
+          {/* 신고 (소유자 제외) */}
+          {(!myEmail || myEmail !== channel.ownerEmail) && (
+            <button
+              onClick={() => setIsReportOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-red-500 hover:border-red-300 transition-colors text-sm font-semibold"
+            >
+              <FiAlertTriangle size={16} />
+              신고
+            </button>
+          )}
         </div>
       </div>
 
@@ -281,6 +304,17 @@ const ChannelDetail = () => {
           }}
         />
       )}
+
+      {/* 채널 수정 모달 */}
+      <EditChannelModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        channel={channel}
+        onSuccess={() => {
+          setIsEditOpen(false);
+          fetchChannelDetail();
+        }}
+      />
 
       {/* 신고 모달 */}
       <ReportModal

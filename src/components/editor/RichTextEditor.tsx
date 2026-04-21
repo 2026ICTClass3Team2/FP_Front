@@ -43,11 +43,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
     const position = range ? range.index : editor.getLength();
 
     // 이미지 삽입 및 커서 이동
-    editor.insertEmbed(position, 'image', stickerUrl);
-    editor.setSelection(position + 1, 0);
+    editor.insertEmbed(position, 'image', stickerUrl, 'user');
+    
+    // 스티커 뒤에 공백을 추가하여 텍스트처럼 백스페이스로 자연스럽게 지워지도록 처리
+    editor.insertText(position + 1, ' ', 'user');
+    editor.setSelection(position + 2, 0);
     
     // 삽입 후 모달 닫기
     setIsStickerPickerOpen(false);
+    
+    // 포커스 유지 (모달이 닫힐 때 에디터가 포커스를 잃는 현상 방지)
+    setTimeout(() => editor.focus(), 0);
   };
 
   useEffect(() => {
@@ -151,7 +157,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
         modules={modules}
         readOnly={readOnly}
         placeholder={placeholder || "내용을 입력하세요..."}
-        className="bg-transparent [&_.ql-container]:!border-none [&_.ql-editor]:min-h-[120px] [&_.ql-editor]:p-4 [&_.ql-editor]:pb-20"
+        className="bg-transparent [&_.ql-container]:!border-none [&_.ql-editor]:min-h-[120px] [&_.ql-editor]:p-4 [&_.ql-editor]:pb-20 [&_.ql-editor_img]:max-h-28 [&_.ql-editor_img]:inline-block [&_.ql-editor_img]:align-middle [&_.ql-editor_img]:mx-1"
       />
 
       {/* 4. 스티커 선택 모달창 */}

@@ -10,5 +10,6 @@ export interface CommentResponse {
   authorNickname: string;
   authorProfilePicUrl: string | null;
   parentId: number | null;
+  isReported?: boolean;
   children: CommentResponse[];
 }

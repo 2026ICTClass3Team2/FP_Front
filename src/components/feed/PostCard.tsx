@@ -12,6 +12,7 @@ export interface Post {
   contentType?: string;
   tags: string[];
   
+  authorUserId?: number | null;
   authorProfileImageUrl?: string | null;
   authorNickname: string;
   authorUsername: string;

@@ -5,6 +5,7 @@ import useThemeStore from '../../../useThemeStore';
 import CreateChannelModal from '../channel/CreateChannelModal';
 import PointShopModal from '../../pages/shop/PointShopModal';
 import jwtAxios from '../../api/jwtAxios';
+import Modal from '../common/Modal';
 
 const NavBar = () => {
   const [subscribedOpen, setSubscribedOpen] = useState(true);

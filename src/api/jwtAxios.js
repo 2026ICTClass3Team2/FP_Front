@@ -21,7 +21,19 @@ const beforeReq = (config) => {
             response: { data: { message: '로그인이 필요한 서비스입니다.' } }
         });
     }
-    config.headers.Authorization = `Bearer ${token}`;
+    
+    // Ensure config.headers is an object
+    if (!config.headers) {
+        config.headers = {};
+    }
+    
+    // Safely set the Authorization header
+    if (typeof config.headers.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    
     return config;
 }
 

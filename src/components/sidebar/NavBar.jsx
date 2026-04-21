@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import useThemeStore from '../../../useThemeStore';
 import CreateChannelModal from '../channel/CreateChannelModal';
@@ -12,7 +12,6 @@ const NavBar = () => {
   const [subscribedChannels, setSubscribedChannels] = useState([]);
   const [popularChannels, setPopularChannels] = useState([]);
   const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useThemeStore();
 
   const fetchChannels = async () => {
@@ -29,12 +28,17 @@ const NavBar = () => {
   };
 
   useEffect(() => {
-    fetchChannels();
-  }, []);
+    if (currentUser) {
+      fetchChannels();
+    } else {
+      setSubscribedChannels([]);
+      setPopularChannels([]);
+    }
+  }, [currentUser]);
 
   const handleLogout = async () => {
     await logout?.();
-    navigate('/login');
+    window.location.replace('/login');
   };
 
   return (

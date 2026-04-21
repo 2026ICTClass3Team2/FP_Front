@@ -1,17 +1,16 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import useThemeStore from '../../../useThemeStore';
 import { FiHome, FiMessageCircle, FiBookOpen, FiPlus, FiLogOut, FiMoon, FiSun } from 'react-icons/fi';
 
 const AdminNavBar = () => {
   const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useThemeStore();
 
   const handleLogout = async () => {
     await logout?.();
-    navigate('/login');
+    window.location.replace('/login');
   };
 
   return (

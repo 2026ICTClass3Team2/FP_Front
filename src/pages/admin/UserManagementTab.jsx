@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import jwtAxios from '../../api/jwtAxios';
 import { useAuth } from '../../components/sidebar/AuthContext';
 import { FiSearch, FiAlertCircle, FiSlash, FiCheck, FiX } from 'react-icons/fi';
 
@@ -14,8 +14,7 @@ const UserManagementTab = ({ fetchStats }) => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:8090/admin/users', {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await jwtAxios.get('admin/users', {
         params: {
           keyword: keyword || undefined,
           status: statusFilter === 'all' ? undefined : statusFilter,
@@ -44,9 +43,7 @@ const UserManagementTab = ({ fetchStats }) => {
   const handleWarn = async (userId) => {
     if (!window.confirm('이 사용자에게 경고를 부여하시겠습니까? (3회 누적시 자동 정지)')) return;
     try {
-      await axios.post(`http://localhost:8090/admin/users/${userId}/warn`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await jwtAxios.post(`admin/users/${userId}/warn`);
       alert('경고가 부여되었습니다.');
       fetchUsers();
     } catch (error) {
@@ -63,11 +60,9 @@ const UserManagementTab = ({ fetchStats }) => {
       const releasedAt = new Date();
       releasedAt.setDate(releasedAt.getDate() + days);
 
-      await axios.post(`http://localhost:8090/admin/users/${suspendModal.id}/suspend`, {
+      await jwtAxios.post(`admin/users/${suspendModal.id}/suspend`, {
         reason,
         releasedAt: releasedAt.toISOString()
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       alert('정지 처리가 완료되었습니다.');
       setSuspendModal(null);

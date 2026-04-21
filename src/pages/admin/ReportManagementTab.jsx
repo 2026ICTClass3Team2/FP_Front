@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import jwtAxios from '../../api/jwtAxios';
 import { useAuth } from '../../components/sidebar/AuthContext';
 import { FiEye, FiCheck, FiX, FiTrash2, FiEyeOff } from 'react-icons/fi';
 
@@ -14,8 +14,7 @@ const ReportManagementTab = ({ fetchStats }) => {
 
   const fetchReports = async () => {
     try {
-      const response = await axios.get('http://localhost:8090/admin/reports', {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await jwtAxios.get('admin/reports', {
         params: {
           status: statusFilter === 'all' ? undefined : statusFilter,
           page,
@@ -38,9 +37,7 @@ const ReportManagementTab = ({ fetchStats }) => {
     setReportModal(report);
     setTargetDetails(null);
     try {
-      const response = await axios.get(`http://localhost:8090/admin/reports/${report.id}/target`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await jwtAxios.get(`admin/reports/${report.id}/target`);
       setTargetDetails(response.data);
     } catch (error) {
       console.error('Failed to fetch target details:', error);
@@ -49,9 +46,8 @@ const ReportManagementTab = ({ fetchStats }) => {
 
   const handleUpdateStatus = async (status) => {
     try {
-      await axios.put(`http://localhost:8090/admin/reports/${reportModal.id}/status`, null, {
-        params: { status },
-        headers: { Authorization: `Bearer ${token}` }
+      await jwtAxios.put(`admin/reports/${reportModal.id}/status`, null, {
+        params: { status }
       });
       alert('상태가 업데이트되었습니다.');
       setReportModal(null);
@@ -67,17 +63,11 @@ const ReportManagementTab = ({ fetchStats }) => {
     if (!window.confirm('해당 대상에 대해 조치를 취하시겠습니까?')) return;
     try {
       if (action === 'delete_comment') {
-        await axios.delete(`http://localhost:8090/admin/comments/${reportModal.targetId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await jwtAxios.delete(`admin/comments/${reportModal.targetId}`);
       } else if (action === 'hide_post') {
-        await axios.put(`http://localhost:8090/admin/posts/${reportModal.targetId}/hide`, null, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await jwtAxios.put(`admin/posts/${reportModal.targetId}/hide`);
       } else if (action === 'hide_channel') {
-        await axios.put(`http://localhost:8090/admin/channels/${reportModal.targetId}/hide`, null, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await jwtAxios.put(`admin/channels/${reportModal.targetId}/hide`);
       }
       alert('조치가 완료되었습니다.');
       handleUpdateStatus('resolved');

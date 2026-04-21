@@ -5,6 +5,7 @@ import { CommentResponse } from './types';
 import CommentForm from './CommentForm';
 import { formatTimeAgo } from '../../utils/time';
 import ConfirmationModal from '../common/ConfirmationModal';
+import ReportModal from '../common/ReportModal';
 
 interface CommentItemProps {
   comment: CommentResponse;
@@ -49,6 +50,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isAcceptConfirmModalOpen, setIsAcceptConfirmModalOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for reply expansion and pagination
@@ -58,8 +60,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const initialBriefCount = 0; // 대댓글 기본 숨김 처리
   const repliesChunkSize = 10; // Number of replies to add when "더 보기" is clicked
 
-  const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
-  const commentAuthorUserId = comment.authorUserId ?? comment.authorId ?? comment.author_id ?? comment.userId ?? comment.user_id ?? null;
+  const currentUserId = currentUser?.userId ?? null;
+  const commentAuthorUserId = comment.authorUserId ?? null;
   const isDeleted = comment.status === 'deleted';
   const isRootComment = depth === 0;
   const isQnaContext = resourcePath === 'qna';
@@ -233,15 +235,21 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.createdAt)}</span>
                 </div>
                 
-                {isAuthor && (
+                {currentUserId !== null && (
                   <div className="relative" ref={dropdownRef}>
                     <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-secondary transition-colors">
                       <FiMoreVertical size={16} />
                     </button>
                     {isDropdownOpen && (
                       <div className="absolute right-0 mt-1 w-24 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
-                        <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
-                        <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
+                        {isAuthor ? (
+                          <>
+                            <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
+                            <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
+                          </>
+                        ) : (
+                          <button onClick={() => { setIsReportModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">신고</button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -330,6 +338,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
         onConfirm={handleAcceptAnswer}
         title="답변 채택"
         message="이 댓글을 채택하시겠습니까? 채택하면 질문이 해결 상태로 변경되고 포인트가 지급됩니다."
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        targetType="comment"
+        targetId={comment.id}
+        onSuccess={() => setIsReportModalOpen(false)}
       />
 
       {/* Render replies only if it's a root comment */}

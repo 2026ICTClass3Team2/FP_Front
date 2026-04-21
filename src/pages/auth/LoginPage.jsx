@@ -42,7 +42,7 @@ const LoginPage = () => {
         sessionStorage.removeItem('redirectUrl');
         window.location.href = redirectUrl; // 상세 모달 등 원래 주소로 이동
       } else {
-        navigate('/', { replace: true });
+        window.location.replace('/');
       }
     } catch (err) {
       setError(err.message);

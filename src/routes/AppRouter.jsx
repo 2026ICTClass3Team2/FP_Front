@@ -15,6 +15,7 @@ import OAuthCallback from '../pages/auth/OAuthCallback';
 import MyPostList from '../components/layouts/MyPostList';
 import MyBookmarkList from '../components/layouts/MyBookmarkList';
 import BlockList from '../components/profile/BlockList';
+import ChannelDetail from '../pages/channel/ChannelDetail';
 
 const AppRouter = () => {
   return (
@@ -51,6 +52,9 @@ const AppRouter = () => {
               <Route index element={<ProfileCard />} />
               {/* 타인 프로필 정보 탭 라우트 추가 예정 */}
             </Route>
+
+            {/* 채널 상세 페이지 */}
+            <Route path="channels/:channelId" element={<ChannelDetail />} />
 
             {/* 관리자 영역 */}
             <Route path='admin'>

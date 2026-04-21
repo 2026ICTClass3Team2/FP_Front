@@ -3,12 +3,15 @@ import Header from './Header'
 import { Outlet } from 'react-router-dom'
 import Footer from './Footer'
 import NavBar from '../sidebar/NavBar'
+import AdminNavBar from '../sidebar/AdminNavBar'
 import NoticeBar from '../sidebar/NoticeBar'
 import GlobalWriteButton from '../common/GlobalWriteButton'
+import { useAuth } from '../sidebar/AuthContext'
 import useThemeStore from '../../../useThemeStore'
 
 function MainLayout() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     const html = document.documentElement;
@@ -20,7 +23,7 @@ function MainLayout() {
   }, [isDarkMode]);
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
-      <NavBar />                    
+      {currentUser?.role === 'admin' ? <AdminNavBar /> : <NavBar />}                    
       
       <div className="flex-1 flex flex-col min-w-0 bg-background">  {/* bg-white → bg-background로만 통일 (색상 동일) */}
         <Header />                

@@ -5,6 +5,7 @@ import { FiUsers, FiAlertTriangle, FiMessageSquare, FiMonitor, FiFileText, FiHel
 import UserManagementTab from './UserManagementTab';
 import ReportManagementTab from './ReportManagementTab';
 import SuggestionManagementTab from './SuggestionManagementTab';
+import ChannelManagementTab from './ChannelManagementTab';
 
 const AdminDashboard = () => {
   const { currentUser, token } = useAuth();
@@ -92,12 +93,19 @@ const AdminDashboard = () => {
           >
             건의사항 관리
           </button>
+          <button
+            className={`flex-1 py-4 font-semibold text-center transition-colors ${activeTab === 'channels' ? 'text-primary border-b-2 border-primary bg-primary/5' : 'text-muted-foreground hover:bg-muted/5'}`}
+            onClick={() => setActiveTab('channels')}
+          >
+            채널 관리
+          </button>
         </div>
 
         <div className="p-6">
           {activeTab === 'users' && <UserManagementTab fetchStats={fetchStats} />}
           {activeTab === 'reports' && <ReportManagementTab fetchStats={fetchStats} />}
           {activeTab === 'suggestions' && <SuggestionManagementTab fetchStats={fetchStats} />}
+          {activeTab === 'channels' && <ChannelManagementTab fetchStats={fetchStats} />}
         </div>
       </div>
     </div>

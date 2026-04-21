@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import jwtAxios from '../../api/jwtAxios';
 import TechStackModal from '../auth/TechStackModal';
 import RichTextEditor from '../editor/RichTextEditor';
+import { FiImage, FiX } from 'react-icons/fi';
 
 const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
   const [title, setTitle] = useState('');
@@ -12,6 +14,9 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
   const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
   const [attachedUrl, setAttachedUrl] = useState('');
   const [isUrlFocused, setIsUrlFocused] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   // 수정 모드일 때 기존 데이터로 폼 채우기
   useEffect(() => {
@@ -21,14 +26,44 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
       setTags(postToEdit.tags?.join(', ') || '');
       // attachedUrls가 배열로 올 수 있으므로, 첫 번째 요소만 문자열로 설정합니다.
       setAttachedUrl(Array.isArray(postToEdit.attachedUrls) && postToEdit.attachedUrls.length > 0 ? postToEdit.attachedUrls[0] : '');
+      setThumbnailUrl(postToEdit.thumbnailUrl || '');
     } else {
       // 새 글 작성 모드일 때 폼 초기화
       setTitle('');
       setContent('');
       setTags('');
       setAttachedUrl('');
+      setThumbnailUrl('');
     }
   }, [postToEdit]);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      console.log('[Upload] presigned-url 요청 시작:', file.name);
+      const presignedRes = await jwtAxios.get('s3/presigned-url', {
+        params: { filename: file.name },
+      });
+      const { presignedUrl, publicUrl } = presignedRes.data;
+      console.log('[Upload] presigned-url 수신:', { presignedUrl, publicUrl });
+
+      await axios.put(presignedUrl, file, {
+        headers: { 'Content-Type': file.type },
+      });
+      console.log('[Upload] S3 PUT 성공, publicUrl:', publicUrl);
+
+      setThumbnailUrl(publicUrl);
+    } catch (err) {
+      console.error('[Upload] 업로드 실패:', err?.response?.status, err?.response?.data || err?.message || err);
+      alert('파일 업로드에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const handleTechStackToggle = (tech) => {
     const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
@@ -68,11 +103,12 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
       body: content,
       contentType: 'feed',
       // channelId: 1, // 필요 시 설정
-      thumbnailUrl: null, // 백엔드 명세에 맞추기 위해 썸네일 기본값 추가
+      thumbnailUrl: thumbnailUrl || null,
       tags: tagArray, // 태그는 여전히 배열로 보냅니다.
       attachedUrls: attachedUrlValue, // 단일 문자열로 보냅니다.
       author: currentUser.username || currentUser.nickname || '익명'
     };
+    console.log('[FeedCard] 전송 postData:', postData);
 
     try {
       if (postToEdit) {
@@ -211,15 +247,45 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">썸네일 이미지 (선택)</label>
-        <div className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:bg-muted/30 transition-colors">
-          <span className="text-sm text-muted-foreground">클릭하여 이미지 업로드 (JPG, PNG 최대 10MB)</span>
-        </div>
+
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+
+        {!thumbnailUrl ? (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="w-full flex items-center justify-center gap-2 py-8 border-2 border-dashed border-border rounded-xl bg-background hover:bg-muted/30 transition-colors disabled:opacity-50"
+          >
+            <FiImage size={22} className="text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              {isUploading ? '업로드 중...' : '클릭하여 이미지 업로드 (JPG, PNG 최대 10MB)'}
+            </span>
+          </button>
+        ) : (
+          <div className="relative w-full rounded-xl overflow-hidden border border-border">
+            <img src={thumbnailUrl} alt="썸네일 미리보기" className="w-full max-h-64 object-cover" />
+            <button
+              type="button"
+              onClick={() => setThumbnailUrl('')}
+              className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+            >
+              <FiX size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
         <button type="button" onClick={onClose} className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-sm font-medium transition-colors">취소</button>
-        <button type="submit" disabled={loading} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg">
-          {loading ? (postToEdit ? '수정 중...' : '작성 중...') : (postToEdit ? '수정' : '작성')}
+        <button type="submit" disabled={loading || isUploading} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg">
+          {isUploading ? '이미지 업로드 중...' : loading ? (postToEdit ? '수정 중...' : '작성 중...') : (postToEdit ? '수정' : '작성')}
         </button>
       </div>
     </form>

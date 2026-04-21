@@ -14,9 +14,10 @@ const OAuthCallback = () => {
     const username = params.get('username') || '소셜유저'; 
     const userIdParam = params.get('userId') || params.get('user_id') || params.get('id');
     const userId = userIdParam ? Number(userIdParam) : null;
+    const role = params.get('role') || 'user';
 
     if (token) {
-      handleOAuthLogin(token, username, Number.isNaN(userId) ? null : userId);
+      handleOAuthLogin(token, username, Number.isNaN(userId) ? null : userId, role);
       
       const redirectUrl = sessionStorage.getItem('redirectUrl');
       if (redirectUrl) {

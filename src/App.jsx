@@ -9,12 +9,11 @@ function App() {
     const redirectUrl = sessionStorage.getItem('redirectUrl');
     const token = localStorage.getItem('token');
 
-    // 토큰이 있고 가려던 주소가 있다면 즉시 이동 (소셜 로그인 후 복구 등)
-    if (token && redirectUrl) {
+    // 토큰이 있고 가려던 안전한 주소가 있다면 이동 (OAuth 콜백 등 민감 경로 제외)
+    if (token && redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.startsWith('/oauth/')) {
       sessionStorage.removeItem('redirectUrl');
-      // AuthContext가 토큰을 세팅할 시간을 벌기 위해 약간 지연
       setTimeout(() => {
-        window.location.href = redirectUrl;
+        window.location.replace(redirectUrl);
       }, 150);
     }
   }, []);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import jwtAxios from '../../api/jwtAxios';
 import { useAuth } from '../../components/sidebar/AuthContext';
 import { FiEye, FiCheck, FiX } from 'react-icons/fi';
 
@@ -17,8 +17,7 @@ const SuggestionManagementTab = ({ fetchStats }) => {
       if (isSeenFilter === 'true') filterValue = true;
       if (isSeenFilter === 'false') filterValue = false;
 
-      const response = await axios.get('http://localhost:8090/admin/suggestions', {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await jwtAxios.get('admin/suggestions', {
         params: {
           isSeen: filterValue,
           page,
@@ -39,9 +38,7 @@ const SuggestionManagementTab = ({ fetchStats }) => {
 
   const handleMarkAsSeen = async (id) => {
     try {
-      await axios.put(`http://localhost:8090/admin/suggestions/${id}/seen`, null, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await jwtAxios.put(`admin/suggestions/${id}/seen`);
       setSuggestionModal(null);
       fetchSuggestions();
       fetchStats();

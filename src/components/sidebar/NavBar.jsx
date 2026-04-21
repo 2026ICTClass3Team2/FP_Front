@@ -3,14 +3,18 @@ import { Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import useThemeStore from '../../../useThemeStore';
 import CreateChannelModal from '../channel/CreateChannelModal';
+import PointShopModal from '../../pages/shop/PointShopModal';
 import jwtAxios from '../../api/jwtAxios';
+import Modal from '../common/Modal';
 
 const NavBar = () => {
   const [subscribedOpen, setSubscribedOpen] = useState(true);
   const [popularOpen, setPopularOpen] = useState(true);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
+  const [isPointShopOpen, setIsPointShopOpen] = useState(false);
   const [subscribedChannels, setSubscribedChannels] = useState([]);
   const [popularChannels, setPopularChannels] = useState([]);
+  const [currentPoint, setCurrentPoint] = useState(null);
   const { currentUser, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useThemeStore();
 
@@ -27,6 +31,16 @@ const NavBar = () => {
     }
   };
 
+  const fetchCurrentPoint = async () => {
+    if (!currentUser) return;
+    try {
+      const res = await jwtAxios.get('shop/my-points');
+      setCurrentPoint(res.data.points);
+    } catch {
+      setCurrentPoint(null);
+    }
+  };
+
   useEffect(() => {
     if (currentUser) {
       fetchChannels();
@@ -34,6 +48,10 @@ const NavBar = () => {
       setSubscribedChannels([]);
       setPopularChannels([]);
     }
+  }, [currentUser]);
+
+  useEffect(() => {
+    fetchCurrentPoint();
   }, [currentUser]);
 
   const handleLogout = async () => {
@@ -59,8 +77,12 @@ const NavBar = () => {
         </Link>
 
         <div className="flex gap-2">
-          <button className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors">
-            <span className="text-2xl">
+          <button
+            onClick={() => setIsPointShopOpen(true)}
+            title="포인트 샵"
+            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-yellow-50 dark:hover:bg-yellow-900/20 hover:border-yellow-400 transition-all group"
+          >
+            <span className="text-2xl group-hover:scale-110 transition-transform">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="none" stroke="#f0b100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/>
@@ -68,7 +90,9 @@ const NavBar = () => {
                 <circle cx="16" cy="8" r="6"/>
               </svg>
             </span>
-            <span className="font-semibold text-foreground text-base">1250</span>
+            <span className="font-semibold text-foreground text-base">
+              {currentPoint !== null ? currentPoint.toLocaleString() : '...'}
+            </span>
           </button>
 
           <button
@@ -208,6 +232,11 @@ const NavBar = () => {
         onSuccess={fetchChannels}
       />
 
+      <PointShopModal
+        isOpen={isPointShopOpen}
+        onClose={() => { setIsPointShopOpen(false); fetchCurrentPoint(); }}
+      />
+
       {/* 하단 로그아웃 */}
       <div className="mt-auto p-4 border-t border-border">
         <button
@@ -220,6 +249,13 @@ const NavBar = () => {
           로그아웃
         </button>
       </div>
+      <Modal
+        isOpen={isPointShopOpen}
+        onClose={() => setIsShopOpen(false)}
+        title="포인트 상점"
+      >
+        <PointShopModal />
+      </Modal>
     </aside>
   );
 };

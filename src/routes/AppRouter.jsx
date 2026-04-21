@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import MainLayout from '../components/layouts/MainLayout';
+import AdminLayout from '../components/layouts/AdminLayout';
 import StudyPage from '../pages/study/StudyPage';
 import MyProfile from '../pages/profile/MyProfile';
 import AdminDashboard from '../pages/admin/AdminDashboard';
@@ -34,8 +35,8 @@ const AppRouter = () => {
             <Route index element={<MainFeed />} />
 
 
-          {/* 질문게시판 */}
-          <Route path="qna" element={<QuestionBoard />} />
+            {/* 질문게시판 */}
+            <Route path="qna" element={<QuestionBoard />} />
 
             {/* 학습 페이지 */}
             <Route path="study" element={<StudyPage />} />
@@ -55,11 +56,11 @@ const AppRouter = () => {
 
             {/* 채널 상세 페이지 */}
             <Route path="channels/:channelId" element={<ChannelDetail />} />
+          </Route>
 
-            {/* 관리자 영역 */}
-            <Route path='admin'>
-              <Route index element={<AdminDashboard />} />
-            </Route>
+          {/* 관리자 영역 - MainLayout과 분리된 AdminLayout 적용 */}
+          <Route path='admin' element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
           </Route>
         </Route>
       </Routes>

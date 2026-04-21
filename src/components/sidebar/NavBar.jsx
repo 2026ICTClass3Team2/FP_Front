@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import useThemeStore from '../../../useThemeStore';
 import CreateChannelModal from '../channel/CreateChannelModal';
@@ -8,14 +8,14 @@ import jwtAxios from '../../api/jwtAxios';
 
 const NavBar = () => {
   const [subscribedOpen, setSubscribedOpen] = useState(true);
-  const [popularOpen, setPopularOpen] = useState(true);
+  const [popularOpen, setPopularOpen]       = useState(true);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
-  const [isPointShopOpen, setIsPointShopOpen] = useState(false);
-  const [subscribedChannels, setSubscribedChannels] = useState([]);
-  const [popularChannels, setPopularChannels] = useState([]);
+  const [isPointShopOpen, setIsPointShopOpen]         = useState(false);
+  const [subscribedChannels, setSubscribedChannels]   = useState([]);
+  const [popularChannels, setPopularChannels]         = useState([]);
   const [currentPoint, setCurrentPoint] = useState(null);
+
   const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useThemeStore();
 
   const fetchChannels = async () => {
@@ -26,7 +26,7 @@ const NavBar = () => {
       ]);
       setSubscribedChannels(subscribedRes.data);
       setPopularChannels(popularRes.data);
-    } catch (err) {
+    } catch {
       // 조용히 실패 처리
     }
   };
@@ -42,8 +42,13 @@ const NavBar = () => {
   };
 
   useEffect(() => {
-    fetchChannels();
-  }, []);
+    if (currentUser) {
+      fetchChannels();
+    } else {
+      setSubscribedChannels([]);
+      setPopularChannels([]);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     fetchCurrentPoint();
@@ -51,11 +56,18 @@ const NavBar = () => {
 
   const handleLogout = async () => {
     await logout?.();
-    navigate('/login');
+    window.location.replace('/login');
+  };
+
+  // 포인트샵 닫기: 유저 모달이 닫히면 포인트 갱신
+  const handleShopClose = () => {
+    setIsPointShopOpen(false);
+    fetchCurrentPoint();
   };
 
   return (
     <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0 select-none">
+
       {/* 1. 상단 프로필 구역 */}
       <div className="p-5 flex flex-col gap-4">
         <Link to="/mypage" className="flex items-center gap-3 hover:bg-foreground/10 rounded-lg p-2 -m-2 transition-colors">
@@ -66,22 +78,28 @@ const NavBar = () => {
             </svg>
           </div>
           <div className="flex flex-col">
-            <span className="text-foreground font-semibold text-lg leading-none">{currentUser?.nickname || '닉네임'}</span>
-            <span className="text-foreground text-sm mt-0.5">@{currentUser?.username || '사용자명'}</span>
+            <span className="text-foreground font-semibold text-lg leading-none">
+              {currentUser?.nickname || '닉네임'}
+            </span>
+            <span className="text-foreground text-sm mt-0.5">
+              @{currentUser?.username || '사용자명'}
+            </span>
           </div>
         </Link>
 
         <div className="flex gap-2">
+          {/* 포인트 / 포인트샵 버튼 */}
           <button
             onClick={() => setIsPointShopOpen(true)}
             title="포인트 샵"
-            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-yellow-50 dark:hover:bg-yellow-900/20 hover:border-yellow-400 transition-all group"
+            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm transition-all duration-150 hover:border-foreground/30 hover:bg-foreground/5 group"
           >
-            <span className="text-2xl group-hover:scale-110 transition-transform">
+            <span className="transition-transform duration-150 group-hover:scale-110">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="none" stroke="#f0b100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/>
-                <path d="M15 6h1v4"/><path d="m6.134 14.768.866-.5 2 3.464"/>
+                <path d="M15 6h1v4"/>
+                <path d="m6.134 14.768.866-.5 2 3.464"/>
                 <circle cx="16" cy="8" r="6"/>
               </svg>
             </span>
@@ -90,6 +108,7 @@ const NavBar = () => {
             </span>
           </button>
 
+          {/* 다크모드 토글 */}
           <button
             onClick={toggleTheme}
             className="flex items-center justify-center px-3 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors"
@@ -97,12 +116,12 @@ const NavBar = () => {
           >
             {isDarkMode ? (
               <svg className="w-5 h-5 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m2.12-2.12l4.24-4.24M19 12l.01.01" />
+                <circle cx="12" cy="12" r="5"/>
+                <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m2.12-2.12l4.24-4.24M19 12l.01.01"/>
               </svg>
             ) : (
               <svg className="w-5 h-5 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
               </svg>
             )}
           </button>
@@ -134,7 +153,7 @@ const NavBar = () => {
           <span>학습</span>
         </Link>
 
-        {/* 구독한 채널 - 스크롤 가능 */}
+        {/* 구독한 채널 */}
         <div className="pt-4 px-4">
           <button
             onClick={() => setSubscribedOpen(!subscribedOpen)}
@@ -150,11 +169,8 @@ const NavBar = () => {
                 <p className="text-xs text-muted-foreground pl-2 py-1">구독한 채널이 없습니다.</p>
               ) : (
                 subscribedChannels.map((ch) => (
-                  <Link
-                    key={ch.channelId}
-                    to={`/channels/${ch.channelId}`}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/5 transition-colors"
-                  >
+                  <Link key={ch.channelId} to={`/channels/${ch.channelId}`}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/5 transition-colors">
                     {ch.imageUrl ? (
                       <img src={ch.imageUrl} alt={ch.name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                     ) : (
@@ -170,7 +186,7 @@ const NavBar = () => {
           )}
         </div>
 
-        {/* 인기 채널 - 구독자 순 top 5 */}
+        {/* 인기 채널 */}
         <div className="pt-2 px-4">
           <button
             onClick={() => setPopularOpen(!popularOpen)}
@@ -186,11 +202,8 @@ const NavBar = () => {
                 <p className="text-xs text-muted-foreground pl-2 py-1">채널이 없습니다.</p>
               ) : (
                 popularChannels.map((ch, idx) => (
-                  <Link
-                    key={ch.channelId}
-                    to={`/channels/${ch.channelId}`}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/5 transition-colors"
-                  >
+                  <Link key={ch.channelId} to={`/channels/${ch.channelId}`}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/5 transition-colors">
                     <span className="text-xs font-bold text-muted-foreground w-4 flex-shrink-0">{idx + 1}</span>
                     {ch.imageUrl ? (
                       <img src={ch.imageUrl} alt={ch.name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
@@ -221,6 +234,7 @@ const NavBar = () => {
         </div>
       </nav>
 
+      {/* ── 모달 영역 ── */}
       <CreateChannelModal
         isOpen={isCreateChannelOpen}
         onClose={() => setIsCreateChannelOpen(false)}
@@ -229,7 +243,8 @@ const NavBar = () => {
 
       <PointShopModal
         isOpen={isPointShopOpen}
-        onClose={() => { setIsPointShopOpen(false); fetchCurrentPoint(); }}
+        onClose={handleShopClose}
+        currentUser={currentUser}
       />
 
       {/* 하단 로그아웃 */}
@@ -239,18 +254,11 @@ const NavBar = () => {
           className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-foreground/10 transition-all text-sm font-medium"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9" />
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/>
           </svg>
           로그아웃
         </button>
       </div>
-      <Modal
-        isOpen={isShopOpen}
-        onClose={() => setIsShopOpen(false)}
-        title="포인트 상점"
-      >
-        <PointShopModal />
-      </Modal>
     </aside>
   );
 };

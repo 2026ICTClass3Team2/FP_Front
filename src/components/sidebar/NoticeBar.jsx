@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import Modal from '../common/Modal';
-import axios from 'axios'; 
+import jwtAxios from '../../api/jwtAxios';
 
 const NoticeBar = () => {
     const [dynamicNotices, setDynamicNotices] = useState([]);
@@ -70,7 +70,7 @@ const NoticeBar = () => {
                 // 여기서 다른 게시글 데이터를 만지는 코드는 싹 다 지웠습니다.
                 pdfNotices.forEach(async (notice) => {
                     try {
-                        await axios.post("http://localhost:8090/api/notices/add", {
+                        await jwtAxios.post("notices/add", {
                             title: notice.title,
                             body: notice.content,
                             authorName: "관리자",

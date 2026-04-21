@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import { useAuth } from '../../components/sidebar/AuthContext';
 import { FiSearch, FiAlertCircle, FiSlash, FiCheck, FiX } from 'react-icons/fi';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 
 const UserManagementTab = ({ fetchStats }) => {
   const { token } = useAuth();
@@ -11,6 +12,7 @@ const UserManagementTab = ({ fetchStats }) => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [suspendModal, setSuspendModal] = useState(null);
+  const [warningModal, setWarningModal] = useState(null);
 
   const fetchUsers = async () => {
     try {
@@ -30,25 +32,24 @@ const UserManagementTab = ({ fetchStats }) => {
   };
 
   useEffect(() => {
-    fetchUsers();
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 300);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line
-  }, [page, statusFilter]);
+  }, [keyword, page, statusFilter]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setPage(0);
-    fetchUsers();
-  };
-
-  const handleWarn = async (userId) => {
-    if (!window.confirm('이 사용자에게 경고를 부여하시겠습니까? (3회 누적시 자동 정지)')) return;
+  const handleWarn = async () => {
+    if (!warningModal) return;
     try {
-      await jwtAxios.post(`admin/users/${userId}/warn`);
+      await jwtAxios.post(`admin/users/${warningModal.id}/warn`);
       alert('경고가 부여되었습니다.');
+      setWarningModal(null);
       fetchUsers();
     } catch (error) {
       console.error('Warn error:', error);
       alert('오류가 발생했습니다.');
+      setWarningModal(null);
     }
   };
 
@@ -76,7 +77,7 @@ const UserManagementTab = ({ fetchStats }) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-        <form onSubmit={handleSearch} className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input 
@@ -84,11 +85,13 @@ const UserManagementTab = ({ fetchStats }) => {
               placeholder="닉네임, 아이디, 이메일 검색" 
               className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={(e) => {
+                setKeyword(e.target.value);
+                setPage(0);
+              }}
             />
           </div>
-          <button type="submit" className="btn-primary px-4 py-2 rounded-xl text-sm whitespace-nowrap">검색</button>
-        </form>
+        </div>
 
         <select 
           className="w-full sm:w-auto px-4 py-2 bg-background border border-border rounded-xl focus:outline-none"
@@ -140,7 +143,7 @@ const UserManagementTab = ({ fetchStats }) => {
                 <td className="py-3 px-4 text-right">
                   <div className="flex justify-end gap-2">
                     <button 
-                      onClick={() => handleWarn(user.id)}
+                      onClick={() => setWarningModal(user)}
                       disabled={user.status !== 'active'}
                       className="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors disabled:opacity-50"
                       title="경고"
@@ -232,6 +235,17 @@ const UserManagementTab = ({ fetchStats }) => {
           </div>
         </div>
       )}
+
+      {/* Warning Modal */}
+      <ConfirmationModal
+        isOpen={!!warningModal}
+        onClose={() => setWarningModal(null)}
+        onConfirm={handleWarn}
+        title="사용자 경고"
+        message={`정말로 ${warningModal?.nickname || ''}님에게 경고를 부여하시겠습니까? (3회 누적 시 자동 정지됩니다.)`}
+        confirmText="경고 부여"
+        cancelText="취소"
+      />
     </div>
   );
 };

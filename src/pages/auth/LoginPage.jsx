@@ -23,7 +23,7 @@ const LoginPage = () => {
       if (prevPath && prevPath.includes(window.location.host)) {
         const url = new URL(prevPath);
         const target = url.pathname + url.search;
-        if (target !== '/login' && target !== '/register' && target !== '/') {
+        if (target !== '/login' && target !== '/register' && target !== '/' && !target.startsWith('/oauth/')) {
           sessionStorage.setItem('redirectUrl', target);
         }
       }
@@ -38,9 +38,9 @@ const LoginPage = () => {
       await login(email, password);
       
       const redirectUrl = sessionStorage.getItem('redirectUrl');
-      if (redirectUrl) {
-        sessionStorage.removeItem('redirectUrl');
-        window.location.href = redirectUrl; // 상세 모달 등 원래 주소로 이동
+      sessionStorage.removeItem('redirectUrl');
+      if (redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.startsWith('/oauth/')) {
+        window.location.replace(redirectUrl);
       } else {
         window.location.replace('/');
       }

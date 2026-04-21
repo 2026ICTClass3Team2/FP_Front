@@ -5,6 +5,7 @@ import { FiUsers, FiAlertTriangle, FiMessageSquare, FiMonitor, FiFileText, FiHel
 import UserManagementTab from './UserManagementTab';
 import ReportManagementTab from './ReportManagementTab';
 import SuggestionManagementTab from './SuggestionManagementTab';
+import ChannelManagementTab from './ChannelManagementTab';
 
 const AdminDashboard = () => {
   const { currentUser, token } = useAuth();
@@ -36,10 +37,10 @@ const AdminDashboard = () => {
   const statsConfig = [
     { label: '전체 사용자', value: stats.totalUsers, icon: FiUsers, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
     { label: '미처리 신고', value: stats.pendingReports, icon: FiAlertTriangle, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
-    { label: '미확인 건의사항', value: stats.unseenSuggestions, icon: FiMessageSquare, color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+    { label: '건의사항', value: stats.unseenSuggestions, icon: FiMessageSquare, color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/30' },
     { label: '전체 채널', value: stats.totalChannels, icon: FiMonitor, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
-    { label: '전체 피드 포스트', value: stats.totalFeedPosts, icon: FiFileText, color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30' },
-    { label: '전체 질문 포스트', value: stats.totalQnaPosts, icon: FiHelpCircle, color: 'text-indigo-500', bg: 'bg-indigo-100 dark:bg-indigo-900/30' },
+    { label: '전체 피드 글', value: stats.totalFeedPosts, icon: FiFileText, color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+    { label: '전체 질문 글', value: stats.totalQnaPosts, icon: FiHelpCircle, color: 'text-indigo-500', bg: 'bg-indigo-100 dark:bg-indigo-900/30' },
   ];
 
   if (currentUser?.role !== 'admin') {
@@ -92,12 +93,19 @@ const AdminDashboard = () => {
           >
             건의사항 관리
           </button>
+          <button
+            className={`flex-1 py-4 font-semibold text-center transition-colors ${activeTab === 'channels' ? 'text-primary border-b-2 border-primary bg-primary/5' : 'text-muted-foreground hover:bg-muted/5'}`}
+            onClick={() => setActiveTab('channels')}
+          >
+            채널 관리
+          </button>
         </div>
 
         <div className="p-6">
           {activeTab === 'users' && <UserManagementTab fetchStats={fetchStats} />}
           {activeTab === 'reports' && <ReportManagementTab fetchStats={fetchStats} />}
           {activeTab === 'suggestions' && <SuggestionManagementTab fetchStats={fetchStats} />}
+          {activeTab === 'channels' && <ChannelManagementTab fetchStats={fetchStats} />}
         </div>
       </div>
     </div>

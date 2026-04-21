@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import MainLayout from '../components/layouts/MainLayout';
+import AdminLayout from '../components/layouts/AdminLayout';
 import StudyPage from '../pages/study/StudyPage';
 import MyProfile from '../pages/profile/MyProfile';
 import AdminDashboard from '../pages/admin/AdminDashboard';
@@ -16,6 +17,7 @@ import MyPostList from '../components/layouts/MyPostList';
 import MyBookmarkList from '../components/layouts/MyBookmarkList';
 import BlockList from '../components/profile/BlockList';
 import ChannelDetail from '../pages/channel/ChannelDetail';
+import UserProfilePage from '../pages/profile/UserProfilePage';
 
 const AppRouter = () => {
   return (
@@ -34,8 +36,8 @@ const AppRouter = () => {
             <Route index element={<MainFeed />} />
 
 
-          {/* 질문게시판 */}
-          <Route path="qna" element={<QuestionBoard />} />
+            {/* 질문게시판 */}
+            <Route path="qna" element={<QuestionBoard />} />
 
             {/* 학습 페이지 */}
             <Route path="study" element={<StudyPage />} />
@@ -49,17 +51,16 @@ const AppRouter = () => {
               <Route path='blocks' element={<BlockList />} />
             </Route>
             <Route path="user/:userId" element={<MyPageLayout />}>
-              <Route index element={<ProfileCard />} />
-              {/* 타인 프로필 정보 탭 라우트 추가 예정 */}
+              <Route index element={<UserProfilePage />} />
             </Route>
 
             {/* 채널 상세 페이지 */}
             <Route path="channels/:channelId" element={<ChannelDetail />} />
+          </Route>
 
-            {/* 관리자 영역 */}
-            <Route path='admin'>
-              <Route index element={<AdminDashboard />} />
-            </Route>
+          {/* 관리자 영역 - MainLayout과 분리된 AdminLayout 적용 */}
+          <Route path='admin' element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
           </Route>
         </Route>
       </Routes>

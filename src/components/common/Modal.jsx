@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl', maxHeight = 'max-h-[90vh]' }) => {
   // 클릭 시작 지점을 저장하기 위한 ref
   const mouseDownTarget = useRef(null);
 
@@ -57,8 +57,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
       onMouseUp={handleMouseUp}     // 떼는 시점 체크
     >
       <div 
-        className="bg-background w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-border max-h-[90vh] overflow-y-auto
-          [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className={`bg-background w-full ${maxWidth} ${maxHeight} rounded-2xl p-6 shadow-2xl border border-border overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
         // 내부 클릭 시 상위(Overlay)로 이벤트가 전파되어 닫히는 것을 방지
         onMouseDown={(e) => e.stopPropagation()} 
         onMouseUp={(e) => e.stopPropagation()}

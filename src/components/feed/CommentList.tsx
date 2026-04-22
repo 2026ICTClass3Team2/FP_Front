@@ -50,7 +50,15 @@ const CommentList: React.FC<CommentListProps> = ({
     setError(null);
     try {
       const response = await jwtAxios.get(`${resourcePath}/${postId}/comments`);
-      setComments(response.data);
+      
+      // Sort so the accepted answer is always pinned to the top
+      const sortedComments = response.data.sort((a: CommentResponse, b: CommentResponse) => {
+        if (a.isAnswer && !b.isAnswer) return -1;
+        if (!a.isAnswer && b.isAnswer) return 1;
+        return 0;
+      });
+      
+      setComments(sortedComments);
     } catch (err: any) {
       setError(err.response?.data?.message || '댓글을 불러오는 중 오류가 발생했습니다.');
     } finally {

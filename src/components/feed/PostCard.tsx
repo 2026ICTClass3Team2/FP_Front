@@ -16,7 +16,9 @@ export interface Post {
   authorProfileImageUrl?: string | null;
   authorNickname: string;
   authorUsername: string;
+  channelId?: number | null;
   channelName?: string | null;
+  channelImageUrl?: string | null;
   
   likeCount: number;
   dislikeCount: number;
@@ -213,7 +215,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
                 <span className="font-bold text-foreground">{authorNickname}</span>
                 <span className="text-sm text-muted-foreground">@{authorUsername}</span>
                 {post.channelName && (
-                  <span className="text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+                  <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+                    {post.channelImageUrl ? (
+                      <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-sm bg-primary/30 flex items-center justify-center flex-shrink-0 text-[8px] font-bold">
+                        {post.channelName.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                     {post.channelName}
                   </span>
                 )}

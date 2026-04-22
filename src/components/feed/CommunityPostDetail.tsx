@@ -338,6 +338,21 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
 // 2. 본문 영역 (Content)
 const PostContent = ({ post }: { post: Post }) => (
   <div className="mb-6">
+    {/* 채널 정보 */}
+    {post.channelName && (
+      <div className="flex items-center gap-1.5 mb-3">
+        <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+          {post.channelImageUrl ? (
+            <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
+          ) : (
+            <span className="w-3.5 h-3.5 rounded-sm bg-primary/30 flex items-center justify-center flex-shrink-0 text-[8px] font-bold">
+              {post.channelName.charAt(0).toUpperCase()}
+            </span>
+          )}
+          {post.channelName}
+        </span>
+      </div>
+    )}
     {/* 썸네일 이미지 */}
     {post.thumbnailUrl && (
       <div className="w-full rounded-2xl overflow-hidden border border-border mb-4">

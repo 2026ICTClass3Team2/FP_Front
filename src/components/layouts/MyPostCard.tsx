@@ -14,14 +14,28 @@ const MyPostCard: React.FC<MyPostCardProps> = ({ post, onClick }) => {
     >
       {/* 4. 게시글의 타입 배지 및 작성 시간 */}
       <div className="flex justify-between items-start mb-3">
-        <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
-          post.contentType === 'qna' 
-            ? 'bg-indigo-100 text-indigo-700' 
-            : 'bg-emerald-100 text-emerald-700'
-        }`}>
-          {post.contentType === 'qna' ? '질문' : '피드'}
-        </span>
-        <div className="flex items-center text-sm text-muted-foreground gap-1.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+            post.contentType === 'qna'
+              ? 'bg-indigo-100 text-indigo-700'
+              : 'bg-emerald-100 text-emerald-700'
+          }`}>
+            {post.contentType === 'qna' ? '질문' : '피드'}
+          </span>
+          {post.channelName && (
+            <span className="flex items-center gap-1 text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-md">
+              {post.channelImageUrl ? (
+                <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
+              ) : (
+                <span className="w-3.5 h-3.5 rounded-sm bg-primary/30 flex items-center justify-center flex-shrink-0 text-[8px] font-bold">
+                  {post.channelName.charAt(0).toUpperCase()}
+                </span>
+              )}
+              {post.channelName}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center text-sm text-muted-foreground gap-1.5 flex-shrink-0">
           <FiClock size={14} />
           <span>{post.createdAt ? new Date(post.createdAt).toLocaleDateString('ko-KR') : ''}</span>
         </div>

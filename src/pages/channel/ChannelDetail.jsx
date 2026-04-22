@@ -33,6 +33,8 @@ const ChannelDetail = () => {
   const [myEmail, setMyEmail] = useState(null);
   const setWriteChannel = useWriteChannelStore((s) => s.setChannel);
   const clearWriteChannel = useWriteChannelStore((s) => s.clearChannel);
+  const setOnWriteClick = useWriteChannelStore((s) => s.setOnWriteClick);
+  const clearOnWriteClick = useWriteChannelStore((s) => s.clearOnWriteClick);
 
   useEffect(() => {
     jwtAxios.get('mypage/profile')
@@ -40,12 +42,19 @@ const ChannelDetail = () => {
       .catch(() => setMyEmail(null));
   }, []);
 
-  // 채널 상세 진입 시 write 버튼에 현재 채널 설정, 이탈 시 초기화
+  // 채널 상세 진입 시 write 버튼 콜백 등록 + 채널 정보 설정
   useEffect(() => {
     if (channel) {
       setWriteChannel({ channelId: channel.channelId, name: channel.name, imageUrl: channel.imageUrl });
+      setOnWriteClick(() => {
+        setEditingPost(null);
+        setIsWriteModalOpen(true);
+      });
     }
-    return () => clearWriteChannel();
+    return () => {
+      clearWriteChannel();
+      clearOnWriteClick();
+    };
   }, [channel]);
 
   // 모달 상태
@@ -415,20 +424,31 @@ const ChannelDetail = () => {
         />
       )}
 
-      {/* 게시글 수정 모달 */}
-      <Modal title="게시글 수정" isOpen={isWriteModalOpen} onClose={() => { setIsWriteModalOpen(false); setEditingPost(null); }}>
+      {/* 게시글 작성 / 수정 모달 */}
+      <Modal
+        title={editingPost ? "게시글 수정" : "게시글 작성"}
+        isOpen={isWriteModalOpen}
+        onClose={() => { setIsWriteModalOpen(false); setEditingPost(null); }}
+      >
         <FeedCard
           postToEdit={editingPost}
+          initialChannel={editingPost ? null : (channel ? { channelId: channel.channelId, name: channel.name, imageUrl: channel.imageUrl } : null)}
           onClose={() => { setIsWriteModalOpen(false); setEditingPost(null); }}
           onPostCreated={async () => {
-            const targetId = editingPost?.postId;
             setIsWriteModalOpen(false);
-            setEditingPost(null);
-            if (targetId) {
+            if (editingPost) {
+              // 수정: 해당 게시글만 갱신
+              const targetId = editingPost.postId;
+              setEditingPost(null);
               try {
                 const res = await jwtAxios.get(`posts/${targetId}`);
                 setPosts((prev) => prev.map((p) => p.postId === targetId ? res.data : p));
               } catch { /* 실패 시 기존 상태 유지 */ }
+            } else {
+              // 새 글: 포스트 목록 새로고침 + 채널 postCount +1
+              setEditingPost(null);
+              refreshPosts();
+              setChannel((prev) => prev ? { ...prev, postCount: (prev.postCount || 0) + 1 } : prev);
             }
           }}
         />

@@ -9,13 +9,14 @@ import Modal from '../common/Modal';
 import { FiBookOpen, FiHome, FiMessageCircle, FiMoon, FiSun } from 'react-icons/fi';
 
 const NavBar = () => {
-  const [subscribedOpen, setSubscribedOpen] = useState(true);
-  const [popularOpen, setPopularOpen]       = useState(true);
+  const [subscribedOpen, setSubscribedOpen] = useState(false);
+  const [popularOpen, setPopularOpen]       = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [isPointShopOpen, setIsPointShopOpen]         = useState(false);
   const [subscribedChannels, setSubscribedChannels]   = useState([]);
   const [popularChannels, setPopularChannels]         = useState([]);
   const [currentPoint, setCurrentPoint] = useState(null);
+  const [profilePicUrl, setProfilePicUrl] = useState(null);
 
   const { currentUser, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useThemeStore();
@@ -55,12 +56,24 @@ const NavBar = () => {
     }
   };
 
+  const fetchProfilePic = async () => {
+    if (!currentUser) return;
+    try {
+      const res = await jwtAxios.get('/mypage/profile');
+      setProfilePicUrl(res.data.profilePicUrl || null);
+    } catch {
+      setProfilePicUrl(null);
+    }
+  };
+
   useEffect(() => {
     if (currentUser) {
       fetchChannels();
+      fetchProfilePic();
     } else {
       setSubscribedChannels([]);
       setPopularChannels([]);
+      setProfilePicUrl(null);
     }
   }, [currentUser]);
 
@@ -85,12 +98,13 @@ const NavBar = () => {
       {/* 1. 상단 프로필 구역 */}
       <div className="p-5 flex flex-col gap-4">
         <Link to="/mypage" className="flex items-center gap-3 hover:bg-foreground/10 rounded-lg p-2 -m-2 transition-colors">
-          <div className="w-9 h-9 bg-primary rounded-2xl flex items-center justify-center text-2xl text-primary-foreground flex-shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/>
-            </svg>
-          </div>
+          {profilePicUrl ? (
+            <img src={profilePicUrl} alt="프로필" className="w-9 h-9 rounded-2xl object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-9 h-9 bg-primary rounded-2xl flex items-center justify-center text-lg font-bold text-primary-foreground flex-shrink-0">
+              {(currentUser?.nickname || currentUser?.username || '?')[0].toUpperCase()}
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="text-foreground font-semibold text-lg leading-none">
               {currentUser?.nickname || '닉네임'}

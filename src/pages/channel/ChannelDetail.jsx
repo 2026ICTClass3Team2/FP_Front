@@ -7,6 +7,9 @@ import CommunityPostDetail from '../../components/feed/CommunityPostDetail';
 import ReportModal from '../../components/common/ReportModal';
 import Modal from '../../components/common/Modal';
 import EditChannelModal from '../../components/channel/EditChannelModal';
+import FeedCard from '../../components/feed/FeedCard';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
+import useWriteChannelStore from '../../../useWriteChannelStore';
 
 const ChannelDetail = () => {
   const { channelId } = useParams();
@@ -23,9 +26,13 @@ const ChannelDetail = () => {
   const [hasNextPage, setHasNextPage] = useState(true);
   const lastPostIdRef = useRef(null);
   const isLoadingRef = useRef(false);
+  const hasNextPageRef = useRef(true); // stale closure 없이 Observer에서 참조
   const observerTarget = useRef(null);
+  const fetchMoreRef = useRef(null);
 
   const [myEmail, setMyEmail] = useState(null);
+  const setWriteChannel = useWriteChannelStore((s) => s.setChannel);
+  const clearWriteChannel = useWriteChannelStore((s) => s.clearChannel);
 
   useEffect(() => {
     jwtAxios.get('mypage/profile')
@@ -33,13 +40,27 @@ const ChannelDetail = () => {
       .catch(() => setMyEmail(null));
   }, []);
 
+  // 채널 상세 진입 시 write 버튼에 현재 채널 설정, 이탈 시 초기화
+  useEffect(() => {
+    if (channel) {
+      setWriteChannel({ channelId: channel.channelId, name: channel.name, imageUrl: channel.imageUrl });
+    }
+    return () => clearWriteChannel();
+  }, [channel]);
+
   // 모달 상태
   const [selectedPost, setSelectedPost] = useState(null);
+  const [autoScrollToComment, setAutoScrollToComment] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isSubscribersOpen, setIsSubscribersOpen] = useState(false);
   const [subscribers, setSubscribers] = useState([]);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  // 게시글 수정/삭제
+  const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [postToDeleteId, setPostToDeleteId] = useState(null);
 
   const fetchChannelDetail = useCallback(async () => {
     try {
@@ -52,57 +73,138 @@ const ChannelDetail = () => {
     }
   }, [channelId]);
 
-  const fetchPosts = useCallback(async () => {
-    if (isLoadingRef.current || !hasNextPage) return;
+  // channelId가 바뀔 때마다 상태를 완전히 리셋하고 첫 페이지를 새로 로드
+  useEffect(() => {
+    setPosts([]);
+    setHasNextPage(true);
+    hasNextPageRef.current = true;
+    setChannel(null);
+    setLoading(true);
+    setError('');
+    lastPostIdRef.current = null;
+    isLoadingRef.current = false;
 
-    setPostsLoading(true);
-    isLoadingRef.current = true;
+    let cancelled = false;
 
-    try {
-      let url = `channels/${channelId}/posts?size=10`;
-      if (lastPostIdRef.current) {
-        url += `&lastPostId=${lastPostIdRef.current}`;
+    // 채널 상세 정보 + 첫 페이지 동시 로드
+    const fetchAll = async () => {
+      try {
+        const [channelRes, postsRes] = await Promise.all([
+          jwtAxios.get(`channels/${channelId}`),
+          jwtAxios.get(`channels/${channelId}/posts?size=10`),
+        ]);
+        if (cancelled) return;
+
+        setChannel(channelRes.data);
+
+        const data = postsRes.data;
+        if (data.content?.length > 0) {
+          setPosts(data.content);
+          lastPostIdRef.current = String(data.content[data.content.length - 1].postId);
+        }
+        hasNextPageRef.current = !data.last;
+        setHasNextPage(!data.last);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err.response?.data?.message || '채널 정보를 불러올 수 없습니다.');
+        hasNextPageRef.current = false;
+        setHasNextPage(false);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
+    };
 
-      const res = await jwtAxios.get(url);
+    fetchAll();
+    return () => { cancelled = true; isLoadingRef.current = false; };
+  }, [channelId]);
+
+  // 추가 페이지 로드 (IntersectionObserver에서 호출)
+  const fetchMorePosts = useCallback(async () => {
+    if (isLoadingRef.current || !hasNextPageRef.current || !lastPostIdRef.current) return;
+    isLoadingRef.current = true;
+    setPostsLoading(true);
+    try {
+      const res = await jwtAxios.get(`channels/${channelId}/posts?size=10&lastPostId=${lastPostIdRef.current}`);
       const data = res.data;
-
-      if (data.content && data.content.length > 0) {
+      if (data.content?.length > 0) {
         setPosts((prev) => [...prev, ...data.content]);
         lastPostIdRef.current = String(data.content[data.content.length - 1].postId);
       }
+      hasNextPageRef.current = !data.last;
       setHasNextPage(!data.last);
     } catch (err) {
-      if (err.response?.status !== 404) {
-        console.error('채널 게시글 로드 실패', err);
-      }
+      if (err.response?.status !== 404) console.error('채널 게시글 로드 실패', err);
+      hasNextPageRef.current = false;
       setHasNextPage(false);
     } finally {
       setPostsLoading(false);
       isLoadingRef.current = false;
     }
-  }, [channelId, hasNextPage]);
-
-  useEffect(() => {
-    fetchChannelDetail();
-  }, [fetchChannelDetail]);
-
-  useEffect(() => {
-    fetchPosts();
   }, [channelId]);
+
+  // fetchMorePosts를 ref에 등록해 Observer 재생성 없이 최신 함수 참조 유지
+  useEffect(() => {
+    fetchMoreRef.current = fetchMorePosts;
+  }, [fetchMorePosts]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isLoadingRef.current) {
-          fetchPosts();
+        if (entries[0].isIntersecting && hasNextPageRef.current && !isLoadingRef.current) {
+          fetchMoreRef.current?.();
         }
       },
       { threshold: 0.5 }
     );
     if (observerTarget.current) observer.observe(observerTarget.current);
     return () => observer.disconnect();
-  }, [hasNextPage, fetchPosts]);
+  }, []);
+
+  // 차단 등으로 인한 포스트 목록 전체 새로고침
+  const refreshPosts = () => {
+    setPosts([]);
+    setHasNextPage(true);
+    hasNextPageRef.current = true;
+    lastPostIdRef.current = null;
+    isLoadingRef.current = false;
+    // fetchMoreRef는 channelId가 동일하므로 fetchAll을 직접 재실행
+    setPostsLoading(true);
+    jwtAxios.get(`channels/${channelId}/posts?size=10`)
+      .then((res) => {
+        const data = res.data;
+        if (data.content?.length > 0) {
+          setPosts(data.content);
+          lastPostIdRef.current = String(data.content[data.content.length - 1].postId);
+        }
+        hasNextPageRef.current = !data.last;
+        setHasNextPage(!data.last);
+      })
+      .catch(() => { hasNextPageRef.current = false; setHasNextPage(false); })
+      .finally(() => setPostsLoading(false));
+  };
+
+  const handleEditPost = (post) => {
+    setEditingPost(post);
+    setIsWriteModalOpen(true);
+  };
+
+  const handleDeletePost = (postId) => {
+    setPostToDeleteId(postId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeletePost = async () => {
+    if (!postToDeleteId) return;
+    try {
+      await jwtAxios.delete(`posts/${postToDeleteId}`);
+      setPosts((prev) => prev.filter((p) => p.postId !== postToDeleteId));
+    } catch (err) {
+      alert(err.response?.data?.message || '게시글 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setPostToDeleteId(null);
+      setIsDeleteModalOpen(false);
+    }
+  };
 
   const handleSubscribe = async () => {
     setSubscribeLoading(true);
@@ -271,11 +373,15 @@ const ChannelDetail = () => {
           <PostCard
             key={post.postId}
             post={post}
-            onEdit={() => {}}
-            onDelete={() => {}}
-            onDetailClick={() => setSelectedPost(post)}
-            onComment={() => setSelectedPost(post)}
-            onReportSuccess={() => setPosts((prev) => prev.filter((p) => p.postId !== post.postId))}
+            onEdit={handleEditPost}
+            onDelete={handleDeletePost}
+            onDetailClick={() => { setSelectedPost(post); setAutoScrollToComment(false); }}
+            onComment={() => { setSelectedPost(post); setAutoScrollToComment(true); }}
+            onReportSuccess={(reportData) => {
+              setPosts((prev) => prev.filter((p) => p.postId !== post.postId));
+              // 유저 차단 시 전체 새로고침으로 해당 유저의 나머지 게시글도 제거
+              if (reportData?.additionalAction) refreshPosts();
+            }}
           />
         ))}
       </div>
@@ -295,15 +401,47 @@ const ChannelDetail = () => {
       {selectedPost && (
         <CommunityPostDetail
           post={selectedPost}
-          autoScrollToComment={false}
+          autoScrollToComment={autoScrollToComment}
           onClose={(updatedPost) => {
             if (updatedPost) {
               setPosts((prev) => prev.map((p) => (p.postId === updatedPost.postId ? updatedPost : p)));
+            } else {
+              // updatedPost 없이 닫힌 경우 = 차단/신고로 인한 닫힘 → 새로고침
+              refreshPosts();
             }
             setSelectedPost(null);
+            setAutoScrollToComment(false);
           }}
         />
       )}
+
+      {/* 게시글 수정 모달 */}
+      <Modal title="게시글 수정" isOpen={isWriteModalOpen} onClose={() => { setIsWriteModalOpen(false); setEditingPost(null); }}>
+        <FeedCard
+          postToEdit={editingPost}
+          onClose={() => { setIsWriteModalOpen(false); setEditingPost(null); }}
+          onPostCreated={async () => {
+            const targetId = editingPost?.postId;
+            setIsWriteModalOpen(false);
+            setEditingPost(null);
+            if (targetId) {
+              try {
+                const res = await jwtAxios.get(`posts/${targetId}`);
+                setPosts((prev) => prev.map((p) => p.postId === targetId ? res.data : p));
+              } catch { /* 실패 시 기존 상태 유지 */ }
+            }
+          }}
+        />
+      </Modal>
+
+      {/* 게시글 삭제 확인 모달 */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => { setIsDeleteModalOpen(false); setPostToDeleteId(null); }}
+        onConfirm={confirmDeletePost}
+        title="게시글 삭제"
+        message="정말로 이 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+      />
 
       {/* 채널 수정 모달 */}
       <EditChannelModal

@@ -59,6 +59,8 @@ export const AuthProvider = ({ children }) => {
       username: data.username,
       nickname: data.username.split('@')[0], // 이메일 앞부분을 닉네임으로 임시 사용
       role: data.role || 'user',
+      status: data.status || 'active',
+      releasedAt: data.releasedAt || null,
     };
 
     setCurrentUser(userProfile);
@@ -74,6 +76,8 @@ export const AuthProvider = ({ children }) => {
       username: username,
       nickname: username.split('@')[0], 
       role,
+      status: 'active', // 소셜 로그인은 기본적으로 활성 상태로 시작한다고 가정 (실제로는 서버 연동 필요)
+      releasedAt: null,
     };
     setCurrentUser(userProfile);
     setToken(token);

@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     const userProfile = {
       userId,
       username: username,
-      nickname: username.split('@')[0], 
+      nickname: username.split('@')[0],
       role,
       status: 'active', // 소셜 로그인은 기본적으로 활성 상태로 시작한다고 가정 (실제로는 서버 연동 필요)
       releasedAt: null,
@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }) => {
         method: 'POST',
         credentials: 'include',
       });
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const value = {

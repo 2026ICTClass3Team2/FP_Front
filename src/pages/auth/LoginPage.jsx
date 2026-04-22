@@ -124,7 +124,10 @@ const LoginPage = () => {
           </a>
         </div>
         
-        <div className="mt-6 text-center text-sm text-muted-foreground">
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          <Link to="/forgot-password" className="text-muted-foreground hover:text-primary hover:underline">비밀번호를 잊으셨나요?</Link>
+        </div>
+        <div className="mt-3 text-center text-sm text-muted-foreground">
           계정이 없으신가요? <Link to="/register" className="text-primary font-semibold hover:underline ml-1">회원가입</Link>
         </div>
       </div>

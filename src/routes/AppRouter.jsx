@@ -21,10 +21,12 @@ import MyBookmarkList from '../components/layouts/MyBookmarkList';
 import BlockList from '../components/profile/BlockList';
 import ChannelDetail from '../pages/channel/ChannelDetail';
 import UserProfilePage from '../pages/profile/UserProfilePage';
+import SuspensionModal from '../components/common/SuspensionModal';
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
+      <SuspensionModal />
       <Routes>
         {/* 인증 영역 (레이아웃 미적용) */}
         <Route path="/login" element={<LoginPage />} />

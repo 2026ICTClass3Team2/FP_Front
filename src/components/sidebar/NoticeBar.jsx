@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { CKEditor } from '@ckeditor/ckeditor5-react';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import Modal from '../common/Modal';
 import axios from 'axios';
 

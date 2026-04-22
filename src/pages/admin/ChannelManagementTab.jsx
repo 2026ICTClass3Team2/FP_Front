@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
-import { FiSearch, FiSlash, FiTrash2 } from 'react-icons/fi';
+import { FiSearch, FiSlash, FiTrash2, FiCheck, FiX } from 'react-icons/fi';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import ChannelDetailModal from './ChannelDetailModal';
 
@@ -65,13 +65,21 @@ const ChannelManagementTab = ({ fetchStats }) => {
             <input 
               type="text" 
               placeholder="채널명, 소유자 닉네임 검색" 
-              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full pl-10 pr-10 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
               value={keyword}
               onChange={(e) => {
                 setKeyword(e.target.value);
                 setPage(0);
               }}
             />
+            {keyword && (
+              <button 
+                onClick={() => { setKeyword(''); setPage(0); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <FiX />
+              </button>
+            )}
           </div>
         </div>
 
@@ -136,9 +144,18 @@ const ChannelManagementTab = ({ fetchStats }) => {
                 </td>
                 <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end gap-2">
+                    {channel.status !== 'active' && (
+                      <button 
+                        onClick={() => setActionModal({ channel, type: 'active' })}
+                        className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                        title="활성화"
+                      >
+                        <FiCheck />
+                      </button>
+                    )}
                     <button 
                       onClick={() => setActionModal({ channel, type: 'frozen' })}
-                      disabled={channel.status === 'frozen' || channel.status === 'hidden'}
+                      disabled={channel.status === 'frozen'}
                       className="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="채널 정지"
                     >
@@ -187,9 +204,9 @@ const ChannelManagementTab = ({ fetchStats }) => {
         isOpen={!!actionModal}
         onClose={() => setActionModal(null)}
         onConfirm={handleStatusChange}
-        title={`채널 ${actionModal?.type === 'frozen' ? '정지' : '삭제'}`}
-        message={`정말로 '${actionModal?.channel?.name}' 채널을 ${actionModal?.type === 'frozen' ? '정지' : '삭제'}하시겠습니까?`}
-        confirmText={actionModal?.type === 'frozen' ? '정지하기' : '삭제하기'}
+        title={`채널 ${actionModal?.type === 'frozen' ? '정지' : actionModal?.type === 'hidden' ? '삭제' : '활성화'}`}
+        message={`정말로 '${actionModal?.channel?.name}' 채널을 ${actionModal?.type === 'frozen' ? '정지' : actionModal?.type === 'hidden' ? '삭제' : '활성화'}하시겠습니까?`}
+        confirmText={actionModal?.type === 'frozen' ? '정지하기' : actionModal?.type === 'hidden' ? '삭제하기' : '활성화하기'}
         cancelText="취소"
       />
 

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import useThemeStore from '../../../useThemeStore';
 import CreateChannelModal from '../channel/CreateChannelModal';
 import PointShopModal from '../../pages/shop/PointShopModal';
 import jwtAxios from '../../api/jwtAxios';
 import Modal from '../common/Modal';
+import { FiBookOpen, FiHome, FiMessageCircle, FiMoon, FiSun } from 'react-icons/fi';
 
 const NavBar = () => {
   const [subscribedOpen, setSubscribedOpen] = useState(true);
@@ -18,6 +19,18 @@ const NavBar = () => {
 
   const { currentUser, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useThemeStore();
+  const location = useLocation();
+
+  const getNavClass = (path, isExact = false) => {
+    const isActive = isExact 
+      ? location.pathname === path 
+      : location.pathname.startsWith(path);
+
+    if (isActive) {
+      return "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all border text-primary bg-primary/10 border-primary/20 dark:bg-primary/20 dark:border-primary/30";
+    }
+    return "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-foreground hover:bg-muted/5 transition-all border border-transparent";
+  };
 
   const fetchChannels = async () => {
     try {
@@ -115,16 +128,7 @@ const NavBar = () => {
             className="flex items-center justify-center px-3 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors"
             title={isDarkMode ? '라이트 모드' : '다크 모드'}
           >
-            {isDarkMode ? (
-              <svg className="w-5 h-5 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5"/>
-                <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m2.12-2.12l4.24-4.24M19 12l.01.01"/>
-              </svg>
-            ) : (
-              <svg className="w-5 h-5 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
+            {isDarkMode ? <FiSun className="w-5 h-5 text-foreground" /> : <FiMoon className="w-5 h-5 text-foreground" />}
           </button>
         </div>
       </div>
@@ -133,24 +137,16 @@ const NavBar = () => {
 
       {/* 2. 네비게이션 메뉴 */}
       <nav className="flex-1 overflow-y-auto scrollbar-hide p-3 space-y-1">
-        <Link to="/" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-foreground hover:bg-muted/5 transition-all">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1v-5m10-10l2 2m-2-2v10a1 1 0 01-1 1v-5m-6 0a1 1 0 001-1v5" />
-          </svg>
+        <Link to="/" className={getNavClass('/', true)}>
+          <FiHome className="w-5 h-5" />
           <span>홈</span>
         </Link>
-
-        <Link to="/qna" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-foreground hover:bg-muted/5 transition-all">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
+        <Link to="/qna" className={getNavClass('/qna')}>
+          <FiMessageCircle className="w-5 h-5" />
           <span>질문답변 게시판</span>
         </Link>
-
-        <Link to="/study" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-foreground hover:bg-muted/5 transition-all">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253zm0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.747 0-3.332.477-4.5 1.253z" />
-          </svg>
+        <Link to="/study" className={getNavClass('/study')}>
+          <FiBookOpen className="w-5 h-5" />
           <span>학습</span>
         </Link>
 

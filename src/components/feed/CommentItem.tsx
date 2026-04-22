@@ -5,6 +5,7 @@ import { CommentResponse } from './types';
 import CommentForm from './CommentForm';
 import { formatTimeAgo } from '../../utils/time';
 import ConfirmationModal from '../common/ConfirmationModal';
+import UserProfileModal from '../common/UserProfileModal';
 
 interface CommentItemProps {
   comment: CommentResponse;
@@ -51,6 +52,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isAcceptConfirmModalOpen, setIsAcceptConfirmModalOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for reply expansion and pagination
@@ -218,7 +220,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
           {/* 프로필 이미지 */}
           {!isDeleted && (
-            <div className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0 mt-1">
+            <div
+              className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0 mt-1 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+              onClick={() => { if (commentAuthorUserId) setProfileModalUserId(commentAuthorUserId as number); }}
+            >
               {comment.authorProfilePicUrl ? (
                 <img src={comment.authorProfilePicUrl} alt="profile" className="w-full h-full object-cover" />
               ) : (
@@ -234,7 +239,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-foreground text-sm">{comment.authorNickname}</span>
+                    <span
+                      className="font-semibold text-foreground text-sm cursor-pointer hover:underline"
+                      onClick={() => { if (commentAuthorUserId) setProfileModalUserId(commentAuthorUserId as number); }}
+                    >{comment.authorNickname}</span>
                     <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.createdAt)}</span>
                   </div>
 
@@ -356,6 +364,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
         onConfirm={handleAcceptAnswer}
         title="답변 채택"
         message="이 댓글을 채택하시겠습니까? 채택하면 질문이 해결 상태로 변경되고 포인트가 지급됩니다."
+      />
+
+      <UserProfileModal
+        isOpen={profileModalUserId !== null}
+        onClose={() => setProfileModalUserId(null)}
+        userId={profileModalUserId}
       />
 
       {/* Render replies only if it's a root comment */}

@@ -5,6 +5,7 @@ import jwtAxios from '../../api/jwtAxios';
 import PostCard from '../../components/feed/PostCard';
 import CommunityPostDetail from '../../components/feed/CommunityPostDetail';
 import ReportModal from '../../components/common/ReportModal';
+import UserProfileModal from '../../components/common/UserProfileModal';
 import Modal from '../../components/common/Modal';
 import EditChannelModal from '../../components/channel/EditChannelModal';
 import FeedCard from '../../components/feed/FeedCard';
@@ -19,6 +20,8 @@ const ChannelDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [unblockLoading, setUnblockLoading] = useState(false);
+  const [profileModalUserId, setProfileModalUserId] = useState(null);
 
   // 게시글 무한 스크롤
   const [posts, setPosts] = useState([]);
@@ -215,6 +218,20 @@ const ChannelDetail = () => {
     }
   };
 
+  const handleUnblock = async () => {
+    setUnblockLoading(true);
+    try {
+      await jwtAxios.delete(`channels/${channelId}/block`);
+      setChannel((prev) => ({ ...prev, blocked: false }));
+      // 차단 해제 후 게시글 목록 로드
+      refreshPosts();
+    } catch (err) {
+      alert(err.response?.data?.message || '차단 해제 중 오류가 발생했습니다.');
+    } finally {
+      setUnblockLoading(false);
+    }
+  };
+
   const handleSubscribe = async () => {
     setSubscribeLoading(true);
     try {
@@ -337,6 +354,15 @@ const ChannelDetail = () => {
               <FiEdit2 size={15} />
               채널 수정
             </button>
+          ) : channel.blocked ? (
+            /* 차단된 채널: 차단 해제 버튼 */
+            <button
+              onClick={handleUnblock}
+              disabled={unblockLoading}
+              className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-50 bg-red-500/10 text-red-500 border border-red-300 hover:bg-red-500/20"
+            >
+              {unblockLoading ? '처리 중...' : '차단 해제'}
+            </button>
           ) : (
             /* 비소유자: 구독 / 구독 취소 */
             <button
@@ -375,6 +401,13 @@ const ChannelDetail = () => {
       </div>
 
       {/* 채널 피드 */}
+      {channel.blocked ? (
+        <div className="text-center py-10 text-muted-foreground bg-surface border border-border rounded-2xl">
+          <p className="font-semibold mb-1">차단된 채널입니다.</p>
+          <p className="text-sm">차단을 해제하면 게시글을 다시 볼 수 있습니다.</p>
+        </div>
+      ) : (
+      <>
       <h2 className="text-lg font-bold text-foreground mb-4">채널 게시글</h2>
 
       <div className="flex flex-col gap-5">
@@ -405,6 +438,8 @@ const ChannelDetail = () => {
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         )}
       </div>
+      </>
+      )}
 
       {/* 게시글 상세 모달 */}
       {selectedPost && (
@@ -480,7 +515,13 @@ const ChannelDetail = () => {
         onClose={() => setIsReportOpen(false)}
         targetType="channel"
         targetId={Number(channelId)}
-        onSuccess={() => setIsReportOpen(false)}
+        onSuccess={(reportData) => {
+          setIsReportOpen(false);
+          // 차단 선택 시 blocked 상태 업데이트 + 구독 취소 반영
+          if (reportData?.additionalAction) {
+            setChannel((prev) => ({ ...prev, blocked: true, subscribed: false }));
+          }
+        }}
       />
 
       {/* 구독자 목록 모달 */}
@@ -494,7 +535,11 @@ const ChannelDetail = () => {
         ) : (
           <div className="flex flex-col gap-3 max-h-96 overflow-y-auto">
             {subscribers.map((sub) => (
-              <div key={sub.userId} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/5 transition-colors">
+              <div
+                key={sub.userId}
+                className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/5 transition-colors cursor-pointer"
+                onClick={() => { setIsSubscribersOpen(false); setProfileModalUserId(sub.userId); }}
+              >
                 {sub.profilePicUrl ? (
                   <img src={sub.profilePicUrl} alt={sub.nickname} className="w-10 h-10 rounded-full object-cover" />
                 ) : (
@@ -511,6 +556,12 @@ const ChannelDetail = () => {
           </div>
         )}
       </Modal>
+
+      <UserProfileModal
+        isOpen={profileModalUserId !== null}
+        onClose={() => setProfileModalUserId(null)}
+        userId={profileModalUserId}
+      />
     </div>
   );
 };

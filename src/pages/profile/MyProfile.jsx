@@ -17,6 +17,7 @@ const initialProfile = {
   registeredAt: '',
   currentPoint: 0,
   techStacks: [],
+  provider: 'local',
 };
 
 const MyProfile = () => {
@@ -65,6 +66,7 @@ const MyProfile = () => {
         >
           <ProfileEditForm
             initial={profile}
+            onPasswordChange={profile.provider === 'local' ? () => setShowPasswordModal(true) : undefined}
             onSubmit={async (form) => {
               // 이메일이 변경된 경우 인증 플로우로 분기
               if (form.email !== profile.email) {
@@ -94,7 +96,6 @@ const MyProfile = () => {
               }
             }}
             onCancel={() => setShowEditModal(false)}
-            onPasswordChange={() => setShowPasswordModal(true)}
           />
           {/* 이메일 인증번호 입력 모달 */}
           {showEmailVerify && (

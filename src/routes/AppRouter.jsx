@@ -11,8 +11,11 @@ import ProfileCard from '../components/profile/ProfileCard';
 import QuestionBoard from '../pages/question/QuestionBoard';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
-import ProtectedRoute from './ProtectedRoute';
 import OAuthCallback from '../pages/auth/OAuthCallback';
+import OAuthUsernameSetupPage from '../pages/auth/OAuthUsernameSetupPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
+import ProtectedRoute from './ProtectedRoute';
 import MyPostList from '../components/layouts/MyPostList';
 import MyBookmarkList from '../components/layouts/MyBookmarkList';
 import BlockList from '../components/profile/BlockList';
@@ -29,6 +32,9 @@ const AppRouter = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route path="/oauth/setup-username" element={<OAuthUsernameSetupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* 로그인된 사용자만 접근할 수 있는 영역 */}
         <Route element={<ProtectedRoute />}>

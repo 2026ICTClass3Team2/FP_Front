@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import { CommentResponse } from './types';
 import CommentItem from './CommentItem';
@@ -12,10 +12,11 @@ interface CommentListProps {
   postAuthorUserId?: number | null;
   postResolved?: boolean;
   onAcceptAnswer?: (commentId: number) => Promise<void>;
-  onReportRequest?: (type: 'post' | 'comment' | 'user', id: number) => void;
+  onReportRequest?: (type: 'post' | 'comment' | 'user', id: number, authorUserId?: number | null) => void;
+  onBlockUser?: (blockedUserId: number) => void;
 }
 
-const CommentList: React.FC<CommentListProps> = ({
+const CommentList = forwardRef<any, CommentListProps>(({
   postId,
   commentCount = 0,
   onCommentCountChange,
@@ -24,12 +25,11 @@ const CommentList: React.FC<CommentListProps> = ({
   postResolved = false,
   onAcceptAnswer,
   onReportRequest,
-}) => {
+  onBlockUser,
+}, ref) => {
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>({});
-  const currentUserFetched = useRef(false);
 
   // 메인 댓글 더보기/간략히 상태 관리
   const [isExpanded, setIsExpanded] = useState(false);
@@ -37,13 +37,7 @@ const CommentList: React.FC<CommentListProps> = ({
   const initialBriefCount = 3; // 처음에 보여줄 댓글 수
   const commentsChunkSize = 10; // 더보기 클릭 시 추가로 보여줄 댓글 수
 
-  useEffect(() => {
-    if (currentUserFetched.current) return;
-    currentUserFetched.current = true;
-    jwtAxios.get('mypage/profile')
-      .then(res => setCurrentUser(res.data))
-      .catch(() => setCurrentUser({}));
-  }, []);
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
@@ -93,6 +87,38 @@ const CommentList: React.FC<CommentListProps> = ({
     setComments(prev => updateRecursively(prev));
   };
 
+  // 작성자 차단 처리
+  const handleBlockUser = (blockedUserId: number) => {
+    const filterRecursively = (list: CommentResponse[]): CommentResponse[] => {
+      return list
+        .filter(c => c.authorUserId !== blockedUserId)
+        .map(c => ({
+          ...c,
+          children: filterRecursively(c.children || []),
+        }));
+    };
+    setComments(prev => filterRecursively(prev));
+    onBlockUser?.(blockedUserId);
+  };
+
+  // 단일 댓글 신고 처리 (낙관적 업데이트)
+  const handleReportComment = (commentId: number) => {
+    const updateRecursively = (list: CommentResponse[]): CommentResponse[] => {
+      return list.map(c => {
+        if (c.id === commentId) {
+          return { ...c, isReported: true };
+        }
+        if (c.children && c.children.length > 0) {
+          return { ...c, children: updateRecursively(c.children) };
+        }
+        return c;
+      });
+    };
+    setComments(prev => updateRecursively(prev));
+  };
+
+  useImperativeHandle(ref, () => ({ handleBlockUser, handleReportComment }));
+
   // 댓글 렌더링을 위한 계산 로직
   const totalComments = comments.length;
   const commentsToRender = isExpanded
@@ -118,10 +144,10 @@ const CommentList: React.FC<CommentListProps> = ({
   return (
     <section className="w-full mt-10 pt-8 border-t border-border">
       {/* 메인 댓글 작성 폼 */}
-      {currentUser.userId ? ( <CommentForm onSubmit={handleMainCommentSubmit} /> ) : ( <div className="p-4 mb-6 text-center bg-surface border border-border rounded-xl"> <p className="text-sm text-muted-foreground"> 댓글을 작성하려면 <a href="/login" className="font-semibold text-primary hover:underline">로그인</a>이 필요합니다. </p> </div> )}
+      {currentUser.username ? ( <CommentForm onSubmit={handleMainCommentSubmit} /> ) : ( <div className="p-4 mb-6 text-center bg-surface border border-border rounded-xl"> <p className="text-sm text-muted-foreground"> 댓글을 작성하려면 <a href="/login" className="font-semibold text-primary hover:underline">로그인</a>이 필요합니다. </p> </div> )}
 
       <h3 className="text-lg font-bold text-foreground mt-8 mb-6 flex items-center gap-1.5">
-        댓글 <span className="text-primary">{commentCount}</span>
+        댓글 <span className="text-primary">{comments.length > 0 ? comments.length : commentCount}</span>
       </h3>
 
       {error && <div className="text-red-500 text-sm mb-4 p-4 bg-red-500/10 rounded-xl">{error}</div>}
@@ -145,6 +171,7 @@ const CommentList: React.FC<CommentListProps> = ({
               onRefresh={fetchComments}
               onOptimisticDelete={handleOptimisticDelete}
               onCommentCountChange={onCommentCountChange}
+              onReportRequest={onReportRequest}
             />
           ))}
 
@@ -181,6 +208,6 @@ const CommentList: React.FC<CommentListProps> = ({
       )}
     </section>
   );
-};
+});
 
 export default CommentList;

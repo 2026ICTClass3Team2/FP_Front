@@ -17,6 +17,7 @@ import MyPostList from '../components/layouts/MyPostList';
 import MyBookmarkList from '../components/layouts/MyBookmarkList';
 import BlockList from '../components/profile/BlockList';
 import ChannelDetail from '../pages/channel/ChannelDetail';
+import UserProfilePage from '../pages/profile/UserProfilePage';
 
 const AppRouter = () => {
   return (
@@ -50,8 +51,7 @@ const AppRouter = () => {
               <Route path='blocks' element={<BlockList />} />
             </Route>
             <Route path="user/:userId" element={<MyPageLayout />}>
-              <Route index element={<ProfileCard />} />
-              {/* 타인 프로필 정보 탭 라우트 추가 예정 */}
+              <Route index element={<UserProfilePage />} />
             </Route>
 
             {/* 채널 상세 페이지 */}

@@ -111,6 +111,13 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
     setIsReportModalOpen(true);
   };
 
+  // 댓글에서 유저를 차단했을 때: 차단된 유저가 이 게시글 작성자이면 모달을 닫아 피드에서 제거
+  const handleBlockUserFromComment = (blockedUserId: number) => {
+    if (localPost.authorUserId != null && localPost.authorUserId === blockedUserId) {
+      onClose();
+    }
+  };
+
   const handleReportSuccess = (reportData: any) => {
     // 게시글 자체를 신고했거나, 작성자를 차단했다면 모달을 닫고 부모에게 리프레시를 위임합니다.
     if (reportData.targetType.toUpperCase() === 'POST' || reportData.additionalAction) {
@@ -272,13 +279,14 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         
         {/* 댓글 리스트 컴포넌트 (여기로 스크롤 이동) */}
         <div ref={commentSectionRef}>
-          <CommentList 
-            postId={localPost.postId} 
+          <CommentList
+            postId={localPost.postId}
             commentCount={localPost.commentCount || 0}
-            onCommentCountChange={(delta) => 
+            onCommentCountChange={(delta) =>
               setLocalPost(prev => ({ ...prev, commentCount: Math.max(0, (prev.commentCount || 0) + delta) }))
             }
             onReportRequest={openReportModal}
+            onBlockUser={handleBlockUserFromComment}
           />
         </div>
         
@@ -352,7 +360,7 @@ const PostContent = ({ post }: { post: Post }) => (
       )}
     </div>
     <div 
-      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-96 [&_img]:inline-block"
+      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-28 [&_img]:inline-block [&_img]:align-middle [&_img]:mx-1"
       dangerouslySetInnerHTML={{ __html: post.body || '' }}
     />
     <div className="flex flex-wrap gap-2">
@@ -364,6 +372,7 @@ const PostContent = ({ post }: { post: Post }) => (
     </div>
   </div>
 );
+
 
 // 3. 상호작용 버튼 영역 (Actions)
 const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare }: { post: Post, onLike: () => void, onDislike: () => void, onBookmark: () => void, onShare: () => void }) => {

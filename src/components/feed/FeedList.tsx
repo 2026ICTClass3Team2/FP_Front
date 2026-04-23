@@ -152,6 +152,9 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     const postIdParam = searchParams.get('postId');
     if (postIdParam && !selectedPost) {
       setSelectedPost({ postId: Number(postIdParam) } as Post);
+      if (searchParams.get('commentId')) {
+        setAutoScrollToComment(true);
+      }
     }
   }, [searchParams]);
 
@@ -218,6 +221,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
             // 모달이 닫힐 때 URL 파라미터 제거
             if (searchParams.has('postId')) {
               searchParams.delete('postId');
+              searchParams.delete('commentId');
               setSearchParams(searchParams, { replace: true });
             }
           }}

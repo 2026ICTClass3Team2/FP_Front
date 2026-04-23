@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllNotifications, markAllAsRead, getNotificationSettings, updateNotificationSettings } from '../../api/notification';
+import { getAllNotifications, markAllAsRead, markAsRead, getNotificationSettings, updateNotificationSettings } from '../../api/notification';
 import { FiSettings, FiCheckCircle, FiBell } from 'react-icons/fi';
 
 const NotificationTab = () => {
@@ -61,6 +61,56 @@ const NotificationTab = () => {
     }`
   );
 
+  const handleIndividualMarkAsRead = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await markAsRead([id]);
+      fetchNotifications();
+    } catch (error) {
+      console.error('Failed to mark individual as read:', error);
+    }
+  };
+
+  const handleNotificationClick = async (n) => {
+    if (!n.isRead) {
+      try {
+        await markAsRead([n.id]);
+      } catch (error) {
+        console.error('Failed to mark as read on click:', error);
+      }
+    }
+    switch (n.targetType) {
+      case 'post':
+      case 'comment':
+      case 'mention':
+        if (n.qnaId) {
+          window.location.href = `/qna?qnaId=${n.qnaId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`;
+        } else if (n.postId) {
+          window.location.href = `/?postId=${n.postId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`;
+        }
+        break;
+      case 'user': 
+        // If it's a profile-related notification (like a follow), go to profile
+        // Otherwise (like admin warnings), go to mypage
+        if (n.message.includes('팔로우')) {
+          window.location.href = `/profile/${n.targetId}`;
+        } else {
+          window.location.href = '/mypage';
+        }
+        break;
+      case 'system':
+        if (n.message.includes('point') || n.message.includes('포인트')) {
+          window.location.href = '/mypage/points';
+        }
+        break;
+      case 'channel':
+        window.location.href = `/channel/${n.targetId}`;
+        break;
+      default:
+        fetchNotifications();
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center bg-card p-4 rounded-2xl border border-border shadow-sm">
@@ -93,23 +143,36 @@ const NotificationTab = () => {
             {notifications.map((n) => (
               <div 
                 key={n.id} 
-                className={`p-6 flex items-start gap-4 transition-colors ${!n.isRead ? 'bg-primary/5' : 'hover:bg-muted/10'}`}
+                className={`group p-6 flex items-start gap-4 transition-colors cursor-pointer ${!n.isRead ? 'bg-primary/5' : 'hover:bg-muted/10'}`}
+                onClick={() => handleNotificationClick(n)}
               >
                 <div className={`p-3 rounded-2xl ${!n.isRead ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   <FiBell size={20} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-1">
+                <div className="flex-1 relative">
+                  <div className="flex justify-between items-start mb-1 pr-10">
                     <p className={`text-sm ${!n.isRead ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
                       {n.message}
                     </p>
                     {!n.isRead && (
-                      <span className="w-2 h-2 bg-primary rounded-full"></span>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]"></span>
+                      </div>
                     )}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {new Date(n.createdAt).toLocaleString()}
                   </span>
+                  
+                  {!n.isRead && (
+                    <button 
+                      onClick={(e) => handleIndividualMarkAsRead(e, n.id)}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 hover:bg-primary/10 rounded-xl text-primary transition-all flex items-center gap-1.5 text-xs font-bold"
+                    >
+                      <FiCheckCircle size={16} />
+                      <span>읽음</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -143,7 +206,7 @@ const NotificationTab = () => {
                 { key: 'commentReply', label: '내 댓글의 새 답글', desc: '내 댓글에 새로운 답글이 달리면 알림을 받습니다.' },
                 { key: 'qnaAnswer', label: 'QnA 답변 채택', desc: '내 댓글이 QnA 답변으로 채택되면 알림을 받습니다.' },
                 { key: 'pointTransaction', label: '포인트 변동', desc: '포인트 획득 및 사용 시 알림을 받습니다.' },
-                { key: 'mention', label: '멘션 (준비 중)', desc: '다른 유저가 나를 @멘션하면 알림을 받습니다.', disabled: true },
+                { key: 'mention', label: '멘션', desc: '다른 유저가 나를 @멘션하면 알림을 받습니다.'},
                 { key: 'chat', label: '채팅 (준비 중)', desc: '새로운 채팅 메시지가 오면 알림을 받습니다.', disabled: true },
               ].map((opt) => (
                 <div key={opt.key} className={`flex items-center justify-between p-3 rounded-2xl hover:bg-muted/50 transition-colors ${opt.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -155,7 +218,7 @@ const NotificationTab = () => {
                     disabled={opt.disabled}
                     onClick={() => handleToggleSetting(opt.key)}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      settings[opt.key] ? 'bg-primary' : 'bg-muted'
+                      settings[opt.key] ? 'bg-primary' : 'bg-foreground/20'
                     }`}
                   >
                     <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${

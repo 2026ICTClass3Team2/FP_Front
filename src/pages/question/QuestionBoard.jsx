@@ -87,11 +87,21 @@ const QuestionBoard = () => {
 
   // URL 파라미터로 모달 열기
   useEffect(() => {
-    if (searchParams.get('write') === 'qna') {
+    const writeMode = searchParams.get('write');
+    if (writeMode === 'qna') {
       setEditingPost(null);
       setIsWriteModalOpen(true);
       searchParams.delete('write');
       setSearchParams(searchParams, { replace: true });
+    }
+
+    const qnaIdParam = searchParams.get('qnaId');
+    if (qnaIdParam && !selectedPost) {
+      setSelectedPost({ qnaId: Number(qnaIdParam) });
+      const commentIdParam = searchParams.get('commentId');
+      if (commentIdParam) {
+        setAutoScrollToComment(true);
+      }
     }
   }, [searchParams, setSearchParams]);
 
@@ -342,6 +352,13 @@ const QuestionBoard = () => {
             }
             setSelectedPost(null);
             setAutoScrollToComment(false);
+
+            // 모달이 닫힐 때 URL 파라미터 제거
+            if (searchParams.has('qnaId')) {
+              searchParams.delete('qnaId');
+              searchParams.delete('commentId');
+              setSearchParams(searchParams, { replace: true });
+            }
           }}
         />
       )}

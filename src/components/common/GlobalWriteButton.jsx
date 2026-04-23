@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useWriteChannelStore from '../../../useWriteChannelStore';
 
-// 글로벌 작성 버튼 컴포넌트
 const GlobalWriteButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const channel = useWriteChannelStore((s) => s.channel);
+  const onWriteClick = useWriteChannelStore((s) => s.onWriteClick);
 
   const handleFeedClick = () => {
     setIsOpen(false);
-    navigate('/?write=feed');
+    if (onWriteClick) {
+      onWriteClick(); // 채널 상세 페이지: 로컬 모달 열기
+    } else {
+      navigate('/?write=feed', { state: { channel: channel || null } });
+    }
   };
 
   const handleQnaClick = () => {

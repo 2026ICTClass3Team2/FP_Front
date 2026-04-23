@@ -1,18 +1,25 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import jwtAxios from '../../api/jwtAxios';
-import { FiImage, FiX } from 'react-icons/fi';
+import { FiImage, FiX, FiSearch, FiChevronDown } from 'react-icons/fi';
 import { Post } from './PostCard';
 import RichTextEditor from '../editor/RichTextEditor';
 import TechStackModal from '../auth/TechStackModal';
 
-interface FeedCardProps {
-  onClose: () => void;
-  onPostCreated?: () => void; // 작성 완료 후 피드 목록을 리로드할 때 사용할 콜백
-  postToEdit?: Post | null;
+interface ChannelOption {
+  channelId: number;
+  name: string;
+  imageUrl?: string | null;
 }
 
-const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit }) => {
+interface FeedCardProps {
+  onClose: () => void;
+  onPostCreated?: () => void;
+  postToEdit?: Post | null;
+  initialChannel?: ChannelOption | null; // 채널 페이지에서 진입 시 자동 선택
+}
+
+const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit, initialChannel }) => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [tags, setTags] = useState('');
@@ -23,16 +30,77 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
 
-  // 수정 모드일 경우 초기값 세팅
+  // 채널 선택
+  const [selectedChannel, setSelectedChannel] = useState<ChannelOption | null>(null);
+  const [channelSearch, setChannelSearch] = useState('');
+  const [channelResults, setChannelResults] = useState<ChannelOption[]>([]);
+  const [showChannelDropdown, setShowChannelDropdown] = useState(false);
+  const [channelSearchLoading, setChannelSearchLoading] = useState(false);
+  const channelDropdownRef = useRef<HTMLDivElement>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 초기값 세팅
   useEffect(() => {
     if (postToEdit) {
       setTitle(postToEdit.title || '');
       setBody(postToEdit.body || '');
       setTags(postToEdit.tags?.join(', ') || '');
-      // In a real app, you'd likely set the selected techs here too
       setThumbnailUrl(postToEdit.thumbnailUrl || '');
+      // 수정 시 기존 채널 세팅
+      if (postToEdit.channelId && postToEdit.channelName) {
+        setSelectedChannel({
+          channelId: postToEdit.channelId as number,
+          name: postToEdit.channelName,
+          imageUrl: (postToEdit as any).channelImageUrl ?? null,
+        });
+      }
+    } else if (initialChannel) {
+      setSelectedChannel(initialChannel);
     }
-  }, [postToEdit]);
+  }, []);
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (channelDropdownRef.current && !channelDropdownRef.current.contains(e.target as Node)) {
+        setShowChannelDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 채널 검색 (debounce 300ms)
+  const searchChannels = useCallback(async (keyword: string) => {
+    setChannelSearchLoading(true);
+    try {
+      const res = await jwtAxios.get('channels/search', { params: { keyword, size: 8 } });
+      setChannelResults(res.data || []);
+    } catch {
+      setChannelResults([]);
+    } finally {
+      setChannelSearchLoading(false);
+    }
+  }, []);
+
+  const handleChannelSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setChannelSearch(val);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => searchChannels(val), 300);
+  };
+
+  const handleChannelDropdownOpen = () => {
+    setShowChannelDropdown(true);
+    setChannelSearch('');
+    searchChannels(''); // 초기 목록 로드
+  };
+
+  const handleSelectChannel = (ch: ChannelOption) => {
+    setSelectedChannel(ch);
+    setShowChannelDropdown(false);
+    setChannelSearch('');
+  };
 
   // 파일 업로드 처리 (S3 presigned URL 방식)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,20 +109,11 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
 
     setIsUploading(true);
     try {
-      // 1. 백엔드에서 presigned URL과 public URL 발급
-      const presignedRes = await jwtAxios.get('s3/presigned-url', {
-        params: { filename: file.name },
-      });
+      const presignedRes = await jwtAxios.get('s3/presigned-url', { params: { filename: file.name } });
       const { presignedUrl, publicUrl } = presignedRes.data;
-
-      // 2. 파일을 S3에 직접 PUT 업로드
-      await axios.put(presignedUrl, file, {
-        headers: { 'Content-Type': file.type },
-      });
-
-      // 3. 공개 URL을 썸네일로 설정
+      await axios.put(presignedUrl, file, { headers: { 'Content-Type': file.type } });
       setThumbnailUrl(publicUrl);
-    } catch (err) {
+    } catch {
       alert('파일 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
@@ -72,29 +131,22 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 에디터의 빈 태그(<p><br></p>) 상태 검증
+
     const isBodyEmpty = body.replace(/<(.|\n)*?>/g, '').trim().length === 0;
     if (!title.trim() || isBodyEmpty) {
       setError('제목과 본문을 입력해주세요.');
       return;
     }
-    
+    if (!selectedChannel) {
+      setError('채널을 선택해주세요.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
-    // 쉼표(,)로 구분된 태그들을 배열로 변환 (공백 제거 및 빈 값 제외)
     const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-
-    // 현재 로그인된 유저 정보 가져오기
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-
-    const postData = {
-      title,
-      body,
-      tags: tagArray,
-      thumbnailUrl // 업로드된 썸네일 URL 포함
-    };
+    const postData = { title, body, tags: tagArray, thumbnailUrl, channelId: selectedChannel.channelId };
 
     try {
       if (postToEdit) {
@@ -105,7 +157,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
         alert('게시글이 성공적으로 작성되었습니다.');
       }
       onClose();
-      if (onPostCreated) onPostCreated(); // 피드 리스트 새로고침
+      if (onPostCreated) onPostCreated();
     } catch (err: any) {
       setError(err.response?.data?.message || '게시글 작성 중 오류가 발생했습니다.');
     } finally {
@@ -116,12 +168,95 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
-      
+
+      {/* 채널 선택 */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">채널 <span className="text-red-500">*</span></label>
+        <div className="relative" ref={channelDropdownRef}>
+          {selectedChannel ? (
+            <div className="flex items-center justify-between px-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800">
+              <div className="flex items-center gap-2">
+                {selectedChannel.imageUrl ? (
+                  <img src={selectedChannel.imageUrl} alt={selectedChannel.name} className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-primary">
+                    {selectedChannel.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedChannel.name}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setSelectedChannel(null); handleChannelDropdownOpen(); }}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full transition-colors"
+              >
+                <FiX size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleChannelDropdownOpen}
+              className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-left hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              <span className="text-sm text-gray-400 dark:text-gray-500">채널을 선택하세요...</span>
+              <FiChevronDown size={16} className="text-gray-400" />
+            </button>
+          )}
+
+          {/* 드롭다운 */}
+          {showChannelDropdown && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
+              <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                  <FiSearch size={14} className="text-gray-400 flex-shrink-0" />
+                  <input
+                    type="text"
+                    value={channelSearch}
+                    onChange={handleChannelSearchChange}
+                    placeholder="채널 검색..."
+                    autoFocus
+                    className="flex-1 text-sm bg-transparent outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="max-h-48 overflow-y-auto">
+                {channelSearchLoading ? (
+                  <div className="flex justify-center py-4">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : channelResults.length === 0 ? (
+                  <p className="text-center text-sm text-gray-400 py-4">채널이 없습니다.</p>
+                ) : (
+                  channelResults.map(ch => (
+                    <button
+                      key={ch.channelId}
+                      type="button"
+                      onClick={() => handleSelectChannel(ch)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left"
+                    >
+                      {ch.imageUrl ? (
+                        <img src={ch.imageUrl} alt={ch.name} className="w-7 h-7 rounded object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-7 h-7 rounded bg-primary/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary">
+                          {ch.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{ch.name}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">제목</label>
-        <input 
-          type="text" value={title} onChange={(e) => setTitle(e.target.value)} 
-          placeholder="게시글 제목을 입력하세요." 
+        <input
+          type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+          placeholder="게시글 제목을 입력하세요."
           className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
           required />
       </div>
@@ -155,7 +290,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
               <span className="text-gray-400 dark:text-gray-500 text-sm">관심 있는 기술을 선택해주세요...</span>
             )}
           </div>
-          <svg className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
           </svg>
         </button>
@@ -168,23 +303,13 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
         onToggle={handleTechStackToggle}
       />
 
-      {/* 이미지 업로드 영역 */}
+      {/* 이미지 업로드 */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">썸네일 이미지</label>
-        
-        {/* 숨겨진 파일 입력 필드 */}
-        <input 
-          type="file" 
-          accept="image/*" 
-          ref={fileInputRef}
-          onChange={handleFileUpload} 
-          className="hidden" 
-        />
-        
-        {/* 업로드 버튼 및 상태 표시 */}
+        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
         {!thumbnailUrl && (
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
             className="w-full flex items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-slate-800/50 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
@@ -193,12 +318,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit 
             <span className="text-sm font-medium">{isUploading ? '업로드 중...' : '클릭하여 이미지 업로드'}</span>
           </button>
         )}
-
-        {/* 미리보기 이미지 */}
         {thumbnailUrl && (
           <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 mt-2">
             <img src={thumbnailUrl} alt="Thumbnail Preview" className="w-full h-auto object-cover max-h-64" />
-            <button 
+            <button
               type="button"
               onClick={() => setThumbnailUrl('')}
               className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors backdrop-blur-sm"

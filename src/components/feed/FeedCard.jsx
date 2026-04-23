@@ -5,7 +5,7 @@ import TechStackModal from '../auth/TechStackModal';
 import RichTextEditor from '../editor/RichTextEditor';
 import { FiImage, FiX } from 'react-icons/fi';
 
-const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
+const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
@@ -18,24 +18,63 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  // 채널 선택 상태
+  const [selectedChannel, setSelectedChannel] = useState(null); // { channelId, name, imageUrl }
+  const [showChannelSearch, setShowChannelSearch] = useState(false);
+  const [channelQuery, setChannelQuery] = useState('');
+  const [channelResults, setChannelResults] = useState([]);
+  const [channelSearchLoading, setChannelSearchLoading] = useState(false);
+  const channelDebounceRef = useRef(null);
+  const channelSearchInputRef = useRef(null);
+
   // 수정 모드일 때 기존 데이터로 폼 채우기
   useEffect(() => {
     if (postToEdit) {
       setTitle(postToEdit.title || '');
-      setContent(postToEdit.body || ''); // body가 없으면 빈 문자열로
+      setContent(postToEdit.body || '');
       setTags(postToEdit.tags?.join(', ') || '');
-      // attachedUrls가 배열로 올 수 있으므로, 첫 번째 요소만 문자열로 설정합니다.
       setAttachedUrl(Array.isArray(postToEdit.attachedUrls) && postToEdit.attachedUrls.length > 0 ? postToEdit.attachedUrls[0] : '');
       setThumbnailUrl(postToEdit.thumbnailUrl || '');
+      // 수정 시 기존 채널 정보가 있으면 복원
+      if (postToEdit.channelId) {
+        setSelectedChannel({ channelId: postToEdit.channelId, name: postToEdit.channelName, imageUrl: postToEdit.channelImageUrl });
+      } else {
+        setSelectedChannel(null);
+      }
     } else {
-      // 새 글 작성 모드일 때 폼 초기화
       setTitle('');
       setContent('');
       setTags('');
       setAttachedUrl('');
       setThumbnailUrl('');
+      setSelectedChannel(initialChannel || null);
     }
-  }, [postToEdit]);
+  }, [postToEdit, initialChannel]);
+
+  // 채널 검색 debounce (300ms)
+  useEffect(() => {
+    if (!showChannelSearch) return;
+    clearTimeout(channelDebounceRef.current);
+    channelDebounceRef.current = setTimeout(async () => {
+      setChannelSearchLoading(true);
+      try {
+        const res = await jwtAxios.get('channels/search', { params: { keyword: channelQuery, size: 10 } });
+        setChannelResults(res.data || []);
+      } catch {
+        setChannelResults([]);
+      } finally {
+        setChannelSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(channelDebounceRef.current);
+  }, [channelQuery, showChannelSearch]);
+
+  // 검색란 열릴 때 자동 포커스
+  useEffect(() => {
+    if (showChannelSearch) {
+      channelSearchInputRef.current?.focus();
+    }
+  }, [showChannelSearch]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -81,10 +120,13 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 에디터 특성상 내용이 비어있어도 <p><br></p>가 들어갈 수 있으므로 태그를 제외하고 검사합니다.
     const isContentEmpty = content.replace(/<(.|\n)*?>/g, '').trim().length === 0;
     if (isContentEmpty) {
       setError('내용을 필수로 입력해주세요.');
+      return;
+    }
+    if (!selectedChannel) {
+      setError('채널을 선택해주세요.');
       return;
     }
     
@@ -97,15 +139,14 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
     const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
     const attachedUrlValue = attachedUrl.trim(); // 백엔드가 단일 문자열을 기대하므로, 배열이 아닌 문자열 자체를 보냅니다.
 
-    // 백엔드에 보낼 데이터
     const postData = {
       title: title || (postToEdit ? postToEdit.title : '제목 없음'),
       body: content,
       contentType: 'feed',
-      // channelId: 1, // 필요 시 설정
+      channelId: selectedChannel.channelId,
       thumbnailUrl: thumbnailUrl || null,
-      tags: tagArray, // 태그는 여전히 배열로 보냅니다.
-      attachedUrls: attachedUrlValue, // 단일 문자열로 보냅니다.
+      tags: tagArray,
+      attachedUrls: attachedUrlValue,
       author: currentUser.username || currentUser.nickname || '익명'
     };
     console.log('[FeedCard] 전송 postData:', postData);
@@ -138,9 +179,88 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated }) => {
     }
   };
 
+  const handleSelectChannel = (ch) => {
+    setSelectedChannel(ch);
+    setShowChannelSearch(false);
+    setChannelQuery('');
+    setChannelResults([]);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
+
+      {/* 채널 선택 (필수) */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-semibold text-foreground">
+          채널 <span className="text-red-500">*</span>
+        </label>
+
+        {showChannelSearch ? (
+          <div className="relative">
+            <input
+              ref={channelSearchInputRef}
+              type="text"
+              value={channelQuery}
+              onChange={(e) => setChannelQuery(e.target.value)}
+              onBlur={() => setTimeout(() => { setShowChannelSearch(false); setChannelQuery(''); setChannelResults([]); }, 150)}
+              placeholder="채널명으로 검색..."
+              className="w-full px-4 py-2 border border-primary rounded-xl bg-background text-foreground focus:outline-none transition-colors"
+            />
+            {(channelSearchLoading || channelResults.length > 0) && (
+              <div className="absolute z-50 w-full mt-1 bg-surface border border-border rounded-xl shadow-xl overflow-hidden">
+                {channelSearchLoading ? (
+                  <div className="flex justify-center py-4">
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  channelResults.map((ch) => (
+                    <button
+                      key={ch.channelId}
+                      type="button"
+                      onMouseDown={() => handleSelectChannel(ch)}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-muted/30 transition-colors text-left"
+                    >
+                      {ch.imageUrl ? (
+                        <img src={ch.imageUrl} alt={ch.name} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm font-bold text-primary">{ch.name?.[0]?.toUpperCase()}</span>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{ch.name}</p>
+                        <p className="text-xs text-muted-foreground">{ch.followerCount?.toLocaleString()}명 구독</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowChannelSearch(true)}
+            className="flex items-center gap-3 w-full min-h-[46px] px-4 py-2.5 border border-border rounded-xl bg-background hover:bg-muted/30 transition-colors text-left"
+          >
+            {selectedChannel ? (
+              <>
+                {selectedChannel.imageUrl ? (
+                  <img src={selectedChannel.imageUrl} alt={selectedChannel.name} className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-primary">{selectedChannel.name?.[0]?.toUpperCase()}</span>
+                  </div>
+                )}
+                <span className="text-sm font-semibold text-foreground">{selectedChannel.name}</span>
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground">채널 선택 (필수)</span>
+            )}
+          </button>
+        )}
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">제목(선택 사항)</label>

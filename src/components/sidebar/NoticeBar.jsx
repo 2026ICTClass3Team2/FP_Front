@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import Modal from '../common/Modal';
-import axios from 'axios';
+import axios from '../../api/jwtAxios';
 
 function MyCustomUploadAdapterPlugin(editor) {
     editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {

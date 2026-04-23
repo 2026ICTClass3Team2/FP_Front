@@ -18,6 +18,7 @@ import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import ProtectedRoute from './ProtectedRoute';
 import MyPostList from '../components/layouts/MyPostList';
 import MyBookmarkList from '../components/layouts/MyBookmarkList';
+import NotificationTab from '../components/profile/NotificationTab';
 import BlockList from '../components/profile/BlockList';
 import ChannelDetail from '../pages/channel/ChannelDetail';
 import UserProfilePage from '../pages/profile/UserProfilePage';
@@ -56,6 +57,7 @@ const AppRouter = () => {
               <Route index element={<MyProfile />} />
               <Route path="posts" element={<MyPostList />} />
               <Route path="bookmarks" element={<MyBookmarkList />} />
+              <Route path="notifications" element={<NotificationTab />} />
               <Route path='blocks' element={<BlockList />} />
             </Route>
             <Route path="user/:userId" element={<MyPageLayout />}>

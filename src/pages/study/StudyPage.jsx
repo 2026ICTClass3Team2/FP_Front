@@ -1,64 +1,73 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { getChoseong } from 'es-hangul';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useAuth } from '../../components/sidebar/AuthContext';
+import jwtAxios from '../../api/jwtAxios';
 
 const StudyPage = () => {
-    const [incomingLanguages, setIncomingLanguages] = useState([]);
-    const [incomingChapters, setIncomingChapters] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [selectedLanguage, setSelectedLanguage] = useState("");
-    const [selectedChapter, setSelectedChapter] = useState(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isSearching, setIsSearching] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newLangName, setNewLangName] = useState("");
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { currentUser } = useAuth();
+    const isAdmin = currentUser?.role === 'admin';
 
-    // 추가: 버튼에 포커스를 주기 위한 Ref
+    const [incomingLanguages, setIncomingLanguages] = useState([]);
+    const [incomingChapters, setIncomingChapters]   = useState([]);
+    const [hiddenLanguages, setHiddenLanguages]     = useState([]); // 숨긴 resource_id 배열
+    const [languageIdMap, setLanguageIdMap]         = useState({}); // { name → resource_id }
+    const [isLoading, setIsLoading]                 = useState(true);
+    const [selectedLanguage, setSelectedLanguage]   = useState("");
+    const [selectedChapter, setSelectedChapter]     = useState(null);
+    const [searchQuery, setSearchQuery]             = useState("");
+    const [isSearching, setIsSearching]             = useState(false);
+    const [isModalOpen, setIsModalOpen]             = useState(false);
+    const [newLangName, setNewLangName]             = useState("");
+    const [selectedFile, setSelectedFile]           = useState(null);
+    const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+    const [isSubmitting, setIsSubmitting]           = useState(false);
+
     const addButtonRef = useRef(null);
+
+    const checkAdminAccess = (callback) => {
+        if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
+        callback();
+    };
+
+    // 숨긴 언어 목록 백엔드에서 로드 (관리자·유저 모두 호출)
+    const fetchHiddenLanguages = useCallback(async () => {
+        try {
+            const res = await jwtAxios.get('study/hidden-languages');
+            setHiddenLanguages(res.data || []);
+        } catch {
+            setHiddenLanguages([]);
+        }
+    }, []);
 
     const fetchDBData = async () => {
         setIsLoading(true);
         try {
             const res = await fetch("http://localhost:5679/webhook/study-data", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({ user_id: 1 }),
             });
 
             const data = await res.json();
-            console.log("n8n 원본 데이터:", data); // 브라우저 콘솔에서 구조 확인용
 
-            // [방어 코드 추가] n8n 응답 구조에 따른 데이터 추출
             let result = {};
             if (Array.isArray(data) && data.length > 0) {
-                // [{ json: { languages, ... } }] 형태일 때
                 result = data[0].json || data[0];
             } else {
-                // { languages, ... } 형태일 때
                 result = data.json || data;
             }
 
-            // result가 languages를 가지고 있는지 확인 (없으면 빈 배열로 초기화)
-            const resRaw = result?.languages || [];
-            const oriRaw = result?.chapters || [];
+            const resRaw   = result?.languages  || [];
+            const oriRaw   = result?.chapters   || [];
             const transRaw = result?.translated || [];
 
             const resourceMap = {};
-            resRaw.forEach(r => {
-                if (r.resource_id) resourceMap[r.resource_id] = r.name;
-            });
+            resRaw.forEach(r => { if (r.resource_id) resourceMap[r.resource_id] = r.name; });
 
             const chapters = oriRaw.map(ori => {
                 const trans = transRaw.find(t => t.original_id === ori.original_id && t.language === 'ko');
-
                 return {
                     id: ori.original_id,
                     title: trans ? trans.title : ori.title,
@@ -69,15 +78,14 @@ const StudyPage = () => {
                     status: ori.is_translated ? "번역됨" : "원문",
                     language: resourceMap[ori.resource_id] || "미분류",
                 };
-            })
-                .filter(ch =>
-                    ch.title &&
-                    ch.title.trim() !== "" &&
-                    ch.title.trim() !== "/" &&
-                    ch.content &&
-                    ch.content.trim() !== ""
-                );
+            }).filter(ch =>
+                ch.title && ch.title.trim() !== "" && ch.title.trim() !== "/" &&
+                ch.content && ch.content.trim() !== ""
+            );
 
+            const idMap = {};
+            resRaw.forEach(r => { if (r.resource_id) idMap[r.name] = r.resource_id; });
+            setLanguageIdMap(idMap);
             setIncomingLanguages(resRaw.map(r => r.name));
             setIncomingChapters(chapters);
 
@@ -90,25 +98,35 @@ const StudyPage = () => {
 
     useEffect(() => {
         fetchDBData();
+        fetchHiddenLanguages();
     }, []);
+
+    // 화면에 표시할 언어 (숨긴 resource_id 제외) — 관리자·유저 동일하게 적용
+    const visibleLanguages = useMemo(
+        () => incomingLanguages.filter(l => !hiddenLanguages.includes(languageIdMap[l])),
+        [incomingLanguages, hiddenLanguages, languageIdMap]
+    );
+
+    // 화면에 표시할 챕터 (숨긴 언어 챕터 제외)
+    const visibleChapters = useMemo(
+        () => incomingChapters.filter(c => visibleLanguages.includes(c.language)),
+        [incomingChapters, visibleLanguages]
+    );
 
     const handleLanguageSelect = (lang) => {
         setSelectedLanguage(lang);
-        const firstChapter = incomingChapters.find(c => c.language === lang);
-        if (firstChapter) setSelectedChapter(firstChapter);
+        const first = visibleChapters.find(c => c.language === lang);
+        if (first) setSelectedChapter(first);
         setIsSearching(false);
         setSearchQuery("");
     };
 
     const handleItemSelect = (item) => {
-        if (incomingLanguages.includes(item)) {
+        if (visibleLanguages.includes(item)) {
             handleLanguageSelect(item);
         } else {
-            const target = incomingChapters.find(c => c.title === item);
-            if (target) {
-                setSelectedLanguage(target.language);
-                setSelectedChapter(target);
-            }
+            const target = visibleChapters.find(c => c.title === item);
+            if (target) { setSelectedLanguage(target.language); setSelectedChapter(target); }
         }
         setSearchQuery("");
         setIsSearching(false);
@@ -116,84 +134,80 @@ const StudyPage = () => {
 
     const handleSearchKeyDown = (e) => {
         if (!isSearching || suggestions.length === 0) return;
-
         if (e.key === "ArrowDown") {
             e.preventDefault();
-            setActiveSuggestionIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
+            setActiveSuggestionIndex(prev => prev < suggestions.length - 1 ? prev + 1 : prev);
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            setActiveSuggestionIndex((prev) => (prev > 0 ? prev - 1 : 0));
+            setActiveSuggestionIndex(prev => prev > 0 ? prev - 1 : 0);
         } else if (e.key === "Enter") {
             e.preventDefault();
-            if (activeSuggestionIndex >= 0) {
-                handleItemSelect(suggestions[activeSuggestionIndex]);
-            } else {
-                handleItemSelect(suggestions[0]);
-            }
+            handleItemSelect(suggestions[activeSuggestionIndex >= 0 ? activeSuggestionIndex : 0]);
         }
     };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        // 1. 파일 확장자 추출 및 검사
-        const fileName = file.name.toLowerCase();
-        const isMdFile = fileName.endsWith('.md');
-
-        if (!isMdFile) {
-            alert("MD 파일(.md)만 업로드할 수 있습니다. 확장자를 확인해 주세요.");
-
-            // 중요: 잘못된 파일을 선택했을 때 input의 값을 비워줘야 합니다.
-            // 그래야 사용자가 다시 올바른 파일을 선택했을 때 'change' 이벤트가 정상 작동합니다.
+        if (!file.name.toLowerCase().endsWith('.md')) {
+            alert("MD 파일(.md)만 업로드할 수 있습니다.");
             e.target.value = "";
             setSelectedFile(null);
             return;
         }
-
-        // 2. MD 파일일 경우에만 읽기 시작
         const reader = new FileReader();
         reader.onload = (event) => {
             setSelectedFile(event.target.result);
-
-            // 파일 로드 완료 후 '추가' 버튼으로 포커스 이동
-            if (addButtonRef.current) {
-                addButtonRef.current.focus();
-            }
+            if (addButtonRef.current) addButtonRef.current.focus();
         };
         reader.readAsText(file);
     };
 
     const handleAddLanguage = async () => {
-        // 1. 이미 제출 중이면 중단 (연속 엔터 방지)
+        if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
         if (isSubmitting) return;
-
         if (!newLangName) return alert("언어 이름을 입력해주세요.");
+
+        const trimmedName = newLangName.trim();
+
+        // DB에 존재하고 숨겨진 언어 이름과 100% 일치 → 숨김 해제 (n8n 호출 없음)
+        const hiddenResourceId = languageIdMap[trimmedName];
+        if (hiddenResourceId !== undefined && hiddenLanguages.includes(hiddenResourceId)) {
+            try {
+                await jwtAxios.delete('study/hidden-languages', { data: { resourceId: hiddenResourceId } });
+                await fetchHiddenLanguages();
+                setIsModalOpen(false);
+                setNewLangName("");
+                setSelectedFile(null);
+            } catch {
+                alert("복원 중 오류가 발생했습니다.");
+            }
+            return;
+        }
+
+        // 이미 표시 중인 이름 → 차단
+        if (visibleLanguages.includes(trimmedName)) {
+            alert(`'${trimmedName}' 언어는 이미 등록되어 있습니다.`);
+            return;
+        }
+
+        // 새 언어 → 파일 필수, n8n 등록
         if (!selectedFile) return alert("MD 파일을 업로드해주세요.");
 
-        const payload = {
-            name: newLangName,
-            content: selectedFile
-        };
-
-        // 2. 제출 시작 시 상태를 true로 변경
         setIsSubmitting(true);
-
         try {
             const res = await fetch("http://localhost:5679/webhook/add-language", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ name: trimmedName, content: selectedFile })
             });
-
             if (res.ok) {
-                alert(`${newLangName} 추가 완료!`);
+                alert(`${trimmedName} 추가 완료!`);
                 setIsModalOpen(false);
                 setNewLangName("");
                 setSelectedFile(null);
-
                 await fetchDBData();
-                setSelectedLanguage(newLangName);
+                setSelectedLanguage(trimmedName);
             } else {
                 throw new Error("HTTP error");
             }
@@ -201,15 +215,26 @@ const StudyPage = () => {
             console.error("저장 실패:", error);
             alert("저장에 실패했습니다.");
         } finally {
-            // 3. 성공하든 실패하든 처리가 끝났으므로 다시 false로 변경
             setIsSubmitting(false);
         }
     };
 
-    const handleDeleteLanguage = (e, lang) => {
+    const handleDeleteLanguage = async (e, lang) => {
         e.stopPropagation();
-        if (window.confirm(`정말 '${lang}' 언어를 삭제하시겠습니까?`)) {
-            alert(`'${lang}' 삭제 요청 완료! (n8n 삭제 Webhook 연동이 필요합니다)`);
+        if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
+        if (!window.confirm(`정말 '${lang}' 언어를 삭제하시겠습니까?\n(DB 데이터는 유지됩니다)`)) return;
+
+        try {
+            const resourceId = languageIdMap[lang];
+            await jwtAxios.post('study/hidden-languages', { resourceId });
+            await fetchHiddenLanguages();
+            if (selectedLanguage === lang) {
+                setSelectedLanguage("");
+                setSelectedChapter(null);
+            }
+        } catch (err) {
+            console.error("언어 삭제 실패:", err?.response?.status, err?.response?.data, err);
+            alert("삭제 중 오류가 발생했습니다.");
         }
     };
 
@@ -218,19 +243,26 @@ const StudyPage = () => {
         if (!trimmed) return [];
         const query = trimmed.toLowerCase();
         const queryChoseong = getChoseong(trimmed);
-        const allItems = Array.from(new Set([...incomingLanguages, ...incomingChapters.map(c => c.title)]));
-
+        const allItems = Array.from(new Set([...visibleLanguages, ...visibleChapters.map(c => c.title)]));
         return allItems.filter(item => {
             if (!item) return false;
-            const itemLower = item.toLowerCase();
             const itemChoseong = getChoseong(item);
-            return itemLower.startsWith(query) || (queryChoseong !== "" && itemChoseong.startsWith(queryChoseong));
+            return item.toLowerCase().startsWith(query) ||
+                   (queryChoseong !== "" && itemChoseong.startsWith(queryChoseong));
         }).slice(0, 10);
-    }, [searchQuery, incomingLanguages, incomingChapters]);
+    }, [searchQuery, visibleLanguages, visibleChapters]);
 
-    const currentChapters = useMemo(() => {
-        return incomingChapters.filter(c => c.language === selectedLanguage);
-    }, [incomingChapters, selectedLanguage]);
+    const currentChapters = useMemo(
+        () => visibleChapters.filter(c => c.language === selectedLanguage),
+        [visibleChapters, selectedLanguage]
+    );
+
+    const isRestoring = (() => {
+        const t = newLangName.trim();
+        if (!t) return false;
+        const rid = languageIdMap[t];
+        return rid !== undefined && hiddenLanguages.includes(rid);
+    })();
 
     return (
         <div className="flex h-full w-full bg-background overflow-hidden">
@@ -244,7 +276,7 @@ const StudyPage = () => {
                             onChange={(e) => { setSearchQuery(e.target.value); setIsSearching(true); setActiveSuggestionIndex(-1); }}
                             onKeyDown={handleSearchKeyDown}
                             placeholder="검색..."
-                            className="w-full h-14 pl-14 bg-background border-2 border-border rounded-2xl"
+                            className="w-full h-14 pl-14 bg-background border-2 border-border rounded-2xl text-foreground placeholder:text-muted-foreground"
                         />
                         {isSearching && suggestions.length > 0 && (
                             <div className="absolute left-10 right-10 top-[6.5rem] bg-surface border border-border rounded-2xl shadow-2xl z-50 overflow-hidden">
@@ -252,9 +284,7 @@ const StudyPage = () => {
                                     <button
                                         key={`search-item-${idx}-${item}`}
                                         onClick={() => handleItemSelect(item)}
-                                        // 현재 선택된 인덱스일 경우 bg-secondary 강제 적용 (방향키 피드백)
-                                        className={`w-full text-left px-6 py-4 transition-colors ${activeSuggestionIndex === idx ? 'bg-secondary' : 'hover:bg-secondary'
-                                            }`}
+                                        className={`w-full text-left px-6 py-4 text-foreground transition-colors ${activeSuggestionIndex === idx ? 'bg-secondary' : 'hover:bg-secondary'}`}
                                     >
                                         {item}
                                     </button>
@@ -265,21 +295,24 @@ const StudyPage = () => {
 
                     <div className="flex-1 overflow-y-auto p-6 space-y-10">
                         <section>
-                            <h3 className="text-lg font-black mb-6 px-4">언어 선택</h3>
+                            <h3 className="text-lg font-black mb-6 px-4 text-foreground">언어 선택</h3>
                             <div className="space-y-2">
-                                {incomingLanguages.map((lang, idx) => (
+                                {visibleLanguages.map((lang, idx) => (
                                     <div
                                         key={`lang-select-${idx}-${lang}`}
                                         onClick={() => handleLanguageSelect(lang)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') handleLanguageSelect(lang); }}
                                         tabIndex={0}
-                                        className={`group flex items-center justify-between w-full px-6 py-5 rounded-2xl cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary ${selectedLanguage === lang ? "bg-primary text-white" : "hover:bg-secondary"
+                                        className={`group flex items-center justify-between w-full px-6 py-5 rounded-2xl cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary
+                                            ${selectedLanguage === lang
+                                                ? "bg-primary text-primary-foreground"
+                                                : "text-foreground hover:bg-secondary hover:text-foreground"
                                             }`}
                                     >
                                         <span>{lang}</span>
                                         {isAdmin && (
                                             <button
-                                                onClick={(e) => handleDeleteLanguage(e, lang)}
+                                                onClick={(e) => { e.stopPropagation(); checkAdminAccess(() => handleDeleteLanguage(e, lang)); }}
                                                 className="hidden group-hover:block text-red-500 hover:text-red-700 font-bold px-2 transition-transform hover:scale-110"
                                                 title="언어 삭제"
                                             >
@@ -292,7 +325,7 @@ const StudyPage = () => {
                         </section>
 
                         <section>
-                            <h3 className="text-lg font-black mb-6 px-4">
+                            <h3 className="text-lg font-black mb-6 px-4 text-foreground">
                                 {selectedLanguage || "언어를 선택해주세요"} 챕터
                             </h3>
                             <div className="space-y-2">
@@ -300,8 +333,9 @@ const StudyPage = () => {
                                     <button
                                         key={chapter.id || `chapter-list-${idx}`}
                                         onClick={() => setSelectedChapter(chapter)}
-                                        className={`w-full text-left px-6 py-5 rounded-2xl border-2 ${selectedChapter?.id === chapter.id ?
-                                            "border-primary bg-primary/5" : "border-transparent"}`}
+                                        className={`w-full text-left px-6 py-5 rounded-2xl border-2 text-foreground ${selectedChapter?.id === chapter.id
+                                            ? "border-primary bg-primary/5"
+                                            : "border-transparent hover:bg-secondary"}`}
                                     >
                                         {chapter.title}
                                     </button>
@@ -314,75 +348,80 @@ const StudyPage = () => {
 
             {/* 메인 콘텐츠 */}
             <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background" onClick={() => setIsSearching(false)}>
-    {isAdmin && (
-        <div className="mb-6 flex justify-end">
-            <button
-                onClick={() => setIsModalOpen(true)}
-                className="px-6 py-3 bg-primary text-white rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95"
-            >
-                언어 추가
-            </button>
-        </div>
-    )}
-
-    {/* max-w-5xl은 유지하되, ml-16 대신 mx-auto를 사용하여 중앙 정렬 */}
-    <div className="max-w-5xl mx-auto w-full"> 
-        {selectedChapter ? (
-            <article className="space-y-12 md:space-y-24">
-                <header>
-                    <h1 className="text-2xl md:text-4xl font-black break-words">{selectedChapter.title}</h1>
-                </header>
-                {/* 패딩(p)과 라운드(rounded)를 반응형으로 조절 */}
-                <div className="min-h-[30rem] md:min-h-[40rem] w-full bg-surface border-2 border-border rounded-[2rem] md:rounded-[4rem] p-6 md:p-12 lg:p-20 shadow-sm">
-                    <div className="text-base md:text-xl leading-relaxed prose prose-slate max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {selectedChapter.content}
-                        </ReactMarkdown>
+                {isAdmin && (
+                    <div className="mb-6 flex justify-end">
+                        <button
+                            onClick={() => checkAdminAccess(() => setIsModalOpen(true))}
+                            className="px-6 py-3 bg-primary text-primary-foreground rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95"
+                        >
+                            언어 추가
+                        </button>
                     </div>
-                </div>
-            </article>
-        ) : (
-            <div className="flex items-center justify-center h-96 text-gray-500">
-                왼쪽에서 언어와 챕터를 선택해주세요.
-            </div>
-        )}
+                )}
 
-                    {isModalOpen && (
+                <div className="max-w-5xl mx-auto w-full">
+                    {selectedChapter ? (
+                        <article className="space-y-12 md:space-y-24">
+                            <header>
+                                <h1 className="text-2xl md:text-4xl font-black break-words text-foreground">{selectedChapter.title}</h1>
+                            </header>
+                            <div className="min-h-[30rem] md:min-h-[40rem] w-full bg-surface border-2 border-border rounded-[2rem] md:rounded-[4rem] p-6 md:p-12 lg:p-20 shadow-sm">
+                                <div className="text-base md:text-xl leading-relaxed prose prose-slate dark:prose-invert max-w-none">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {selectedChapter.content}
+                                    </ReactMarkdown>
+                                </div>
+                            </div>
+                        </article>
+                    ) : (
+                        <div className="flex items-center justify-center h-96 text-muted-foreground">
+                            왼쪽에서 언어와 챕터를 선택해주세요.
+                        </div>
+                    )}
+
+                    {/* 언어 추가 모달 — 관리자 전용 */}
+                    {isModalOpen && isAdmin && (
                         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
                             <div className="bg-surface p-8 rounded-2xl w-full max-w-md border border-border">
-                                <h2 className="text-xl font-bold mb-4">언어 추가</h2>
+                                <h2 className="text-xl font-bold mb-4 text-foreground">언어 추가</h2>
                                 <input
                                     type="text"
                                     placeholder="언어 이름"
                                     value={newLangName}
                                     onChange={(e) => setNewLangName(e.target.value)}
-                                    className="w-full mb-4 p-3 border border-border rounded-xl"
+                                    className="w-full mb-3 p-3 border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground"
                                 />
-                                <div className="relative mb-4">
-                                    <p className="text-sm text-gray-500 mb-1">MD 파일(.md) 업로드:</p>
-                                    <input
-                                        type="file"
-                                        accept=".md"
-                                        onChange={handleFileChange}
-                                        className="w-full p-2 text-sm border border-dashed border-primary rounded-xl cursor-pointer hover:bg-primary/5 transition-colors duration-200"
-                                    />
-                                    {selectedFile && <p className="text-xs text-primary mt-1">✅ 파일이 준비되었습니다.</p>}
-                                </div>
+                                {isRestoring ? (
+                                    <p className="text-xs text-primary mb-4">
+                                        이전에 삭제된 언어입니다. 추가 버튼을 누르면 복원됩니다.
+                                    </p>
+                                ) : (
+                                    <div className="relative mb-4">
+                                        <p className="text-sm text-muted-foreground mb-1">MD 파일(.md) 업로드:</p>
+                                        <input
+                                            type="file"
+                                            accept=".md"
+                                            onChange={handleFileChange}
+                                            className="w-full p-2 text-sm border border-dashed border-primary rounded-xl cursor-pointer hover:bg-primary/5 transition-colors duration-200 text-foreground"
+                                        />
+                                        {selectedFile && <p className="text-xs text-primary mt-1">✅ 파일이 준비되었습니다.</p>}
+                                    </div>
+                                )}
                                 <div className="flex gap-3">
                                     <button
-                                        onClick={() => { setIsModalOpen(false); setSelectedFile(null); }}
-                                        className="flex-1 p-3 bg-secondary rounded-xl"
+                                        onClick={() => { setIsModalOpen(false); setSelectedFile(null); setNewLangName(""); }}
+                                        className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors"
                                     >
                                         취소
                                     </button>
                                     <button
                                         ref={addButtonRef}
                                         onClick={handleAddLanguage}
-                                        disabled={isSubmitting} // 제출 중이면 클릭/엔터 막기
+                                        disabled={isSubmitting}
                                         className={`flex-1 p-3 rounded-xl transition-colors ${isSubmitting
-                                            ? "bg-gray-400 cursor-not-allowed" // 비활성화 스타일
-                                            : "bg-primary text-white hover:bg-primary/90"
-                                            }`}
+                                            ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                            : "bg-primary text-primary-foreground hover:bg-primary/90"
+                                        }`}
                                     >
                                         {isSubmitting ? "추가 중..." : "추가"}
                                     </button>

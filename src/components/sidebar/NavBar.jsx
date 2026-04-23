@@ -151,9 +151,10 @@ const NavBar = () => {
 
       {/* 2. 네비게이션 메뉴 */}
       <nav className="flex-1 overflow-y-auto scrollbar-hide p-3 space-y-1">
+       
         <Link to="/" className={getNavClass('/', true)}>
           <FiHome className="w-5 h-5" />
-          <span>홈</span>
+          <span>피드</span>
         </Link>
         <Link to="/qna" className={getNavClass('/qna')}>
           <FiMessageCircle className="w-5 h-5" />

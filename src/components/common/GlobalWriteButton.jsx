@@ -5,11 +5,16 @@ import useWriteChannelStore from '../../../useWriteChannelStore';
 const GlobalWriteButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const channel = useWriteChannelStore((s) => s.channel); // 채널 상세 페이지에서 설정, 그 외 null
+  const channel = useWriteChannelStore((s) => s.channel);
+  const onWriteClick = useWriteChannelStore((s) => s.onWriteClick);
 
   const handleFeedClick = () => {
     setIsOpen(false);
-    navigate('/?write=feed', { state: { channel: channel || null } });
+    if (onWriteClick) {
+      onWriteClick(); // 채널 상세 페이지: 로컬 모달 열기
+    } else {
+      navigate('/?write=feed', { state: { channel: channel || null } });
+    }
   };
 
   const handleQnaClick = () => {

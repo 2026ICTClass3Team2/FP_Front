@@ -5,6 +5,7 @@ import CommentList from './CommentList';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
 import ReportModal from '../common/ReportModal';
+import UserProfileModal from '../common/UserProfileModal';
 
 interface CommunityPostDetailProps {
   post: Post;
@@ -20,16 +21,23 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   const backdropClickRef = useRef(false); // 배경 클릭 여부 추적용 Ref
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment' | 'user', id: number } | null>(null);
+  const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
 
   const handleClose = () => {
     onClose(localPost);
   };
 
-  // Escape 키를 눌렀을 때 모달 닫기
+  // ESC 키: 신고 모달이 열려 있으면 무시(ReportModal이 직접 처리), 입력란 focus 중이면 blur, 아니면 닫기
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        handleClose();
+        if (isReportModalOpen) return;
+        const active = document.activeElement;
+        if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.tagName === 'SELECT')) {
+          (active as HTMLElement).blur();
+        } else {
+          handleClose();
+        }
       }
     };
 
@@ -37,7 +45,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
     return () => {
       window.removeEventListener('keydown', handleEscape);
     };
-  }, [onClose, localPost]);
+  }, [onClose, localPost, isReportModalOpen]);
 
   // 모달이 열려있을 때 배경 스크롤 방지
   useEffect(() => {
@@ -257,17 +265,28 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
       <div className="relative w-full max-w-2xl bg-background rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
         
-        {/* 우측 상단 닫기 버튼 */}
-        <button 
-          onClick={handleClose}
-          className="absolute top-5 right-5 p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
-          aria-label="닫기"
-        >
-          <FiX size={24} />
-        </button>
+        {/* 우측 상단: 신고 + 닫기 버튼 */}
+        <div className="absolute top-5 right-5 flex items-center gap-1">
+          {!localPost.isAuthor && (
+            <button
+              onClick={() => openReportModal(localPost.contentType || 'post', localPost.postId)}
+              className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+              aria-label="게시글 신고"
+            >
+              <FiAlertTriangle size={20} />
+            </button>
+          )}
+          <button
+            onClick={handleClose}
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
+            aria-label="닫기"
+          >
+            <FiX size={24} />
+          </button>
+        </div>
 
         {/* 분리된 하위 컴포넌트 렌더링 */}
-        <AuthorHeader post={localPost} onReport={() => openReportModal(localPost.contentType || 'post', localPost.postId)} />
+        <AuthorHeader post={localPost} onProfileClick={(uid) => setProfileModalUserId(uid)} />
         <PostContent post={localPost} />
         <ActionButtons 
           post={localPost} 
@@ -299,17 +318,27 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
             onSuccess={handleReportSuccess}
           />
         )}
+
+        <UserProfileModal
+          isOpen={profileModalUserId !== null}
+          onClose={() => setProfileModalUserId(null)}
+          userId={profileModalUserId}
+        />
       </div>
     </div>
   );
 };
 
 // 1. 작성자 정보 영역 (Header)
-const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) => {
+const AuthorHeader = ({ post, onProfileClick }: { post: Post; onProfileClick?: (userId: number) => void }) => {
   const initial = post.authorNickname ? post.authorNickname.charAt(0).toUpperCase() : 'U';
+  const handleClick = () => { if (post.authorUserId && onProfileClick) onProfileClick(post.authorUserId); };
   return (
-    <div className="flex items-center gap-4 mb-6">
-      <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden">
+    <div className="flex items-center gap-4 mb-6 pr-28">
+      <div
+        className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+        onClick={handleClick}
+      >
         {post.authorProfileImageUrl ? (
           <img src={post.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
         ) : (
@@ -317,20 +346,10 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
         )}
       </div>
       <div className="flex flex-col">
-        <span className="font-bold text-foreground">{post.isAuthor ? post.authorNickname : (post.authorNickname || '익명')}</span>
+        <span className="font-bold text-foreground cursor-pointer hover:underline" onClick={handleClick}>{post.isAuthor ? post.authorNickname : (post.authorNickname || '익명')}</span>
         <span className="text-sm text-muted-foreground">@{post.authorUsername || 'unknown'}</span>
         <span className="text-xs text-muted-foreground mt-0.5">{formatTimeAgo(post.createdAt)}</span>
       </div>
-      <div className="flex-grow" />
-      {!post.isAuthor && (
-        <button 
-          onClick={onReport}
-          className="p-2 text-muted-foreground hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors"
-          aria-label="게시글 신고"
-        >
-          <FiAlertTriangle size={20} />
-        </button>
-      )}
     </div>
   );
 };
@@ -338,6 +357,21 @@ const AuthorHeader = ({ post, onReport }: { post: Post, onReport: () => void }) 
 // 2. 본문 영역 (Content)
 const PostContent = ({ post }: { post: Post }) => (
   <div className="mb-6">
+    {/* 채널 정보 */}
+    {post.channelName && (
+      <div className="flex items-center gap-1.5 mb-3">
+        <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+          {post.channelImageUrl ? (
+            <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
+          ) : (
+            <span className="w-3.5 h-3.5 rounded-sm bg-primary/30 flex items-center justify-center flex-shrink-0 text-[8px] font-bold">
+              {post.channelName.charAt(0).toUpperCase()}
+            </span>
+          )}
+          {post.channelName}
+        </span>
+      </div>
+    )}
     {/* 썸네일 이미지 */}
     {post.thumbnailUrl && (
       <div className="w-full rounded-2xl overflow-hidden border border-border mb-4">

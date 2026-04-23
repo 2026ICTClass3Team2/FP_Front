@@ -3,6 +3,7 @@ import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
 import ReportModal from '../common/ReportModal';
+import UserProfileModal from '../common/UserProfileModal';
 
 export interface Post {
   postId: number;
@@ -16,7 +17,9 @@ export interface Post {
   authorProfileImageUrl?: string | null;
   authorNickname: string;
   authorUsername: string;
+  channelId?: number | null;
   channelName?: string | null;
+  channelImageUrl?: string | null;
   
   likeCount: number;
   dislikeCount: number;
@@ -52,6 +55,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localPost, setLocalPost] = useState<Post>(post);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // 부모 컴포넌트의 데이터가 변경되면 동기화
@@ -199,7 +203,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             {/* 원형 프로필 이미지 */}
-            <div className="w-10 h-10 rounded-full bg-muted overflow-hidden flex-shrink-0">
+            <div
+              className="w-10 h-10 rounded-full bg-muted overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+              onClick={(e) => { e.stopPropagation(); if (post.authorUserId) setProfileModalUserId(post.authorUserId); }}
+            >
               {post.authorProfileImageUrl ? (
                 <img src={post.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
               ) : (
@@ -210,10 +217,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-foreground">{authorNickname}</span>
+                <span
+                  className="font-bold text-foreground cursor-pointer hover:underline"
+                  onClick={(e) => { e.stopPropagation(); if (post.authorUserId) setProfileModalUserId(post.authorUserId); }}
+                >{authorNickname}</span>
                 <span className="text-sm text-muted-foreground">@{authorUsername}</span>
                 {post.channelName && (
-                  <span className="text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+                  <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+                    {post.channelImageUrl ? (
+                      <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-sm bg-primary/30 flex items-center justify-center flex-shrink-0 text-[8px] font-bold">
+                        {post.channelName.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                     {post.channelName}
                   </span>
                 )}
@@ -321,6 +338,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
         onSuccess={(reportData: any) => {
           onReportSuccess?.(reportData);
         }}
+      />
+
+      <UserProfileModal
+        isOpen={profileModalUserId !== null}
+        onClose={() => setProfileModalUserId(null)}
+        userId={profileModalUserId}
       />
     </article>
   );

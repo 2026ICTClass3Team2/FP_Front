@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye } from 'react-icons/fi';
+import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle } from 'react-icons/fi';
 import { QnAPost } from './QnAPostCard';
 import CommentList from '../feed/CommentList';
+import ReportModal from '../common/ReportModal';
+import UserProfileModal from '../common/UserProfileModal';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
 
@@ -19,15 +21,23 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 }) => {
   const [localPost, setLocalPost] = useState<QnAPost>(post);
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
   const viewCountIncrementedRef = useRef<Set<number>>(new Set());
   const commentSectionRef = useRef<HTMLDivElement>(null);
   const backdropClickRef = useRef(false);
 
-  // Escape key handler
+  // ESC 키: 신고 모달이 열려 있으면 무시(ReportModal이 직접 처리), 입력란 focus 중이면 blur, 아니면 닫기
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose(localPost);
+        if (isReportModalOpen) return;
+        const active = document.activeElement;
+        if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.tagName === 'SELECT')) {
+          (active as HTMLElement).blur();
+        } else {
+          onClose(localPost);
+        }
       }
     };
 
@@ -35,7 +45,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
     return () => {
       window.removeEventListener('keydown', handleEscape);
     };
-  }, [onClose, localPost]);
+  }, [onClose, localPost, isReportModalOpen]);
 
   // Prevent background scroll
   useEffect(() => {
@@ -247,18 +257,32 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
       <div className="relative w-full max-w-2xl bg-surface rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
         
-        {/* Close button */}
-        <button 
-          onClick={() => onClose(localPost)}
-          className="absolute top-5 right-5 p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
-          aria-label="닫기"
-        >
-          <FiX size={24} />
-        </button>
+        {/* 우측 상단: 신고 + 닫기 버튼 */}
+        <div className="absolute top-5 right-5 flex items-center gap-1">
+          {!(localPost.isAuthor || localPost.author === true) && (
+            <button
+              onClick={() => setIsReportModalOpen(true)}
+              className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+              aria-label="게시글 신고"
+            >
+              <FiAlertTriangle size={20} />
+            </button>
+          )}
+          <button
+            onClick={() => onClose(localPost)}
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
+            aria-label="닫기"
+          >
+            <FiX size={24} />
+          </button>
+        </div>
 
         {/* Author header */}
-        <div className="flex items-center gap-4 mb-3 pr-16">
-          <div className="w-12 h-12 rounded-full bg-background text-foreground flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden border border-border">
+        <div className="flex items-center gap-4 mb-3 pr-28">
+          <div
+            className="w-12 h-12 rounded-full bg-background text-foreground flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+            onClick={() => { const uid = localPost.authorUserId ?? (localPost as any).authorId; if (uid) setProfileModalUserId(uid); }}
+          >
             {localPost.authorProfileImageUrl ? (
               <img src={localPost.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
             ) : (
@@ -266,7 +290,10 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
             )}
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-foreground">{localPost.nickname || '익명'}</span>
+            <span
+              className="font-bold text-foreground cursor-pointer hover:underline"
+              onClick={() => { const uid = localPost.authorUserId ?? (localPost as any).authorId; if (uid) setProfileModalUserId(uid); }}
+            >{localPost.nickname || '익명'}</span>
             <span className="text-sm text-muted-foreground">@{localPost.username || 'unknown'}</span>
             <span className="text-xs text-muted-foreground mt-0.5">{formatTimeAgo(localPost.createdAt)}</span>
           </div>
@@ -363,20 +390,39 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
         {/* Comment section */}
         <div ref={commentSectionRef}>
-          <CommentList 
-            postId={localPost.qnaId} 
+          <CommentList
+            postId={localPost.qnaId}
             resourcePath="qna"
             commentCount={commentCount}
             postAuthorUserId={localPost.authorUserId ?? localPost.authorId ?? localPost.author_id ?? localPost.userId ?? localPost.user_id ?? null}
             postResolved={localPost.resolved === true}
             onAcceptAnswer={handleAcceptAnswer}
-            onCommentCountChange={(delta) => setLocalPost(prev => ({ 
-              ...prev, 
+            onCommentCountChange={(delta) => setLocalPost(prev => ({
+              ...prev,
               commentCount: Math.max(0, (prev.commentCount ?? 0) + delta),
               commentsCount: Math.max(0, (prev.commentsCount ?? 0) + delta)
             }))}
           />
         </div>
+
+        {isReportModalOpen && (
+          <ReportModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            targetType="qna"
+            targetId={localPost.qnaId}
+            onSuccess={() => {
+              setIsReportModalOpen(false);
+              onClose();
+            }}
+          />
+        )}
+
+        <UserProfileModal
+          isOpen={profileModalUserId !== null}
+          onClose={() => setProfileModalUserId(null)}
+          userId={profileModalUserId}
+        />
       </div>
     </div>
   );

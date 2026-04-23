@@ -159,14 +159,21 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     <div className="relative max-w-2xl mx-auto w-full pb-20 pt-4 px-4">
       {error && <div className="text-center text-red-500 bg-red-500/10 p-4 rounded-xl mb-4">{error}</div>}
 
+      {/* 초기 로드 중 스피너 */}
+      {isLoading && posts.length === 0 && (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
       <div className="flex flex-col gap-5">
         {posts.map((post) => (
-          <PostCard 
-            key={post.postId} 
-            post={post} 
-            onEdit={onEditClick} 
-            onDelete={handleDeletePost} 
-            onDetailClick={() => setSelectedPost(post)} 
+          <PostCard
+            key={post.postId}
+            post={post}
+            onEdit={onEditClick}
+            onDelete={handleDeletePost}
+            onDetailClick={() => setSelectedPost(post)}
             onComment={() => {
               setSelectedPost(post);
               setAutoScrollToComment(true);
@@ -190,6 +197,12 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
         <CommunityPostDetail
           post={selectedPost}
           autoScrollToComment={autoScrollToComment}
+          onEditClick={(post) => {
+            onEditClick(post);
+          }}
+          onDeleteClick={(postId) => {
+            handleDeletePost(postId);
+          }}
           onClose={(updatedPost?: Post, wasBlocked: boolean = false) => {
             if (updatedPost) {
               setPosts(prevPosts =>

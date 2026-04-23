@@ -316,7 +316,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-extrabold text-foreground my-4">{localPost.title}</h1>
           <div 
-            className="text-foreground/80 text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-96 [&_img]:inline-block"
+            className="text-foreground/80 text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:inline-block [&_img[src*='flaticon']]:w-24 [&_img[src*='flaticon']]:h-24"
             dangerouslySetInnerHTML={{ __html: localPost.body || '<p>내용 없음</p>' }}
           />
           

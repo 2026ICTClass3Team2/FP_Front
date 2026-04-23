@@ -102,17 +102,21 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit,
     setChannelSearch('');
   };
 
-  // 파일 업로드 처리 (S3 presigned URL 방식)
+  // S3 업로드 공통 함수 (썸네일 & 에디터 인라인 이미지 공용)
+  const uploadToS3 = async (file: File): Promise<string> => {
+    const presignedRes = await jwtAxios.get('s3/presigned-url', { params: { filename: file.name } });
+    const { presignedUrl, publicUrl } = presignedRes.data;
+    await axios.put(presignedUrl, file, { headers: { 'Content-Type': file.type } });
+    return publicUrl;
+  };
+
+  // 썸네일 업로드
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsUploading(true);
     try {
-      const presignedRes = await jwtAxios.get('s3/presigned-url', { params: { filename: file.name } });
-      const { presignedUrl, publicUrl } = presignedRes.data;
-      await axios.put(presignedUrl, file, { headers: { 'Content-Type': file.type } });
-      setThumbnailUrl(publicUrl);
+      setThumbnailUrl(await uploadToS3(file));
     } catch {
       alert('파일 업로드에 실패했습니다.');
     } finally {
@@ -132,7 +136,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit,
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const isBodyEmpty = body.replace(/<(.|\n)*?>/g, '').trim().length === 0;
+    const isBodyEmpty = body.replace(/<(.|\n)*?>/g, '').trim().length === 0 && !body.includes('<img');
     if (!title.trim() || isBodyEmpty) {
       setError('제목과 본문을 입력해주세요.');
       return;
@@ -261,14 +265,15 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit,
           required />
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">본문</label>
         <RichTextEditor
           value={body}
           onChange={setBody}
           placeholder="내용을 입력하세요..."
           readOnly={loading}
-          className="rounded-xl transition-shadow shadow-sm"
+          onImageUpload={uploadToS3}
+          className="rounded-xl transition-shadow shadow-sm mt-1"
         />
       </div>
 

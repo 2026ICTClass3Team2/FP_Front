@@ -286,7 +286,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   ) : (
                     <>
                       <div
-                        className="text-foreground text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-h-28 [&_img]:align-middle [&_img]:mx-1"
+                        className="text-foreground text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:align-middle [&_img]:mx-1 [&_img[src*='flaticon']]:w-24 [&_img[src*='flaticon']]:h-24"
                         dangerouslySetInnerHTML={{ __html: comment.content }}
                       />
                       {isReported && showReportedContent && (

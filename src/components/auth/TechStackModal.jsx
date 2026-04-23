@@ -39,7 +39,7 @@ const TechStackModal = ({ isOpen, onClose, selectedTechStack, onToggle }) => {
             <button
               key={tech}
               type="button"
-              onClick={() => onToggle(tech)}z
+              onClick={() => onToggle(tech)}
               className={`px-4 py-2 text-sm font-bold rounded-2xl border-2 transition-all duration-200 ${
                 selectedTechStack.includes(tech)
                   ? 'bg-blue-500 border-blue-500 text-white shadow-md -translate-y-0.5'

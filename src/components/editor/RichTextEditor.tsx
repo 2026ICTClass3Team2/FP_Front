@@ -1,14 +1,67 @@
-import React, { useRef, useState, useMemo, useEffect } from 'react';
-import ReactQuill, { Quill } from 'react-quill-new';
-import { FiSmile } from 'react-icons/fi';
+import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
+import ReactQuill from 'react-quill-new';
+import { FiSmile, FiX, FiRotateCcw, FiRotateCw } from 'react-icons/fi';
 // @ts-ignore
 import 'react-quill-new/dist/quill.snow.css';
 
-// 1. 임시 스티커 데이터
+// Quill의 기본 Image 블롯을 확장하여 inline style 속성을 보존
+const Quill = ReactQuill.Quill;
+const BaseImage = Quill.import('formats/image') as any;
+
+class StyledImage extends BaseImage {
+  static formats(domNode: HTMLElement) {
+    const formats = super.formats(domNode);
+    const style = domNode.getAttribute('style');
+    if (style) formats.style = style;
+    return formats;
+  }
+
+  format(name: string, value: any) {
+    if (name === 'style') {
+      if (value) {
+        (this as any).domNode.setAttribute('style', value);
+      } else {
+        (this as any).domNode.removeAttribute('style');
+      }
+    } else {
+      super.format(name, value);
+    }
+  }
+}
+
+Quill.register(StyledImage, true);
+
 const STICKER_LIST = [
-  { id: 1, name: '버그+1', url: 'https://cdn-icons-png.flaticon.com/512/826/826963.png' },
+  { id: 1, name: '버그', url: 'https://cdn-icons-png.flaticon.com/512/826/826963.png' },
   { id: 2, name: '코딩중', url: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png' },
   { id: 3, name: '에러', url: 'https://cdn-icons-png.flaticon.com/512/564/564619.png' },
+  { id: 4, name: '완료', url: 'https://cdn-icons-png.flaticon.com/512/190/190411.png' },
+  { id: 5, name: '질문', url: 'https://cdn-icons-png.flaticon.com/512/1436/1436664.png' },
+  { id: 6, name: '커피', url: 'https://cdn-icons-png.flaticon.com/512/924/924514.png' },
+  { id: 7, name: '로켓', url: 'https://cdn-icons-png.flaticon.com/512/2950/2950741.png' },
+  { id: 8, name: '좋아요', url: 'https://cdn-icons-png.flaticon.com/512/1104/1104970.png' },
+  { id: 9, name: '스터디', url: 'https://cdn-icons-png.flaticon.com/512/3976/3976625.png' },
+  { id: 10, name: '팀워크', url: 'https://cdn-icons-png.flaticon.com/512/681/681494.png' },
+  { id: 11, name: '아이디어', url: 'https://cdn-icons-png.flaticon.com/512/1998/1998087.png' },
+  { id: 12, name: '알림', url: 'https://cdn-icons-png.flaticon.com/512/1792/1792931.png' },
+  { id: 13, name: '성공', url: 'https://cdn-icons-png.flaticon.com/512/2583/2583387.png' },
+  { id: 14, name: '화남', url: 'https://cdn-icons-png.flaticon.com/512/742/742789.png' },
+  { id: 15, name: '신남', url: 'https://cdn-icons-png.flaticon.com/512/742/742736.png' },
+  { id: 16, name: '졸림', url: 'https://cdn-icons-png.flaticon.com/512/742/742751.png' },
+];
+
+const BUBBLE_FORMATS = [
+  { fmt: 'bold', label: 'B', cls: 'font-bold' },
+  { fmt: 'italic', label: 'I', cls: 'italic' },
+  { fmt: 'underline', label: 'U', cls: 'underline' },
+  { fmt: 'strike', label: 'S', cls: 'line-through' },
+];
+
+const IMAGE_SIZES = [
+  { label: '25%', value: '25%' },
+  { label: '50%', value: '50%' },
+  { label: '75%', value: '75%' },
+  { label: '원본', value: '' },
 ];
 
 interface RichTextEditorProps {
@@ -17,138 +70,430 @@ interface RichTextEditorProps {
   placeholder?: string;
   className?: string;
   readOnly?: boolean;
+  compact?: boolean;
+  onImageUpload?: (file: File) => Promise<string>;
 }
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeholder, className = '', readOnly = false }) => {
+const RichTextEditor: React.FC<RichTextEditorProps> = ({
+  value,
+  onChange,
+  placeholder,
+  className = '',
+  readOnly = false,
+  compact = false,
+  onImageUpload,
+}) => {
   const quillRef = useRef<ReactQuill>(null);
-  const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
-  
-  // 여러 에디터가 렌더링될 수 있으므로 툴바의 고유 ID를 생성합니다. (오류 방지를 위해 랜덤 ID 사용)
-  const [toolbarId] = useState(() => `toolbar-${Math.random().toString(36).substring(2, 9)}`);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imageUploadRef = useRef<() => void>(() => { });
 
-  // 2. 에디터 툴바 설정
+  const [isStickerOpen, setIsStickerOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [charCount, setCharCount] = useState(0);
+  const [bubble, setBubble] = useState({ visible: false, top: 0, left: 0 });
+  const [imgResize, setImgResize] = useState<{
+    visible: boolean; imgEl: HTMLImageElement | null; top: number; left: number;
+  }>({ visible: false, imgEl: null, top: 0, left: 0 });
+  const [toolbarId] = useState(() => `toolbar-${Math.random().toString(36).slice(2, 9)}`);
+
+  // Image upload: file picker (used by toolbar button + drag & drop)
+  const handleImageUpload = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+      try {
+        let url: string;
+        if (onImageUpload) {
+          url = await onImageUpload(file);
+        } else {
+          url = await new Promise<string>((res) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => res(ev.target?.result as string);
+            reader.readAsDataURL(file);
+          });
+        }
+        const range = quill.getSelection(true);
+        const pos = range ? range.index : quill.getLength();
+        quill.insertEmbed(pos, 'image', url, 'user');
+        quill.setSelection(pos + 1, 0);
+      } catch {
+        alert('이미지 업로드에 실패했습니다.');
+      }
+    };
+    input.click();
+  }, [onImageUpload]);
+
+  useEffect(() => { imageUploadRef.current = handleImageUpload; }, [handleImageUpload]);
+
   const modules = useMemo(() => ({
     toolbar: {
       container: `#${toolbarId}`,
-      // Quill의 자체 핸들러 대신 React onClick을 직접 사용하기 위해 핸들러 제거
+      handlers: { image: () => imageUploadRef.current() },
     },
+    history: { delay: 1000, maxStack: 100, userOnly: true },
+    syntax: false,
   }), [toolbarId]);
 
-  // 3. 스티커 삽입 처리 로직
-  const handleStickerSelect = (stickerUrl: string) => {
-    const editor = quillRef.current?.getEditor();
-    if (!editor) return;
-
-    const range = editor.getSelection(true); // true는 에디터에 포커스를 줍니다.
-    const position = range ? range.index : editor.getLength();
-
-    // 이미지 삽입 및 커서 이동
-    editor.insertEmbed(position, 'image', stickerUrl, 'user');
-    
-    // 스티커 뒤에 공백을 추가하여 텍스트처럼 백스페이스로 자연스럽게 지워지도록 처리
-    editor.insertText(position + 1, ' ', 'user');
-    editor.setSelection(position + 2, 0);
-    
-    // 삽입 후 모달 닫기
-    setIsStickerPickerOpen(false);
-    
-    // 포커스 유지 (모달이 닫힐 때 에디터가 포커스를 잃는 현상 방지)
-    setTimeout(() => editor.focus(), 0);
+  // Sticker insert
+  const insertSticker = (url: string) => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    const range = quill.getSelection(true);
+    const pos = range ? range.index : quill.getLength();
+    quill.insertEmbed(pos, 'image', url, 'user');
+    quill.insertText(pos + 1, ' ', 'user');
+    quill.setSelection(pos + 2, 0);
+    setIsStickerOpen(false);
+    setTimeout(() => quill.focus(), 0);
   };
 
+  // Character count
+  useEffect(() => {
+    try {
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+      const update = () => setCharCount(quill.getText().replace(/\n$/, '').length);
+      quill.on('text-change', update);
+      return () => { quill.off('text-change', update); };
+    } catch { return; }
+  }, []);
+
+  // Bubble toolbar on text selection (full mode only)
+  useEffect(() => {
+    if (compact) return;
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    const handler = (range: any) => {
+      if (range && range.length > 0) {
+        try {
+          const bounds = quill.getBounds(range.index, range.length);
+          const editorRect = (quill.root as HTMLElement).getBoundingClientRect();
+          const contRect = containerRef.current?.getBoundingClientRect() ?? { top: 0, left: 0 };
+          setBubble({
+            visible: true,
+            top: bounds.top + (editorRect.top - contRect.top) - 46,
+            left: bounds.left + (editorRect.left - contRect.left) + bounds.width / 2,
+          });
+        } catch { setBubble({ visible: false, top: 0, left: 0 }); }
+      } else {
+        setBubble({ visible: false, top: 0, left: 0 });
+      }
+    };
+    quill.on('selection-change', handler);
+    return () => { quill.off('selection-change', handler); };
+  }, [compact]);
+
+  // Image click → resize menu
   useEffect(() => {
     const quill = quillRef.current?.getEditor();
     if (!quill) return;
-
-    const root = quill.root;
-    const handleClick = (event: MouseEvent) => {
-      if (event.target !== root) return;
-
-      const clickY = event.clientY;
-      const firstChild = root.firstElementChild;
-
-      if (!firstChild) {
-        quill.focus();
-        return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG' && !target.closest('.rte-sticker-picker')) {
+        const img = target as HTMLImageElement;
+        const contRect = containerRef.current?.getBoundingClientRect() ?? { top: 0, left: 0 };
+        const imgRect = img.getBoundingClientRect();
+        setImgResize({
+          visible: true,
+          imgEl: img,
+          top: imgRect.bottom - contRect.top + 6,
+          left: imgRect.left - contRect.left,
+        });
+      } else if (!(target as HTMLElement).closest('.rte-img-resize-menu')) {
+        setImgResize({ visible: false, imgEl: null, top: 0, left: 0 });
       }
+    };
+    quill.root.addEventListener('click', handler);
+    return () => quill.root.removeEventListener('click', handler);
+  }, []);
 
-      const rects = root.getBoundingClientRect();
-      const firstChildBounds = firstChild.getBoundingClientRect();
+  // Drag & drop image into editor
+  useEffect(() => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    const onDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes('Files')) e.preventDefault();
+    };
+    const onDrop = async (e: DragEvent) => {
+      const images = Array.from(e.dataTransfer?.files ?? []).filter(f => f.type.startsWith('image/'));
+      if (!images.length) return;
+      e.preventDefault(); e.stopPropagation();
+      const range = quill.getSelection(true);
+      let pos = range ? range.index : quill.getLength();
+      for (const file of images) {
+        try {
+          let url: string;
+          if (onImageUpload) {
+            url = await onImageUpload(file);
+          } else {
+            url = await new Promise<string>((res) => {
+              const reader = new FileReader();
+              reader.onload = (ev) => res(ev.target?.result as string);
+              reader.readAsDataURL(file);
+            });
+          }
+          quill.insertEmbed(pos, 'image', url, 'user');
+          pos += 1;
+        } catch { alert('이미지 업로드에 실패했습니다.'); }
+      }
+      quill.setSelection(pos, 0);
+    };
+    quill.root.addEventListener('dragover', onDragOver);
+    quill.root.addEventListener('drop', onDrop);
+    return () => {
+      quill.root.removeEventListener('dragover', onDragOver);
+      quill.root.removeEventListener('drop', onDrop);
+    };
+  }, [onImageUpload]);
 
-      // Case 1: 컨텐츠 위쪽 빈 공간 클릭 -> 코드 블록 탈출하여 위에 생성
-      if (clickY < firstChildBounds.top) {
-        const firstLineFormats = quill.getFormat(0, 1);
-        if (firstLineFormats['code-block']) {
+  // Empty area click: escape code block
+  useEffect(() => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    const root = quill.root;
+    const handler = (e: MouseEvent) => {
+      if (e.target !== root) return;
+      const clickY = e.clientY;
+      const first = root.firstElementChild;
+      if (!first) { quill.focus(); return; }
+      if (clickY < first.getBoundingClientRect().top) {
+        const fmt = quill.getFormat(0, 1);
+        if (fmt['code-block']) {
           quill.insertText(0, '\n', 'api');
           quill.formatLine(0, 1, 'code-block', false, 'api');
-          quill.setSelection(0, 0, 'user');
-        } else {
-          quill.setSelection(0, 0, 'user');
         }
-      } 
-      // Case 2: 컨텐츠 아래쪽 빈 공간 클릭 -> 코드 블록 탈출하여 아래에 생성
-      else if (clickY > root.lastElementChild!.getBoundingClientRect().bottom) {
-        const length = quill.getLength();
-        // 실제 텍스트가 있는 마지막 위치의 포맷 확인
-        const lastLineFormats = quill.getFormat(length - 1, 1);
-
-        if (lastLineFormats['code-block']) {
-          // 마지막이 코드 블록이면, 줄바꿈을 추가하고 해당 줄의 코드 서식을 해제
-          quill.insertText(length, '\n', 'user');
-          quill.formatLine(length, 1, 'code-block', false, 'api');
-          quill.setSelection(length + 1, 0, 'user');
+        quill.setSelection(0, 0, 'user');
+      } else if (clickY > root.lastElementChild!.getBoundingClientRect().bottom) {
+        const len = quill.getLength();
+        const fmt = quill.getFormat(len - 1, 1);
+        if (fmt['code-block']) {
+          quill.insertText(len, '\n', 'user');
+          quill.formatLine(len, 1, 'code-block', false, 'api');
+          quill.setSelection(len + 1, 0, 'user');
         } else {
-          quill.setSelection(length, 0, 'user');
+          quill.setSelection(len, 0, 'user');
         }
       }
-      
-      quill.focus(); // 에디터 자체에 포커스 강제
+      quill.focus();
     };
-
-    root.addEventListener('click', handleClick);
-    return () => root.removeEventListener('click', handleClick);
+    root.addEventListener('click', handler);
+    return () => root.removeEventListener('click', handler);
   }, []);
 
   return (
-    <div className={`relative flex flex-col border border-border rounded-xl bg-transparent transition-shadow ${className}`}>
-      
-      {/* 커스텀 툴바 */}
-      <div id={toolbarId} className="flex flex-wrap items-center gap-1 p-2 bg-transparent border-b border-border rounded-t-xl z-10" style={{ display: 'flex' }}>
-        <span className="ql-formats !mr-2">
-          <span className="relative group inline-block">
-            <button className="ql-bold"></button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">굵게</span>
-          </span>
-          <span className="relative group inline-block">
-            <button className="ql-code-block"></button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">코드 블록</span>
-          </span>
-        </span>
-        <span className="ql-formats !mr-2">
-          <span className="relative group inline-block">
-            <button className="ql-link"></button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">링크</span>
-          </span>
-        </span>
-        <span className="ql-formats !mr-2">
-          <span className="relative group inline-block">
-            <button className="ql-image"></button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">이미지</span>
-          </span>
-        </span>
-        <span className="ql-formats">
-          <button 
-            type="button" 
-            onClick={() => setIsStickerPickerOpen(prev => !prev)}
-            className="relative group !w-auto !p-1 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors" 
+    <div
+      ref={containerRef}
+      className={`relative flex flex-col border rounded-xl bg-transparent transition-all duration-150 ${isFocused ? 'border-ring ring-2 ring-ring/10' : 'border-border'
+        } ${className}`}
+    >
+      {/* ── Floating bubble toolbar ── */}
+      {bubble.visible && !readOnly && (
+        <div
+          className="absolute z-[70] flex items-center gap-0.5 bg-foreground text-background
+                     rounded-lg shadow-xl px-1.5 py-1 -translate-x-1/2 pointer-events-auto"
+          style={{ top: bubble.top, left: bubble.left }}
+        >
+          {BUBBLE_FORMATS.map(({ fmt, label, cls }) => (
+            <button
+              key={fmt}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const q = quillRef.current?.getEditor();
+                if (!q) return;
+                q.format(fmt, !q.getFormat()[fmt]);
+              }}
+              className={`w-6 h-6 flex items-center justify-center text-xs rounded hover:bg-white/20 transition-colors ${cls}`}
+            >
+              {label}
+            </button>
+          ))}
+          <div className="w-px h-4 bg-white/30 mx-0.5" />
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const q = quillRef.current?.getEditor();
+              if (!q) return;
+              const url = prompt('링크 URL을 입력하세요:');
+              if (url) q.format('link', url);
+            }}
+            className="px-1.5 py-0.5 text-xs rounded hover:bg-white/20 transition-colors"
           >
-            <FiSmile size={18} />
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60] shadow-sm">스티커</span>
+            링크
+          </button>
+        </div>
+      )}
+
+      {/* ── Image resize menu ── */}
+      {imgResize.visible && !readOnly && (
+        <div
+          className="rte-img-resize-menu absolute z-[70] flex items-center gap-1
+                     bg-surface border border-border rounded-lg shadow-xl px-2 py-1.5"
+          style={{ top: imgResize.top, left: imgResize.left }}
+        >
+          <span className="text-[11px] text-muted-foreground mr-1">이미지 크기:</span>
+          {IMAGE_SIZES.map(({ label, value }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => {
+                if (imgResize.imgEl) {
+                  const quill = quillRef.current?.getEditor();
+                  const blot = quill && Quill.find(imgResize.imgEl);
+                  if (blot) {
+                    if (value) {
+                      blot.format('style', `width: ${value}; height: auto;`);
+                    } else {
+                      blot.format('style', false);
+                    }
+                    quill!.update('user');
+                  }
+                }
+                setImgResize({ visible: false, imgEl: null, top: 0, left: 0 });
+              }}
+              className="px-2 py-0.5 text-xs bg-secondary hover:bg-muted rounded transition-colors text-foreground"
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setImgResize({ visible: false, imgEl: null, top: 0, left: 0 })}
+            className="ml-1 text-muted-foreground hover:text-foreground"
+          >
+            <FiX size={12} />
+          </button>
+        </div>
+      )}
+
+      {/* ── Toolbar ── */}
+      <div
+        id={toolbarId}
+        style={{ display: readOnly ? 'none' : 'flex' }}
+        className="flex-wrap items-center gap-0.5 px-2 py-2 border-b border-border rounded-t-xl bg-muted/30 z-10"
+      >
+        {/* Undo / Redo */}
+        <span className="ql-formats !mr-0 flex items-center gap-0.5">
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); try { quillRef.current?.getEditor()?.history?.undo(); } catch { } }}
+            className="rte-icon-btn" title="실행 취소 (Ctrl+Z)"
+          >
+            <FiRotateCcw size={13} />
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); try { quillRef.current?.getEditor()?.history?.redo(); } catch { } }}
+            className="rte-icon-btn" title="다시 실행 (Ctrl+Y)"
+          >
+            <FiRotateCw size={13} />
           </button>
         </span>
+
+        <span className="w-px h-4 bg-border mx-1 self-center shrink-0" />
+
+        {/* Headers – full mode only */}
+        {!compact && (
+          <>
+            <span className="ql-formats !mr-0">
+              <select className="ql-header" defaultValue="">
+                <option value="1">H1</option>
+                <option value="2">H2</option>
+                <option value="3">H3</option>
+                <option value="">본문</option>
+              </select>
+            </span>
+            <span className="w-px h-4 bg-border mx-1 self-center shrink-0" />
+          </>
+        )}
+
+        {/* Text formatting */}
+        <span className="ql-formats !mr-0">
+          <button className="ql-bold" />
+          <button className="ql-italic" />
+          <button className="ql-underline" />
+          {!compact && <button className="ql-strike" />}
+        </span>
+
+        {/* Color – full mode */}
+        {!compact && (
+          <span className="ql-formats !mr-0">
+            <select className="ql-color">
+              <option value="" />
+              <option value="#ef4444" />
+              <option value="#f97316" />
+              <option value="#eab308" />
+              <option value="#22c55e" />
+              <option value="#3b82f6" />
+              <option value="#8b5cf6" />
+              <option value="#ec4899" />
+              <option value="#6b7280" />
+            </select>
+          </span>
+        )}
+
+        <span className="w-px h-4 bg-border mx-1 self-center shrink-0" />
+
+        {/* Alignment – full mode */}
+        {!compact && (
+          <>
+            <span className="ql-formats !mr-0">
+              <select className="ql-align">
+                <option value="" />
+                <option value="center" />
+                <option value="right" />
+                <option value="justify" />
+              </select>
+            </span>
+            <span className="w-px h-4 bg-border mx-1 self-center shrink-0" />
+          </>
+        )}
+
+        {/* Lists – full mode */}
+        {!compact && (
+          <>
+            <span className="ql-formats !mr-0">
+              <button className="ql-list" value="bullet" />
+              <button className="ql-list" value="ordered" />
+            </span>
+            <span className="w-px h-4 bg-border mx-1 self-center shrink-0" />
+          </>
+        )}
+
+        {/* Block formats */}
+        <span className="ql-formats !mr-0">
+          {!compact && <button className="ql-blockquote" />}
+          <button className="ql-code-block" />
+        </span>
+
+        <span className="w-px h-4 bg-border mx-1 self-center shrink-0" />
+
+        {/* Link + Image */}
+        <span className="ql-formats !mr-0">
+          <button className="ql-link" />
+          <button className="ql-image" title="이미지 삽입 (드래그&드롭도 가능)" />
+        </span>
+
+        <span className="w-px h-4 bg-border mx-1 self-center shrink-0" />
+
+        {/* Sticker */}
+        <button
+          type="button"
+          onClick={() => setIsStickerOpen(p => !p)}
+          className="rte-icon-btn"
+          title="스티커"
+        >
+          <FiSmile size={14} />
+        </button>
       </div>
 
-      {/* React Quill 에디터 */}
+      {/* ── Quill editor ── */}
       <ReactQuill
         ref={quillRef}
         theme="snow"
@@ -156,26 +501,79 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
         onChange={onChange}
         modules={modules}
         readOnly={readOnly}
-        placeholder={placeholder || "내용을 입력하세요..."}
-        className="bg-transparent [&_.ql-container]:!border-none [&_.ql-editor]:min-h-[120px] [&_.ql-editor]:p-4 [&_.ql-editor]:pb-20 [&_.ql-editor_img]:max-h-28 [&_.ql-editor_img]:inline-block [&_.ql-editor_img]:align-middle [&_.ql-editor_img]:mx-1"
+        placeholder={placeholder ?? '내용을 입력하세요...'}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        className={[
+          'bg-transparent',
+          '[&_.ql-container]:!border-none',
+          compact ? '[&_.ql-editor]:min-h-[120px]' : '[&_.ql-editor]:min-h-[360px]',
+          '[&_.ql-editor]:px-5',
+          '[&_.ql-editor]:py-4',
+          '[&_.ql-editor_img]:inline-block',
+          '[&_.ql-editor_img]:align-middle',
+          '[&_.ql-editor_img]:mx-1',
+          '[&_.ql-editor_img]:max-w-full',
+          '[&_.ql-editor_img[src*="flaticon"]]:w-24',
+          '[&_.ql-editor_img[src*="flaticon"]]:h-24',
+          '[&_.ql-editor_img]:cursor-pointer',
+          '[&_.ql-editor_img]:rounded',
+          '[&_.ql-editor_img]:transition-all',
+          '[&_.ql-editor_img:hover]:ring-2',
+          '[&_.ql-editor_img:hover]:ring-primary/40',
+        ].join(' ')}
       />
 
-      {/* 4. 스티커 선택 모달창 */}
-      {isStickerPickerOpen && (
+      {/* ── Bottom bar ── */}
+      {!readOnly && (
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border rounded-b-xl">
+          {!compact ? (
+            <span className="text-[11px] text-muted-foreground select-none">
+              이미지를 에디터로 드래그하여 바로 삽입 · 이미지 클릭 시 크기 조절
+            </span>
+          ) : (
+            <span />
+          )}
+          <span className="text-[11px] text-muted-foreground tabular-nums">{charCount}자</span>
+        </div>
+      )}
+
+      {/* ── Sticker picker ── */}
+      {isStickerOpen && (
         <>
-          {/* 외부 클릭 시 닫히도록 투명 배경 추가 */}
-          <div className="fixed inset-0 z-40" onClick={() => setIsStickerPickerOpen(false)} />
-        <div className="absolute z-50 bg-surface border border-border rounded-xl shadow-2xl p-4 right-2 top-14 w-72 animate-in fade-in zoom-in duration-200">
-          <div className="flex justify-between items-center border-b border-border pb-3 mb-3">
-            <h4 className="font-bold text-foreground text-sm">이모티콘 목록</h4>
-            <button type="button" onClick={() => setIsStickerPickerOpen(false)} className="text-muted-foreground hover:text-foreground text-lg leading-none">
-                &times;
+          <div className="fixed inset-0 z-40" onClick={() => setIsStickerOpen(false)} />
+          <div className="rte-sticker-picker absolute z-50 bg-surface border border-border
+                          rounded-xl shadow-2xl p-4 right-2 top-14 w-[300px]
+                          animate-in fade-in zoom-in duration-150">
+            <div className="flex justify-between items-center border-b border-border pb-2.5 mb-3">
+              <h4 className="font-semibold text-foreground text-sm">스티커</h4>
+              <button
+                type="button"
+                onClick={() => setIsStickerOpen(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <FiX size={16} />
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-3 max-h-[300px] overflow-y-auto">
-              {STICKER_LIST.map((sticker) => (
-              <button key={sticker.id} type="button" onClick={() => handleStickerSelect(sticker.url)} className="w-full p-2 rounded-xl hover:bg-secondary transition-all border border-transparent hover:border-border focus:outline-none" title={sticker.name}>
-                  <img src={sticker.url} alt={sticker.name} className="w-full h-auto object-contain drop-shadow-sm" />
+            <div className="grid grid-cols-4 gap-2 max-h-[260px] overflow-y-auto pr-1">
+              {STICKER_LIST.map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => insertSticker(s.url)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-xl
+                             hover:bg-secondary transition-all border border-transparent
+                             hover:border-border focus:outline-none group"
+                  title={s.name}
+                >
+                  <img
+                    src={s.url}
+                    alt={s.name}
+                    className="w-10 h-10 object-contain drop-shadow-sm group-hover:scale-110 transition-transform"
+                  />
+                  <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                    {s.name}
+                  </span>
                 </button>
               ))}
             </div>

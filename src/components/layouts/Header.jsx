@@ -2,7 +2,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { getRecentNotifications, markAsRead } from '../../api/notification';
-import { FiBell } from 'react-icons/fi';
+import { FiBell, FiCheckCircle } from 'react-icons/fi';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -54,6 +54,53 @@ const Header = () => {
       setIsDropdownOpen(false);
     } catch (error) {
       console.error('Failed to mark as read:', error);
+    }
+  };
+
+  const handleIndividualMarkAsRead = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await markAsRead([id]);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Failed to mark individual as read:', error);
+    }
+  };
+
+  const handleNotificationClick = async (n) => {
+    // 1. Mark as read first
+    if (!n.isRead) {
+      try {
+        await markAsRead([n.id]);
+      } catch (error) {
+        console.error('Failed to mark as read on click:', error);
+      }
+    }
+
+    // 2. Navigate based on type
+    setIsDropdownOpen(false);
+    
+    switch (n.targetType) {
+      case 'post':
+      case 'comment':
+      case 'mention':
+        if (n.postId) {
+          navigate(`/posts/${n.postId}${n.targetType !== 'post' ? `#comment-${n.targetId}` : ''}`);
+        }
+        break;
+      case 'system':
+        if (n.message.includes('point')) {
+          navigate('/mypage/points'); // or wherever point history is
+        }
+        break;
+      case 'channel':
+        navigate(`/channel/${n.targetId}`);
+        break;
+      case 'user':
+        navigate(`/profile/${n.targetId}`);
+        break;
+      default:
+        navigate('/mypage/notifications');
     }
   };
 
@@ -150,29 +197,42 @@ const Header = () => {
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-              <div className="p-4 border-b border-border flex justify-between items-center bg-muted/30">
+            <div className="absolute right-0 mt-2 w-80 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 z-[100]">
+              <div className="p-4 border-b border-border flex justify-between items-center bg-muted/50">
                 <span className="font-bold text-sm">알림</span>
                 <button 
                   onClick={handleMarkAsRead}
-                  className="text-xs text-primary hover:underline font-medium"
+                  className="text-xs text-primary hover:underline font-bold"
                 >
-                  읽음 처리
+                  모두 읽음
                 </button>
               </div>
 
-              <div className="max-h-96 overflow-y-auto">
+              <div className="max-h-96 overflow-y-auto bg-surface">
                 {notifications.length > 0 ? (
                   notifications.map((n) => (
-                    <div key={n.id} className="p-4 border-b border-border last:border-0 hover:bg-muted/20 transition-colors cursor-pointer">
-                      <p className="text-sm text-foreground mb-1">{n.message}</p>
-                      <span className="text-[10px] text-muted-foreground">
+                    <div 
+                      key={n.id} 
+                      className="group p-4 border-b border-border last:border-0 hover:bg-muted/40 transition-colors cursor-pointer relative"
+                      onClick={() => handleNotificationClick(n)}
+                    >
+                      <div className="flex justify-between items-start gap-2 pr-6">
+                        <p className="text-sm text-foreground leading-snug">{n.message}</p>
+                        <button 
+                          onClick={(e) => handleIndividualMarkAsRead(e, n.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-primary/10 rounded-full text-primary transition-all absolute right-2 top-3"
+                          title="읽음 처리"
+                        >
+                          <FiCheckCircle size={14} />
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground mt-1 block">
                         {new Date(n.createdAt).toLocaleString()}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center text-muted-foreground text-sm">
+                  <div className="p-10 text-center text-muted-foreground text-sm">
                     새로운 알림이 없습니다
                   </div>
                 )}
@@ -180,9 +240,9 @@ const Header = () => {
 
               <button 
                 onClick={handleAllNotifications}
-                className="w-full p-3 text-center text-xs font-bold text-muted-foreground hover:bg-muted/30 transition-colors border-t border-border"
+                className="w-full p-3 text-center text-xs font-bold text-muted-foreground hover:bg-muted/50 transition-colors border-t border-border bg-muted/20"
               >
-                전체 알림
+                전체 알림 보기
               </button>
             </div>
           )}

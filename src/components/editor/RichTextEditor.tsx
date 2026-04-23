@@ -261,48 +261,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     root.addEventListener('click', handler);
     return () => root.removeEventListener('click', handler);
 
-    // Mention detection
-    const handleTextChange = () => {
-      const editor = quillRef.current?.getEditor();
-      const range = editor?.getSelection();
-      if (!editor || !range) return;
-
-      const [line] = editor.getLine(range.index);
-      const lineText = line.domNode.textContent || '';
-      const offset = editor.getIndex(line);
-      const textBefore = editor.getText(offset, range.index - offset);
-      
-      const mentionMatch = textBefore.match(/@([^@\s]*)$/);
-      if (mentionMatch) {
-        const query = mentionMatch[1];
-        setMentionQuery(query);
-        
-        // Calculate position
-        const bounds = editor.getBounds(range.index);
-        setMentionPosition({ 
-          top: bounds.top + bounds.height + 40, // 40 for toolbar offset
-          left: bounds.left 
-        });
-        
-        // Fetch suggestions
-        fetch(`http://localhost:8090/member/search?query=${query}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
-        })
-          .then(res => res.json())
-          .then(data => setSuggestions(data))
-          .catch(err => console.error('Failed to fetch suggestions:', err));
-      } else {
-        setMentionQuery(null);
-        setSuggestions([]);
-      }
-    };
-
-    quill.on('text-change', handleTextChange);
-
-    return () => {
-      root.removeEventListener('click', handleClick);
-      quill.off('text-change', handleTextChange);
-    };
   }, []);
 
   const handleMentionSelect = (nickname: string) => {

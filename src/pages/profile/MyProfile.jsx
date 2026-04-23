@@ -8,6 +8,7 @@ import PasswordEditForm from '../../components/profile/PasswordEditForm';
 import ProfileEditForm from '../../components/profile/ProfileEditForm';
 import TechStackModal from '../../components/auth/TechStackModal';
 import EmailVerifyModal from '../../components/profile/EmailVerifyModal';
+import PointShopModal from '../shop/PointShopModal';
 
 const initialProfile = {
   profilePicUrl: null,
@@ -31,6 +32,7 @@ const MyProfile = () => {
   const [showEmailVerify, setShowEmailVerify] = useState(false);
   const [pendingProfile, setPendingProfile] = useState(null);
   const [pendingEmail, setPendingEmail] = useState('');
+  const [showPointShop, setShowPointShop] = useState(false);
 
   // 프로필 정보 불러오기
   useEffect(() => {
@@ -56,7 +58,8 @@ const MyProfile = () => {
       {/* 글로벌 메시지 */}
       {error && <div className="mb-4 text-red-500 text-center font-semibold">{error}</div>}
       {success && <div className="mb-4 text-green-600 text-center font-semibold">{success}</div>}
-      <ProfileCard profile={profile} onEdit={() => setShowEditModal(true)} onPassword={() => setShowPasswordModal(true)} />
+      <ProfileCard profile={profile} onEdit={() => setShowEditModal(true)} onPassword={() => setShowPasswordModal(true)} onPointShop={() => setShowPointShop(true)} />
+      <PointShopModal isOpen={showPointShop} onClose={() => setShowPointShop(false)} currentUser={profile} />
       {/* 프로필 수정 모달 */}
       {showEditModal && (
         <Modal

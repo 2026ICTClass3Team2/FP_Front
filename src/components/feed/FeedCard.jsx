@@ -76,25 +76,20 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     }
   }, [showChannelSearch]);
 
+  const uploadToS3 = async (file) => {
+    const presignedRes = await jwtAxios.get('s3/presigned-url', { params: { filename: file.name } });
+    const { presignedUrl, publicUrl } = presignedRes.data;
+    await axios.put(presignedUrl, file, { headers: { 'Content-Type': file.type } });
+    return publicUrl;
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
     try {
-      console.log('[Upload] presigned-url 요청 시작:', file.name);
-      const presignedRes = await jwtAxios.get('s3/presigned-url', {
-        params: { filename: file.name },
-      });
-      const { presignedUrl, publicUrl } = presignedRes.data;
-      console.log('[Upload] presigned-url 수신:', { presignedUrl, publicUrl });
-
-      await axios.put(presignedUrl, file, {
-        headers: { 'Content-Type': file.type },
-      });
-      console.log('[Upload] S3 PUT 성공, publicUrl:', publicUrl);
-
-      setThumbnailUrl(publicUrl);
+      setThumbnailUrl(await uploadToS3(file));
     } catch (err) {
       console.error('[Upload] 업로드 실패:', err?.response?.status, err?.response?.data || err?.message || err);
       alert('파일 업로드에 실패했습니다.');
@@ -120,7 +115,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const isContentEmpty = content.replace(/<(.|\n)*?>/g, '').trim().length === 0;
+    const isContentEmpty = content.replace(/<(.|\n)*?>/g, '').trim().length === 0 && !content.includes('<img');
     if (isContentEmpty) {
       setError('내용을 필수로 입력해주세요.');
       return;
@@ -274,14 +269,15 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <label className="text-sm font-semibold text-foreground">내용</label>
         <RichTextEditor
           value={content}
           onChange={setContent}
           placeholder="내용을 입력하세요 (최대 10,000자)"
           readOnly={loading}
-          className="rounded-xl transition-shadow"
+          onImageUpload={uploadToS3}
+          className="rounded-xl transition-shadow mt-1"
         />
       </div>
 

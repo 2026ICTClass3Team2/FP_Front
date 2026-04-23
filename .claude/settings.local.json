@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(js|ts\\)$\")",
+      "Bash(npx tsc *)",
+      "Bash(npx --yes tsc --noEmit)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(npm run *)"
+    ]
+  }
+}

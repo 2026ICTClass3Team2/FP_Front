@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink } from 'react-icons/fi';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
 import jwtAxios from '../../api/jwtAxios';
@@ -11,17 +11,23 @@ interface CommunityPostDetailProps {
   post: Post;
   onClose: (updatedPost?: Post) => void;
   autoScrollToComment?: boolean;
+  onEditClick?: (post: Post) => void;
+  onDeleteClick?: (postId: number) => void;
 }
 
-const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose, autoScrollToComment = false }) => {
+const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose, autoScrollToComment = false, onEditClick, onDeleteClick }) => {
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
   const [localPost, setLocalPost] = useState<Post>(post);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(true); // 로딩 상태 추가
-  const viewCountIncrementedRef = useRef<Set<number>>(new Set()); // useRef를 사용하여 특정 postId에 대한 조회수 증가 API가 호출되었는지 추적
-  const commentSectionRef = useRef<HTMLDivElement>(null); // 스크롤 타겟용 Ref
-  const backdropClickRef = useRef(false); // 배경 클릭 여부 추적용 Ref
+  const [isLoadingDetails, setIsLoadingDetails] = useState(true);
+  const viewCountIncrementedRef = useRef<Set<number>>(new Set());
+  const commentSectionRef = useRef<HTMLDivElement>(null);
+  const backdropClickRef = useRef(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment' | 'user', id: number } | null>(null);
   const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const handleClose = () => {
     onClose(localPost);
@@ -113,6 +119,29 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
       }, 100); 
     }
   }, [isLoadingDetails, autoScrollToComment]);
+
+  // 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
+
+  const handleEdit = () => {
+    setIsMenuOpen(false);
+    onClose(localPost);
+    onEditClick?.(localPost);
+  };
+
+  const handleDelete = () => {
+    setIsMenuOpen(false);
+    onClose();
+    onDeleteClick?.(localPost.postId);
+  };
 
   const openReportModal = (type: 'post' | 'comment' | 'user', id: number) => {
     setReportTarget({ type, id });
@@ -265,9 +294,37 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
       <div className="relative w-full max-w-2xl bg-background rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
         
-        {/* 우측 상단: 신고 + 닫기 버튼 */}
+        {/* 우측 상단: 작성자면 수정/삭제 메뉴, 타인이면 신고 버튼 */}
         <div className="absolute top-5 right-5 flex items-center gap-1">
-          {!localPost.isAuthor && (
+          {(localPost.isAuthor || (currentUserId !== null && localPost.authorUserId !== null && currentUserId === localPost.authorUserId)) ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setIsMenuOpen(prev => !prev)}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
+                aria-label="게시글 메뉴"
+              >
+                <FiMoreVertical size={20} />
+              </button>
+              {isMenuOpen && (
+                <div className="absolute right-0 top-10 w-32 bg-background border border-border rounded-xl shadow-lg z-10 overflow-hidden">
+                  <button
+                    onClick={handleEdit}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
+                  >
+                    <FiEdit2 size={14} />
+                    수정
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                  >
+                    <FiTrash2 size={14} />
+                    삭제
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
             <button
               onClick={() => openReportModal(localPost.contentType || 'post', localPost.postId)}
               className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
@@ -294,6 +351,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           onDislike={handleDislike}
           onBookmark={handleBookmark}
           onShare={handleShare}
+          onCommentClick={() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
         />
         
         {/* 댓글 리스트 컴포넌트 (여기로 스크롤 이동) */}
@@ -355,7 +413,9 @@ const AuthorHeader = ({ post, onProfileClick }: { post: Post; onProfileClick?: (
 };
 
 // 2. 본문 영역 (Content)
-const PostContent = ({ post }: { post: Post }) => (
+const PostContent = ({ post }: { post: Post }) => {
+
+  return (
   <div className="mb-6">
     {/* 채널 정보 */}
     {post.channelName && (
@@ -394,8 +454,8 @@ const PostContent = ({ post }: { post: Post }) => (
       )}
     </div>
     <div 
-      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-h-28 [&_img]:inline-block [&_img]:align-middle [&_img]:mx-1"
-      dangerouslySetInnerHTML={{ __html: post.body || '' }}
+      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:inline-block [&_img]:align-middle [&_img]:mx-1 [&_img[src*='flaticon']]:w-24 [&_img[src*='flaticon']]:h-24 [&_pre]:bg-[#f0f0f0] dark:[&_pre]:bg-surface [&_pre]:text-foreground [&_pre]:px-3 [&_pre]:py-2 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_pre]:font-mono [&_pre]:text-sm [&_pre]:my-4 [&_pre]:whitespace-pre [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 dark:[&_blockquote]:border-gray-600 [&_blockquote]:pl-4 [&_blockquote]:my-2 [&_blockquote]:text-muted-foreground"
+      dangerouslySetInnerHTML={{ __html: post.body || '<p>내용 없음</p>' }}
     />
     <div className="flex flex-wrap gap-2">
       {post.tags && post.tags.map(tag => (
@@ -405,11 +465,12 @@ const PostContent = ({ post }: { post: Post }) => (
       ))}
     </div>
   </div>
-);
+  );
+};
 
 
 // 3. 상호작용 버튼 영역 (Actions)
-const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare }: { post: Post, onLike: () => void, onDislike: () => void, onBookmark: () => void, onShare: () => void }) => {
+const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare, onCommentClick }: { post: Post, onLike: () => void, onDislike: () => void, onBookmark: () => void, onShare: () => void, onCommentClick?: () => void }) => {
   const buttonClass = "relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0";
   const iconOnlyClass = "relative group flex items-center justify-center w-10 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0";
   const isLiked = post.isLiked || post.liked;
@@ -429,7 +490,7 @@ const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare }: { post:
           <span className="text-sm font-semibold">{post.dislikeCount || 0}</span>
           <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
         </button>
-        <button className={buttonClass}>
+        <button onClick={onCommentClick} className={buttonClass}>
           <FiMessageCircle size={18} />
           <span className="text-sm font-semibold">{post.commentCount || 0}</span>
           <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">댓글</span>

@@ -50,7 +50,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
     e.preventDefault();
     
     // Quill은 빈 내용이라도 <p><br></p> 등을 포함할 수 있어 체크가 필요합니다.
-    const isContentEmpty = content.replace(/<(.|\n)*?>/g, '').trim().length === 0;
+    const isContentEmpty = content.replace(/<(.|\n)*?>/g, '').trim().length === 0 && !content.includes('<img');
     if (isContentEmpty) return;
 
     setIsLoading(true);
@@ -74,6 +74,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
           onChange={setContent}
           placeholder={placeholder}
           readOnly={isLoading}
+          compact
         />
       </div>
 
@@ -90,7 +91,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
         )}
         <button
           type="submit"
-          disabled={isLoading || content.replace(/<(.|\n)*?>/g, '').trim().length === 0}
+          disabled={isLoading || (content.replace(/<(.|\n)*?>/g, '').trim().length === 0 && !content.includes('<img'))}
           className="px-4 py-2 text-sm font-bold text-primary-foreground bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-md"
         >
           {isLoading ? '저장 중...' : (initialValue ? '수정 완료' : '댓글 작성')}

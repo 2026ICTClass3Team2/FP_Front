@@ -1,13 +1,23 @@
+// Header.tsx
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { getRecentNotifications, markAsRead } from '../../api/notification';
-import { FiBell, FiMessageSquare } from 'react-icons/fi';
+import { FiBell } from 'react-icons/fi';
 
 const Header = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogoClick = (e) => {
+    if (location.pathname === '/') {
+      e.preventDefault();
+      navigate(0); // 같은 경로면 강제 새로고침
+    }
+  };
+
   const [notifications, setNotifications] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const navigate = useNavigate();
 
   const fetchNotifications = async () => {
     try {
@@ -53,9 +63,10 @@ const Header = () => {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-background flex items-center px-4 md:px-6 shrink-0 relative z-50">
-      
-      <Link to="/" className="flex items-center gap-3 min-w-[200px] text-foreground">
+    <header className="h-16 border-b border-border bg-background flex items-center px-4 md:px-6 shrink-0 relative z-10">
+
+      <Link to="/" onClick={handleLogoClick} className="flex items-center gap-3 min-w-[200px] text-foreground">
+        {/* 앱 아이콘 */}
         <h1 className="font-black text-xl tracking-[0px] flex items-center gap-3">
           Dead
           {/* 앱 아이콘 */}

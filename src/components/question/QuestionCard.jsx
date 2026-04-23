@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import jwtAxios from '../../api/jwtAxios';
 import TechStackModal from '../auth/TechStackModal';
 import RichTextEditor from '../editor/RichTextEditor';
@@ -27,7 +28,8 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
   // 폼 제출 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) {
+    const isBodyEmpty = body.replace(/<(.|\n)*?>/g, '').trim().length === 0 && !body.includes('<img');
+    if (!title.trim() || isBodyEmpty) {
       setError('제목과 본문을 입력해주세요.');
       return;
     }
@@ -67,6 +69,13 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
     }
   };
 
+  const uploadToS3 = useCallback(async (file) => {
+    const presignedRes = await jwtAxios.get('s3/presigned-url', { params: { filename: file.name } });
+    const { presignedUrl, publicUrl } = presignedRes.data;
+    await axios.put(presignedUrl, file, { headers: { 'Content-Type': file.type } });
+    return publicUrl;
+  }, []);
+
   const handleTechStackToggle = (tech) => {
     const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
     if (currentTags.includes(tech)) {
@@ -105,6 +114,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
           onChange={setBody}
           placeholder="문제 상황, 시도해본 방법, 에러 메시지 등을 상세히 적어주시면 더 좋은 답변을 받을 수 있습니다."
           readOnly={loading}
+          onImageUpload={uploadToS3}
           className="rounded-xl transition-shadow"
         />
       </div>

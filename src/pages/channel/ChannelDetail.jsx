@@ -410,6 +410,13 @@ const ChannelDetail = () => {
       <>
       <h2 className="text-lg font-bold text-foreground mb-4">채널 게시글</h2>
 
+      {/* 초기 로드 중 스피너 */}
+      {postsLoading && posts.length === 0 && (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
       <div className="flex flex-col gap-5">
         {posts.map((post) => (
           <PostCard
@@ -446,6 +453,12 @@ const ChannelDetail = () => {
         <CommunityPostDetail
           post={selectedPost}
           autoScrollToComment={autoScrollToComment}
+          onEditClick={(post) => {
+            handleEditPost(post);
+          }}
+          onDeleteClick={(postId) => {
+            handleDeletePost(postId);
+          }}
           onClose={(updatedPost) => {
             if (updatedPost) {
               setPosts((prev) => prev.map((p) => (p.postId === updatedPost.postId ? updatedPost : p)));

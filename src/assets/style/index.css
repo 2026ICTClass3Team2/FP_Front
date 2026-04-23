@@ -212,13 +212,288 @@
     box-shadow: 0 0 0 1px var(--color-ring);
   }
 
-  /* Quill Editor Code Block Override */
-  .ql-editor pre.ql-syntax {
-    background-color: var(--color-surface) !important;
+  /* Quill Editor – toolbar icon button */
+  .rte-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 0.375rem;
+    color: var(--color-muted-foreground);
+    transition: background-color 0.15s, color 0.15s;
+    cursor: pointer;
+  }
+  .rte-icon-btn:hover {
+    background-color: var(--color-muted);
+    color: var(--color-foreground);
+  }
+  
+  /* Fix SVG centering inside custom buttons overridden by Quill */
+  .ql-snow .ql-toolbar button.rte-icon-btn svg,
+  .ql-snow.ql-toolbar button.rte-icon-btn svg {
+    float: none !important;
+    height: auto !important;
+  }
+
+  /* Quill – hide default header (snow theme adds one we don't want) */
+  .ql-toolbar.ql-snow { border: none !important; padding: 0.5rem 1rem !important; }
+  .ql-container.ql-snow { border: none !important; }
+
+  /* Quill – toolbar button & picker base */
+  .ql-snow .ql-toolbar button,
+  .ql-snow.ql-toolbar button {
+    width: 26px !important;
+    height: 26px !important;
+    padding: 4px !important;
+    border-radius: 0.375rem !important;
+    color: var(--color-muted-foreground);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ql-snow .ql-toolbar button:hover,
+  .ql-snow.ql-toolbar button:hover,
+  .ql-snow .ql-toolbar button.ql-active,
+  .ql-snow.ql-toolbar button.ql-active {
+    background-color: var(--color-muted) !important;
     color: var(--color-foreground) !important;
+  }
+
+  /* Quill – stroke/fill match foreground */
+  .ql-snow .ql-toolbar button .ql-stroke,
+  .ql-snow.ql-toolbar button .ql-stroke {
+    stroke: var(--color-muted-foreground) !important;
+  }
+  .ql-snow .ql-toolbar button:hover .ql-stroke,
+  .ql-snow.ql-toolbar button:hover .ql-stroke,
+  .ql-snow .ql-toolbar button.ql-active .ql-stroke,
+  .ql-snow.ql-toolbar button.ql-active .ql-stroke {
+    stroke: var(--color-foreground) !important;
+  }
+  .ql-snow .ql-toolbar button .ql-fill,
+  .ql-snow.ql-toolbar button .ql-fill {
+    fill: var(--color-muted-foreground) !important;
+  }
+  .ql-snow .ql-toolbar button:hover .ql-fill,
+  .ql-snow.ql-toolbar button:hover .ql-fill,
+  .ql-snow .ql-toolbar button.ql-active .ql-fill,
+  .ql-snow.ql-toolbar button.ql-active .ql-fill {
+    fill: var(--color-foreground) !important;
+  }
+
+  /* Quill – picker labels (header, color, align) */
+  .ql-snow .ql-picker-label,
+  .ql-snow.ql-toolbar .ql-picker-label {
+    color: var(--color-muted-foreground) !important;
     border: 1px solid var(--color-border) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 1rem !important;
+    border-radius: 0.375rem !important;
+    background: transparent !important;
+  }
+  .ql-snow .ql-picker-label:hover,
+  .ql-snow .ql-picker-label.ql-active {
+    color: var(--color-foreground) !important;
+    border-color: var(--color-ring) !important;
+  }
+  .ql-snow .ql-picker-label .ql-stroke {
+    stroke: var(--color-muted-foreground) !important;
+  }
+
+  /* Quill – picker dropdown */
+  .ql-snow .ql-picker-options {
+    background-color: var(--color-surface) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12) !important;
+    padding: 4px !important;
+  }
+  .ql-snow .ql-picker-options .ql-picker-item {
+    border-radius: 4px;
+    padding: 4px 6px;
+    color: var(--color-foreground) !important;
+  }
+  .ql-snow .ql-picker-options .ql-picker-item:hover,
+  .ql-snow .ql-picker-options .ql-picker-item.ql-selected {
+    background-color: var(--color-muted) !important;
+    color: var(--color-foreground) !important;
+  }
+
+  /* Quill – link tooltip */
+  .ql-snow .ql-tooltip {
+    background-color: var(--color-surface) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 0.5rem !important;
+    color: var(--color-foreground) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+  }
+  .ql-snow .ql-tooltip input[type=text] {
+    background-color: var(--color-background) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-foreground) !important;
+    border-radius: 0.375rem !important;
+    outline: none !important;
+  }
+  .ql-snow .ql-tooltip a.ql-action::after {
+    color: var(--color-primary) !important;
+  }
+  .ql-snow .ql-tooltip a.ql-remove::before {
+    color: #ef4444 !important;
+  }
+
+  /* Quill – editor content */
+  .ql-editor {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--color-foreground) !important;
+  }
+  .ql-editor.ql-blank::before {
+    color: var(--color-muted-foreground) !important;
+    font-style: normal !important;
+  }
+
+  /* Quill – blockquote */
+  .ql-editor blockquote {
+    border-left: 3px solid var(--color-primary) !important;
+    padding-left: 1rem !important;
+    color: var(--color-muted-foreground) !important;
+    margin: 0.5rem 0 !important;
+    background-color: var(--color-muted) !important;
+    border-radius: 0 0.375rem 0.375rem 0 !important;
+  }
+
+  /* ── Code block: shared base (editor + viewer) ── */
+  .ql-code-block-container {
+    position: relative;
+    background-color: #f4f4f5;
+    color: #18181b;
+    border: 1px solid #e4e4e7;
+    border-radius: 0.625rem;
+    padding: 2.75rem 1.25rem 1.25rem;
+    font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+
+  /* macOS-style title bar */
+  .ql-code-block-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2.25rem;
+    background-color: #e4e4e7;
+    border-radius: 0.625rem 0.625rem 0 0;
+    border-bottom: 1px solid #d4d4d8;
+  }
+
+  /* macOS traffic-light dots */
+  .ql-code-block-container::after {
+    content: '● ● ●';
+    position: absolute;
+    top: 0.55rem;
+    left: 0.875rem;
+    font-size: 0.45rem;
+    letter-spacing: 0.3em;
+    color: #a1a1aa;
+    font-family: var(--font-family-sans);
+    white-space: nowrap;
+  }
+
+  /* each line inside the editor */
+  .ql-code-block {
+    white-space: pre;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    min-height: 1.4em;
+  }
+
+  /* highlighted viewer: pre/code wrapper reset */
+  .ql-code-block-container pre {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    white-space: pre;
+    overflow: visible;
+  }
+  .ql-code-block-container code {
+    font-family: inherit;
+    font-size: inherit;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  /* Dark mode */
+  .dark .ql-code-block-container {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    border-color: #313244;
+  }
+  .dark .ql-code-block-container::before {
+    background-color: #181825;
+    border-bottom-color: #313244;
+  }
+  .dark .ql-code-block-container::after {
+    color: #45475a;
+  }
+
+  /* Editor-specific overrides (beat Quill snow defaults) */
+  .ql-editor .ql-code-block-container {
+    background-color: #f4f4f5 !important;
+    color: #18181b !important;
+    border: 1px solid #e4e4e7 !important;
+    border-radius: 0.625rem !important;
+    padding: 2.75rem 1.25rem 1.25rem !important;
+    font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, monospace !important;
+    font-size: 0.85rem !important;
+    line-height: 1.7 !important;
+    overflow-x: auto !important;
+    margin: 0.75rem 0 !important;
+    position: relative !important;
+  }
+  .dark .ql-editor .ql-code-block-container {
+    background-color: #1e1e2e !important;
+    color: #cdd6f4 !important;
+    border-color: #313244 !important;
+  }
+  /* Light mode hljs token colors */
+  .hljs-keyword        { color: #d73a49 !important; }
+  .hljs-string         { color: #032f62 !important; }
+  .hljs-number         { color: #005cc5 !important; }
+  .hljs-comment        { color: #6a737d !important; font-style: italic; }
+  .hljs-function,
+  .hljs-title          { color: #6f42c1 !important; }
+  .hljs-type           { color: #e36209 !important; }
+  .hljs-built_in       { color: #005cc5 !important; }
+  .hljs-literal        { color: #005cc5 !important; }
+  .hljs-attr           { color: #6f42c1 !important; }
+  .hljs-variable       { color: #24292e !important; }
+  .hljs-tag            { color: #22863a !important; }
+  .hljs-meta           { color: #735c0f !important; }
+
+  /* Dark mode hljs token colors */
+  .dark .hljs-keyword  { color: #89b4fa !important; }
+  .dark .hljs-string   { color: #a6e3a1 !important; }
+  .dark .hljs-number   { color: #fab387 !important; }
+  .dark .hljs-comment  { color: #6c7086 !important; }
+  .dark .hljs-function { color: #89dceb !important; }
+  .dark .hljs-title    { color: #cba6f7 !important; }
+  .dark .hljs-type     { color: #f38ba8 !important; }
+  .dark .hljs-built_in { color: #89b4fa !important; }
+  .dark .hljs-literal  { color: #fab387 !important; }
+  .dark .hljs-attr     { color: #f9e2af !important; }
+  .dark .hljs-variable { color: #cdd6f4 !important; }
+  .dark .hljs-tag      { color: #f38ba8 !important; }
+  .dark .hljs-meta     { color: #7f849c !important; }
+
+  /* Quill – read-only mode: hide cursor */
+  .ql-editor[contenteditable="false"] {
+    cursor: default !important;
   }
 }
 

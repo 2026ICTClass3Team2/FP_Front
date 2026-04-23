@@ -22,6 +22,9 @@ interface RichTextEditorProps {
 const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeholder, className = '', readOnly = false }) => {
   const quillRef = useRef<ReactQuill>(null);
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
   
   // 여러 에디터가 렌더링될 수 있으므로 툴바의 고유 ID를 생성합니다. (오류 방지를 위해 랜덤 ID 사용)
   const [toolbarId] = useState(() => `toolbar-${Math.random().toString(36).substring(2, 9)}`);
@@ -106,8 +109,67 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
     };
 
     root.addEventListener('click', handleClick);
-    return () => root.removeEventListener('click', handleClick);
+
+    // Mention detection
+    const handleTextChange = () => {
+      const editor = quillRef.current?.getEditor();
+      const range = editor?.getSelection();
+      if (!editor || !range) return;
+
+      const [line] = editor.getLine(range.index);
+      const lineText = line.domNode.textContent || '';
+      const offset = editor.getIndex(line);
+      const textBefore = editor.getText(offset, range.index - offset);
+      
+      const mentionMatch = textBefore.match(/@([^@\s]*)$/);
+      if (mentionMatch) {
+        const query = mentionMatch[1];
+        setMentionQuery(query);
+        
+        // Calculate position
+        const bounds = editor.getBounds(range.index);
+        setMentionPosition({ 
+          top: bounds.top + bounds.height + 40, // 40 for toolbar offset
+          left: bounds.left 
+        });
+        
+        // Fetch suggestions
+        fetch(`http://localhost:8090/member/search?query=${query}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+        })
+          .then(res => res.json())
+          .then(data => setSuggestions(data))
+          .catch(err => console.error('Failed to fetch suggestions:', err));
+      } else {
+        setMentionQuery(null);
+        setSuggestions([]);
+      }
+    };
+
+    quill.on('text-change', handleTextChange);
+
+    return () => {
+      root.removeEventListener('click', handleClick);
+      quill.off('text-change', handleTextChange);
+    };
   }, []);
+
+  const handleMentionSelect = (nickname: string) => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor || mentionQuery === null) return;
+
+    const range = editor.getSelection();
+    if (!range) return;
+
+    const startIndex = range.index - mentionQuery.length - 1;
+    editor.deleteText(startIndex, mentionQuery.length + 1);
+    editor.insertText(startIndex, `@${nickname} `);
+    editor.setSelection(startIndex + nickname.length + 2, 0);
+
+    setMentionQuery(null);
+    setSuggestions([]);
+    editor.focus();
+  };
 
   return (
     <div className={`relative flex flex-col border border-border rounded-xl bg-transparent transition-shadow ${className}`}>
@@ -181,6 +243,35 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
             </div>
           </div>
         </>
+      )}
+      {/* 5. 멘션 추천 목록 */}
+      {mentionQuery !== null && suggestions.length > 0 && (
+        <div 
+          className="absolute z-[70] bg-card border border-border rounded-xl shadow-2xl overflow-hidden w-48 animate-in fade-in slide-in-from-top-1"
+          style={{ 
+            top: mentionPosition?.top, 
+            left: mentionPosition?.left 
+          }}
+        >
+          {suggestions.map((user: any) => (
+            <button
+              key={user.id}
+              type="button"
+              onClick={() => handleMentionSelect(user.nickname)}
+              className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors border-b border-border last:border-0"
+            >
+              <img 
+                src={user.profilePicUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
+                alt={user.nickname} 
+                className="w-6 h-6 rounded-full object-cover"
+              />
+              <div className="text-left">
+                <p className="text-xs font-bold text-foreground">{user.nickname}</p>
+                <p className="text-[10px] text-muted-foreground">@{user.username}</p>
+              </div>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

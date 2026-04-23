@@ -126,7 +126,7 @@ const MyPosts = () => {
 
       {/* Q&A 상세 모달 */}
       {selectedPost && selectedPost.contentType === 'qna' && (
-        <QnaDetailModal postId={selectedPost.id} onClose={handleCloseModal} />
+        <QnaDetailModal post={selectedPost} onClose={handleCloseModal} />
       )}
     </div>
   );

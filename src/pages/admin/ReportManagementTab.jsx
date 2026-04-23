@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import { useAuth } from '../../components/sidebar/AuthContext';
 import { FiEye, FiCheck, FiX, FiTrash2, FiEyeOff, FiSlash, FiAlertCircle, FiUserMinus, FiUserCheck, FiLock, FiUnlock, FiRotateCcw } from 'react-icons/fi';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 
 const TRANSLATIONS = {
   // Target Types
@@ -26,6 +27,7 @@ const ReportManagementTab = ({ fetchStats }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [reportModal, setReportModal] = useState(null);
   const [targetDetails, setTargetDetails] = useState(null);
+  const [confirmation, setConfirmation] = useState(null); // { title, message, onConfirm }
 
   const fetchReports = async () => {
     try {
@@ -75,26 +77,38 @@ const ReportManagementTab = ({ fetchStats }) => {
   };
 
   const handleTargetAction = async (targetType, targetId, status, isUserWarn = false) => {
-    if (!window.confirm(`해당 대상의 상태를 [${status}] (으)로 변경하시겠습니까?`)) return;
-    try {
-      if (isUserWarn) {
-        await jwtAxios.post(`admin/users/${targetId}/warn`);
-        alert('사용자에게 경고가 부여되었습니다.');
-      } else {
-        const typePlural = targetType.toLowerCase() === 'user' ? 'users' : 
-                          targetType.toLowerCase() === 'post' ? 'posts' : 
-                          targetType.toLowerCase() === 'comment' ? 'comments' : 'channels';
-        
-        await jwtAxios.put(`admin/${typePlural}/${targetId}/status`, null, {
-          params: { status }
-        });
-        alert(`상태가 [${status}] (으)로 변경되었습니다.`);
+    const title = isUserWarn ? '경고 부여' : '상태 변경';
+    const message = isUserWarn 
+      ? '해당 사용자에게 경고를 1회 부여하시겠습니까?' 
+      : `해당 대상의 상태를 [${status}] (으)로 변경하시겠습니까?`;
+
+    setConfirmation({
+      title,
+      message,
+      onConfirm: async () => {
+        try {
+          if (isUserWarn) {
+            await jwtAxios.post(`admin/users/${targetId}/warn`);
+            alert('사용자에게 경고가 부여되었습니다.');
+          } else {
+            const typePlural = targetType.toLowerCase() === 'user' ? 'users' : 
+                              targetType.toLowerCase() === 'post' ? 'posts' : 
+                              targetType.toLowerCase() === 'comment' ? 'comments' : 'channels';
+            
+            await jwtAxios.put(`admin/${typePlural}/${targetId}/status`, null, {
+              params: { status }
+            });
+            alert(`상태가 [${status}] (으)로 변경되었습니다.`);
+          }
+          handleUpdateStatus('resolved');
+        } catch (error) {
+          console.error('Action error:', error);
+          alert('조치 중 오류가 발생했습니다.');
+        } finally {
+          setConfirmation(null);
+        }
       }
-      handleUpdateStatus('resolved');
-    } catch (error) {
-      console.error('Action error:', error);
-      alert('조치 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   return (
@@ -119,8 +133,7 @@ const ReportManagementTab = ({ fetchStats }) => {
               <th className="py-3 px-4 font-semibold">유형</th>
               <th className="py-3 px-4 font-semibold">신고 사유</th>
               <th className="py-3 px-4 font-semibold">상태</th>
-              <th className="py-3 px-4 font-semibold">신고일</th>
-              <th className="py-3 px-4 font-semibold text-right">상세</th>
+              <th className="py-3 px-4 font-semibold text-right">신고일</th>
             </tr>
           </thead>
           <tbody>
@@ -148,22 +161,14 @@ const ReportManagementTab = ({ fetchStats }) => {
                     {report.status === 'pending' ? '미처리' : '처리완료'}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-sm text-muted-foreground">
+                <td className="py-3 px-4 text-sm text-muted-foreground text-right">
                   {new Date(report.createdAt).toLocaleDateString()}
-                </td>
-                <td className="py-3 px-4 text-right">
-                  <button 
-                    onClick={() => openReportModal(report)}
-                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                  >
-                    <FiEye />
-                  </button>
                 </td>
               </tr>
             ))}
             {reports.length === 0 && (
               <tr>
-                <td colSpan="6" className="py-8 text-center text-muted-foreground">신고 내역이 없습니다.</td>
+                <td colSpan="5" className="py-8 text-center text-muted-foreground">신고 내역이 없습니다.</td>
               </tr>
             )}
           </tbody>
@@ -302,6 +307,14 @@ const ReportManagementTab = ({ fetchStats }) => {
           </div>
         </div>
       )}
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!confirmation}
+        onClose={() => setConfirmation(null)}
+        onConfirm={confirmation?.onConfirm || (() => {})}
+        title={confirmation?.title || ''}
+        message={confirmation?.message || ''}
+      />
     </div>
   );
 };

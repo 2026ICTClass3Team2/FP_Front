@@ -79,25 +79,32 @@ const NotificationTab = () => {
         console.error('Failed to mark as read on click:', error);
       }
     }
-    
     switch (n.targetType) {
       case 'post':
       case 'comment':
       case 'mention':
-        if (n.postId) {
-          window.location.href = `/posts/${n.postId}${n.targetType !== 'post' ? `#comment-${n.targetId}` : ''}`;
+        if (n.qnaId) {
+          window.location.href = `/qna?qnaId=${n.qnaId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`;
+        } else if (n.postId) {
+          window.location.href = `/?postId=${n.postId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`;
+        }
+        break;
+      case 'user': 
+        // If it's a profile-related notification (like a follow), go to profile
+        // Otherwise (like admin warnings), go to mypage
+        if (n.message.includes('팔로우')) {
+          window.location.href = `/profile/${n.targetId}`;
+        } else {
+          window.location.href = '/mypage';
         }
         break;
       case 'system':
-        if (n.message.includes('point')) {
+        if (n.message.includes('point') || n.message.includes('포인트')) {
           window.location.href = '/mypage/points';
         }
         break;
       case 'channel':
         window.location.href = `/channel/${n.targetId}`;
-        break;
-      case 'user':
-        window.location.href = `/profile/${n.targetId}`;
         break;
       default:
         fetchNotifications();

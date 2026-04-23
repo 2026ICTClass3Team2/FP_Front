@@ -47,25 +47,14 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
     };
   }, [onClose, localPost, isReportModalOpen]);
 
-  // Prevent background scroll
+  // Prevent background scroll (actual scroll container is <main>)
   useEffect(() => {
-    const scrollY = window.scrollY;
-    const originalPosition = document.body.style.position;
-    const originalTop = document.body.style.top;
-    const originalWidth = document.body.style.width;
-    const originalOverflow = document.body.style.overflow;
-
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-
+    const main = document.querySelector('main') as HTMLElement | null;
+    if (!main) return;
+    const prevOverflow = main.style.overflow;
+    main.style.overflow = 'hidden';
     return () => {
-      document.body.style.position = originalPosition;
-      document.body.style.top = originalTop;
-      document.body.style.width = originalWidth;
-      document.body.style.overflow = originalOverflow;
-      window.scrollTo(0, scrollY);
+      main.style.overflow = prevOverflow;
     };
   }, []);
 

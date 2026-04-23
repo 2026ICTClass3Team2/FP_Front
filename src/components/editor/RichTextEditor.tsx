@@ -3,6 +3,7 @@ import ReactQuill from 'react-quill-new';
 import { FiSmile, FiX, FiRotateCcw, FiRotateCw } from 'react-icons/fi';
 // @ts-ignore
 import 'react-quill-new/dist/quill.snow.css';
+import jwtAxios from '../../api/jwtAxios';
 
 // Quill의 기본 Image 블롯을 확장하여 inline style 속성을 보존
 const Quill = ReactQuill.Quill;
@@ -261,49 +262,68 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     root.addEventListener('click', handler);
     return () => root.removeEventListener('click', handler);
 
-    // Mention detection
-    const handleTextChange = () => {
-      const editor = quillRef.current?.getEditor();
-      const range = editor?.getSelection();
-      if (!editor || !range) return;
+  }, []);
 
-      const [line] = editor.getLine(range.index);
-      const lineText = line.domNode.textContent || '';
-      const offset = editor.getIndex(line);
-      const textBefore = editor.getText(offset, range.index - offset);
-      
-      const mentionMatch = textBefore.match(/@([^@\s]*)$/);
+  // ── Mention logic ──
+  useEffect(() => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+
+    const handleTextChange = () => {
+      const range = quill.getSelection();
+      if (!range || range.length > 0) {
+        setMentionQuery(null);
+        return;
+      }
+
+      const textBefore = quill.getText(0, range.index);
+      const mentionMatch = textBefore.match(/@([^\s@]*)$/);
+
       if (mentionMatch) {
         const query = mentionMatch[1];
         setMentionQuery(query);
-        
-        // Calculate position
-        const bounds = editor.getBounds(range.index);
-        setMentionPosition({ 
-          top: bounds.top + bounds.height + 40, // 40 for toolbar offset
-          left: bounds.left 
-        });
-        
-        // Fetch suggestions
-        fetch(`http://localhost:8090/member/search?query=${query}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
-        })
-          .then(res => res.json())
-          .then(data => setSuggestions(data))
-          .catch(err => console.error('Failed to fetch suggestions:', err));
+
+        // Position popup
+        const bounds = quill.getBounds(range.index - query.length - 1);
+        const editorRect = containerRef.current?.getBoundingClientRect();
+        if (bounds && editorRect) {
+          setMentionPosition({
+            top: bounds.bottom + 45, // 툴바 높이 등을 고려
+            left: bounds.left
+          });
+        }
       } else {
         setMentionQuery(null);
-        setSuggestions([]);
       }
     };
 
     quill.on('text-change', handleTextChange);
+    quill.on('selection-change', handleTextChange);
 
     return () => {
-      root.removeEventListener('click', handleClick);
       quill.off('text-change', handleTextChange);
+      quill.off('selection-change', handleTextChange);
     };
   }, []);
+
+  // Fetch suggestions
+  useEffect(() => {
+    if (mentionQuery === null) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await jwtAxios.get(`member/search?query=${mentionQuery}`);
+        setSuggestions(res.data);
+      } catch (error) {
+        console.error('Failed to search users:', error);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [mentionQuery]);
 
   const handleMentionSelect = (nickname: string) => {
     const editor = quillRef.current?.getEditor();

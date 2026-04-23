@@ -20,6 +20,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
   const [localPost, setLocalPost] = useState<Post>(post);
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
+  const [channelSuspendedError, setChannelSuspendedError] = useState<string | null>(null);
   const viewCountIncrementedRef = useRef<Set<number>>(new Set());
   const commentSectionRef = useRef<HTMLDivElement>(null);
   const backdropClickRef = useRef(false);
@@ -74,11 +75,15 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           // 이 API를 호출하면 백엔드에서 조회수가 1 증가합니다.
           const response = await jwtAxios.get(`posts/${post.postId}`);
           setLocalPost(response.data); // 응답받은 최신 데이터로 상태를 업데이트합니다.
-        } catch (error) {
+        } catch (error: any) {
           console.error("게시글 상세 정보 로딩 실패:", error);
-          // 에러 발생 시 모달을 닫거나 사용자에게 알림
-          // alert("게시글 상세 정보를 불러오는 데 실패했습니다.");
-          onClose(post); // Pass the original post on error
+          const status = error?.response?.status;
+          const message = error?.response?.data?.message;
+          if (status === 410 || message === '삭제된 채널입니다') {
+            setChannelSuspendedError('삭제된 채널입니다');
+          } else {
+            onClose(post); // Pass the original post on error
+          }
         } finally {
           setIsLoadingDetails(false); // 로딩 종료
           // 해당 postId에 대한 조회수 증가 API 호출 완료를 기록
@@ -254,6 +259,31 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // 정지된 채널의 게시글 접근 시 안내 모달
+  if (channelSuspendedError) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+        onClick={handleClose}
+      >
+        <div
+          className="bg-background rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="text-4xl mb-4">🚫</div>
+          <h2 className="text-lg font-bold text-foreground mb-2">삭제된 채널입니다</h2>
+          <p className="text-sm text-muted-foreground mb-6">해당 채널이 정지되어 게시글을 열람할 수 없습니다.</p>
+          <button
+            onClick={handleClose}
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity"
+          >
+            확인
+          </button>
+        </div>
       </div>
     );
   }

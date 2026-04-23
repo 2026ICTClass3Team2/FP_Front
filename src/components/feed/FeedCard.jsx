@@ -76,8 +76,12 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     }
   }, [showChannelSearch]);
 
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+
   const uploadToS3 = async (file) => {
-    const presignedRes = await jwtAxios.get('s3/presigned-url', { params: { filename: file.name } });
+    const presignedRes = await jwtAxios.get('s3/presigned-url', {
+      params: { filename: file.name, contentType: file.type },
+    });
     const { presignedUrl, publicUrl } = presignedRes.data;
     await axios.put(presignedUrl, file, { headers: { 'Content-Type': file.type } });
     return publicUrl;
@@ -86,6 +90,13 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // MIME 타입 검증 (확장자를 모든 파일로 바꿔서 올리는 시도 차단)
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      alert('이미지 파일만 업로드 가능합니다. (JPG, PNG, GIF, WEBP, SVG)');
+      e.target.value = '';
+      return;
+    }
 
     setIsUploading(true);
     try {

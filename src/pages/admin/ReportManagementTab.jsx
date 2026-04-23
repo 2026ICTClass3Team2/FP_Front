@@ -10,7 +10,7 @@ const TRANSLATIONS = {
   comment: '댓글',
   user: '사용자',
   channel: '채널',
-  
+
   // Categories
   spam: '스팸 / 홍보',
   harrassment: '괴롭힘 / 비하',
@@ -77,44 +77,40 @@ const ReportManagementTab = ({ fetchStats }) => {
   };
 
   const handleTargetAction = async (targetType, targetId, status, isUserWarn = false) => {
-    const title = isUserWarn ? '경고 부여' : '상태 변경';
-    const message = isUserWarn 
-      ? '해당 사용자에게 경고를 1회 부여하시겠습니까?' 
-      : `해당 대상의 상태를 [${status}] (으)로 변경하시겠습니까?`;
+    const statusLabel = {
+      'active': '활성화',
+      'frozen': '정지',
+      'hidden': '숨김',
+      'deleted': '삭제',
+      'suspended': '계정 정지'
+    }[status] || status;
 
-    setConfirmation({
-      title,
-      message,
-      onConfirm: async () => {
-        try {
-          if (isUserWarn) {
-            await jwtAxios.post(`admin/users/${targetId}/warn`);
-            alert('사용자에게 경고가 부여되었습니다.');
-          } else {
-            const typePlural = targetType.toLowerCase() === 'user' ? 'users' : 
-                              targetType.toLowerCase() === 'post' ? 'posts' : 
-                              targetType.toLowerCase() === 'comment' ? 'comments' : 'channels';
-            
-            await jwtAxios.put(`admin/${typePlural}/${targetId}/status`, null, {
-              params: { status }
-            });
-            alert(`상태가 [${status}] (으)로 변경되었습니다.`);
-          }
-          handleUpdateStatus('resolved');
-        } catch (error) {
-          console.error('Action error:', error);
-          alert('조치 중 오류가 발생했습니다.');
-        } finally {
-          setConfirmation(null);
-        }
+    if (!window.confirm(`해당 대상의 상태를 '${statusLabel}'(으)로 변경하시겠습니까?`)) return;
+    try {
+      if (isUserWarn) {
+        await jwtAxios.post(`admin/users/${targetId}/warn`);
+        alert('사용자에게 경고가 부여되었습니다.');
+      } else {
+        const typePlural = targetType.toLowerCase() === 'user' ? 'users' :
+          targetType.toLowerCase() === 'post' ? 'posts' :
+            targetType.toLowerCase() === 'comment' ? 'comments' : 'channels';
+
+        await jwtAxios.put(`admin/${typePlural}/${targetId}/status`, null, {
+          params: { status }
+        });
+        alert(`상태가 '${statusLabel}'(으)로 변경되었습니다.`);
       }
-    });
+      handleUpdateStatus('resolved');
+    } catch (error) {
+      console.error('Action error:', error);
+      alert('조치 중 오류가 발생했습니다.');
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <select 
+        <select
           className="w-full sm:w-auto px-4 py-2 bg-background border border-border rounded-xl focus:outline-none"
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
@@ -138,8 +134,8 @@ const ReportManagementTab = ({ fetchStats }) => {
           </thead>
           <tbody>
             {reports.map(report => (
-              <tr 
-                key={report.id} 
+              <tr
+                key={report.id}
                 className="border-b border-border hover:bg-muted/5 transition-colors cursor-pointer group"
                 onClick={() => openReportModal(report)}
               >
@@ -154,10 +150,9 @@ const ReportManagementTab = ({ fetchStats }) => {
                   <div className="text-xs text-muted-foreground truncate max-w-[200px]">{report.details}</div>
                 </td>
                 <td className="py-3 px-4">
-                  <span className={`px-2 py-1 rounded-md text-xs font-bold ${
-                    report.status === 'pending' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                  }`}>
+                  <span className={`px-2 py-1 rounded-md text-xs font-bold ${report.status === 'pending' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    }`}>
                     {report.status === 'pending' ? '미처리' : '처리완료'}
                   </span>
                 </td>
@@ -182,9 +177,8 @@ const ReportManagementTab = ({ fetchStats }) => {
             <button
               key={i}
               onClick={() => setPage(i)}
-              className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                page === i ? 'bg-primary text-primary-foreground' : 'bg-muted/10 hover:bg-muted/20 text-foreground'
-              }`}
+              className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${page === i ? 'bg-primary text-primary-foreground' : 'bg-muted/10 hover:bg-muted/20 text-foreground'
+                }`}
             >
               {i + 1}
             </button>
@@ -202,7 +196,7 @@ const ReportManagementTab = ({ fetchStats }) => {
                 <FiX className="w-6 h-6" />
               </button>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
               <div className="p-4 bg-muted/5 rounded-xl border border-border">
                 <p className="text-muted-foreground mb-1">신고자</p>
@@ -240,7 +234,7 @@ const ReportManagementTab = ({ fetchStats }) => {
                   <button onClick={() => handleUpdateStatus('resolved')} className="px-4 py-2 rounded-xl border border-border hover:bg-muted/5 font-semibold flex items-center justify-center gap-2">
                     <FiCheck /> 이상 없음
                   </button>
-                  
+
                   {reportModal.targetType.toLowerCase() === 'comment' && (
                     <>
                       <button onClick={() => handleTargetAction('comment', reportModal.targetId, 'active')} className="px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold flex items-center justify-center gap-2">
@@ -251,7 +245,7 @@ const ReportManagementTab = ({ fetchStats }) => {
                       </button>
                     </>
                   )}
-                  
+
                   {reportModal.targetType.toLowerCase() === 'post' && (
                     <>
                       <button onClick={() => handleTargetAction('post', reportModal.targetId, 'active')} className="px-4 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold flex items-center justify-center gap-2">

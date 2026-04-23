@@ -15,24 +15,16 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl', maxHe
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-  // 모달이 열려있을 때 배경 스크롤 방지 로직
+  // 모달이 열려있을 때 배경 스크롤 방지 (실제 스크롤 컨테이너는 <main>)
   useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-
-      return () => {
-        const prevScrollY = parseInt(document.body.style.top || '0') * -1;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
-        window.scrollTo(0, prevScrollY);
-      };
-    }
+    if (!isOpen) return;
+    const main = document.querySelector('main');
+    if (!main) return;
+    const prevOverflow = main.style.overflow;
+    main.style.overflow = 'hidden';
+    return () => {
+      main.style.overflow = prevOverflow;
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;

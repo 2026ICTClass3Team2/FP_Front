@@ -33,6 +33,7 @@ const MyPageLayout = () => {
             <NavLink to="/mypage" end className={getNavLinkClass}>내 프로필</NavLink>
             <NavLink to="/mypage/posts" className={getNavLinkClass}>내 게시글</NavLink>
             <NavLink to="/mypage/bookmarks" className={getNavLinkClass}>내 북마크</NavLink>
+            <NavLink to="/mypage/notifications" className={getNavLinkClass}>알림</NavLink>
             <NavLink to="/mypage/blocks" className={getNavLinkClass}>차단 목록</NavLink>
           </>
         ) : (

@@ -454,7 +454,7 @@ const PostContent = ({ post }: { post: Post }) => {
       )}
     </div>
     <div 
-      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:inline-block [&_img]:align-middle [&_img]:mx-1 [&_img[src*='flaticon']]:w-24 [&_img[src*='flaticon']]:h-24 [&_pre]:bg-[#f0f0f0] dark:[&_pre]:bg-surface [&_pre]:text-foreground [&_pre]:px-3 [&_pre]:py-2 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_pre]:font-mono [&_pre]:text-sm [&_pre]:my-4 [&_pre]:whitespace-pre"
+      className="text-foreground text-base md:text-lg leading-relaxed mb-6 [&>p]:mb-2 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:inline-block [&_img]:align-middle [&_img]:mx-1 [&_img[src*='flaticon']]:w-24 [&_img[src*='flaticon']]:h-24 [&_pre]:bg-[#f0f0f0] dark:[&_pre]:bg-surface [&_pre]:text-foreground [&_pre]:px-3 [&_pre]:py-2 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_pre]:font-mono [&_pre]:text-sm [&_pre]:my-4 [&_pre]:whitespace-pre [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 dark:[&_blockquote]:border-gray-600 [&_blockquote]:pl-4 [&_blockquote]:my-2 [&_blockquote]:text-muted-foreground"
       dangerouslySetInnerHTML={{ __html: post.body || '<p>내용 없음</p>' }}
     />
     <div className="flex flex-wrap gap-2">

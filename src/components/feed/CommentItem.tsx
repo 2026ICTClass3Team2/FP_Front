@@ -5,6 +5,7 @@ import { CommentResponse } from './types';
 import CommentForm from './CommentForm';
 import { formatTimeAgo } from '../../utils/time';
 import ConfirmationModal from '../common/ConfirmationModal';
+import UserProfileModal from '../common/UserProfileModal';
 
 interface CommentItemProps {
   comment: CommentResponse;
@@ -51,6 +52,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isAcceptConfirmModalOpen, setIsAcceptConfirmModalOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for reply expansion and pagination
@@ -214,130 +216,136 @@ const CommentItem: React.FC<CommentItemProps> = ({
       {/* The actual comment body */}
       <div className={depthClass}>
         <div className="flex items-start gap-3 relative">
-        {depth > 0 && <FiCornerDownRight className="text-muted-foreground mt-2 flex-shrink-0" size={16} />}
-        
-        {/* 프로필 이미지 */}
-        {!isDeleted && (
-          <div className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0 mt-1">
-            {comment.authorProfilePicUrl ? (
-              <img src={comment.authorProfilePicUrl} alt="profile" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                {comment.authorNickname?.charAt(0).toUpperCase() || 'U'}
-              </div>
-            )}
-          </div>
-        )}
+          {depth > 0 && <FiCornerDownRight className="text-muted-foreground mt-2 flex-shrink-0" size={16} />}
 
-        <div className="flex-1 w-full">
-          {!isDeleted ? (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-foreground text-sm">{comment.authorNickname}</span>
-                  <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.createdAt)}</span>
+          {/* 프로필 이미지 */}
+          {!isDeleted && (
+            <div
+              className="w-8 h-8 rounded-full bg-muted overflow-hidden flex-shrink-0 mt-1 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+              onClick={() => { if (commentAuthorUserId) setProfileModalUserId(commentAuthorUserId as number); }}
+            >
+              {comment.authorProfilePicUrl ? (
+                <img src={comment.authorProfilePicUrl} alt="profile" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                  {comment.authorNickname?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                
-                <div className="relative" ref={dropdownRef}>
-                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-secondary transition-colors">
-                    <FiMoreVertical size={16} />
-                  </button>
-                  {isDropdownOpen && (
-                    <div className="absolute right-0 mt-1 w-24 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
-                      {isAuthor ? (
-                        <>
-                          <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
-                          <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
-                        </>
-                      ) : (
-                        <button onClick={() => { if(onReportRequest) onReportRequest('comment', comment.id, comment.authorUserId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">신고</button>
-                      )}
+              )}
+            </div>
+          )}
+
+          <div className="flex-1 w-full">
+            {!isDeleted ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className="font-semibold text-foreground text-sm cursor-pointer hover:underline"
+                      onClick={() => { if (commentAuthorUserId) setProfileModalUserId(commentAuthorUserId as number); }}
+                    >{comment.authorNickname}</span>
+                    <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.createdAt)}</span>
+                  </div>
+
+                  <div className="relative" ref={dropdownRef}>
+                    <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-secondary transition-colors">
+                      <FiMoreVertical size={16} />
+                    </button>
+                    {isDropdownOpen && (
+                      <div className="absolute right-0 mt-1 w-24 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
+                        {isAuthor ? (
+                          <>
+                            <button onClick={() => { setIsEditing(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
+                            <button onClick={() => { setIsConfirmModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
+                          </>
+                        ) : (
+                          <button onClick={() => { if (onReportRequest) onReportRequest('comment', comment.id, comment.authorUserId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">신고</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {isEditing ? (
+                  <CommentForm
+                    initialValue={comment.content}
+                    onSubmit={handleEditSubmit}
+                    onCancel={() => setIsEditing(false)}
+                    isReply
+                  />
+                ) : (
+                  isReported && !showReportedContent ? (
+                    <div className="flex items-center gap-2 mb-2 p-3 bg-surface border border-border rounded-xl">
+                      <p className="text-sm text-muted-foreground italic">신고한 댓글입니다.</p>
+                      <button
+                        onClick={() => setShowReportedContent(true)}
+                        className="text-xs font-semibold text-primary hover:underline"
+                      >
+                        [내용 보기]
+                      </button>
                     </div>
+                  ) : (
+                    <>
+                      <div
+                        className="text-foreground text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-h-28 [&_img]:align-middle [&_img]:mx-1"
+                        dangerouslySetInnerHTML={{ __html: comment.content }}
+                      />
+                      {isReported && showReportedContent && (
+                        <button onClick={() => setShowReportedContent(false)} className="text-xs font-semibold text-muted-foreground hover:underline mb-1">[숨기기]</button>
+                      )}
+                    </>
+                  )
+                )}
+
+                <div className="flex items-center gap-4 mt-2 text-muted-foreground">
+                  <button onClick={handleLike} className="relative group flex items-center gap-1 p-1.5 hover:bg-secondary rounded-full hover:text-blue-500 transition-colors">
+                    <FiThumbsUp size={16} />
+                    <span className="text-xs font-medium">{comment.likeCount}</span>
+                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">좋아요</span>
+                  </button>
+                  <button onClick={handleDislike} className="relative group flex items-center gap-1 p-1.5 hover:bg-secondary rounded-full hover:text-red-500 transition-colors">
+                    <FiThumbsDown size={16} />
+                    <span className="text-xs font-medium">{comment.dislikeCount}</span>
+                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
+                  </button>
+                  {isRootComment && (
+                    <button onClick={() => setIsReplying(!isReplying)} className="relative group flex items-center p-1.5 hover:bg-gray-100 rounded-full hover:text-gray-800 transition-colors">
+                      <FiCornerDownRight size={16} />
+                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
+                    </button>
+                  )}
+                  {comment.isAnswer && (
+                    <span className="px-2 py-1 text-[11px] font-semibold rounded-md bg-primary/10 text-primary border border-primary/20">
+                      채택된 답변
+                    </span>
+                  )}
+                  {canAcceptAnswer && (
+                    <button
+                      onClick={() => setIsAcceptConfirmModalOpen(true)}
+                      className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      채택하기
+                    </button>
                   )}
                 </div>
-              </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground italic text-sm py-2">
+                삭제된 댓글입니다.
+              </p>
+            )}
 
-              {isEditing ? (
-                <CommentForm
-                  initialValue={comment.content}
-                  onSubmit={handleEditSubmit}
-                  onCancel={() => setIsEditing(false)}
-                  isReply
-                />
-              ) : (
-                isReported && !showReportedContent ? (
-                  <div className="flex items-center gap-2 mb-2 p-3 bg-surface border border-border rounded-xl">
-                    <p className="text-sm text-muted-foreground italic">신고한 댓글입니다.</p>
-                    <button
-                      onClick={() => setShowReportedContent(true)}
-                      className="text-xs font-semibold text-primary hover:underline"
-                    >
-                      [내용 보기]
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div 
-                      className="text-foreground text-sm leading-relaxed mb-2 [&>p]:m-0 [&_img]:inline-block [&_img]:max-h-28 [&_img]:align-middle [&_img]:mx-1"
-                      dangerouslySetInnerHTML={{ __html: comment.content }}
-                    />
-                    {isReported && showReportedContent && (
-                      <button onClick={() => setShowReportedContent(false)} className="text-xs font-semibold text-muted-foreground hover:underline mb-1">[숨기기]</button>
-                    )}
-                  </>
-                )
-              )}
-
-              <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-                <button onClick={handleLike} className="relative group flex items-center gap-1 p-1.5 hover:bg-secondary rounded-full hover:text-blue-500 transition-colors">
-                  <FiThumbsUp size={16} />
-                  <span className="text-xs font-medium">{comment.likeCount}</span>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">좋아요</span>
-                </button>
-                <button onClick={handleDislike} className="relative group flex items-center gap-1 p-1.5 hover:bg-secondary rounded-full hover:text-red-500 transition-colors">
-                  <FiThumbsDown size={16} />
-                  <span className="text-xs font-medium">{comment.dislikeCount}</span>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
-                </button>
-                {isRootComment && (
-                  <button onClick={() => setIsReplying(!isReplying)} className="relative group flex items-center p-1.5 hover:bg-gray-100 rounded-full hover:text-gray-800 transition-colors">
-                    <FiCornerDownRight size={16} />
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-800 text-white text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">답글 달기</span>
-                  </button>
-                )}
-                {comment.isAnswer && (
-                  <span className="px-2 py-1 text-[11px] font-semibold rounded-md bg-primary/10 text-primary border border-primary/20">
-                    채택된 답변
-                  </span>
-                )}
-                {canAcceptAnswer && (
-                  <button
-                    onClick={() => setIsAcceptConfirmModalOpen(true)}
-                    className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                  >
-                    채택하기
-                  </button>
-                )}
-              </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground italic text-sm py-2">
-              삭제된 댓글입니다.
-            </p>
-          )}
-
-          {/* 답글 폼 */}
-          {isRootComment && isReplying && (
-            <CommentForm
-              initialValue={isAuthor ? '' : `<strong>@${comment.authorNickname}</strong>&nbsp;`}
-              onSubmit={handleReplySubmit}
-              onCancel={() => setIsReplying(false)}
-              placeholder="답글을 남겨보세요."
-              isReply
-            />
-          )}
+            {/* 답글 폼 */}
+            {isRootComment && isReplying && (
+              <CommentForm
+                initialValue={isAuthor ? '' : `<strong>@${comment.authorNickname}</strong>&nbsp;`}
+                onSubmit={handleReplySubmit}
+                onCancel={() => setIsReplying(false)}
+                placeholder="답글을 남겨보세요."
+                isReply
+              />
+            )}
+          </div>
         </div>
-      </div>
       </div>
 
       <ConfirmationModal
@@ -356,6 +364,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
         onConfirm={handleAcceptAnswer}
         title="답변 채택"
         message="이 댓글을 채택하시겠습니까? 채택하면 질문이 해결 상태로 변경되고 포인트가 지급됩니다."
+      />
+
+      <UserProfileModal
+        isOpen={profileModalUserId !== null}
+        onClose={() => setProfileModalUserId(null)}
+        userId={profileModalUserId}
       />
 
       {/* Render replies only if it's a root comment */}

@@ -8,17 +8,30 @@ const OAuthCallback = () => {
   const { handleOAuthLogin } = useAuth();
 
   useEffect(() => {
-    // URL에서 파라미터 추출 (예: /oauth/callback?token=eyJ...&username=test&userId=1)
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
-    const username = params.get('username') || '소셜유저'; 
+    const username = params.get('username') || '소셜유저';
     const userIdParam = params.get('userId') || params.get('user_id') || params.get('id');
     const userId = userIdParam ? Number(userIdParam) : null;
     const role = params.get('role') || 'user';
+    const isNewUser = params.get('isNewUser') === 'true';
 
     if (token) {
+      if (isNewUser) {
+        // 신규 OAuth 가입: 토큰만 저장 후 username 설정 페이지로 이동
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify({
+          userId: Number.isNaN(userId) ? null : userId,
+          username,
+          nickname: username,
+          role,
+        }));
+        navigate('/oauth/setup-username', { replace: true });
+        return;
+      }
+
       handleOAuthLogin(token, username, Number.isNaN(userId) ? null : userId, role);
-      
+
       const redirectUrl = sessionStorage.getItem('redirectUrl');
       if (redirectUrl) {
         sessionStorage.removeItem('redirectUrl');

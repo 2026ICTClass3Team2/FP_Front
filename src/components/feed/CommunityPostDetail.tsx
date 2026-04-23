@@ -53,27 +53,14 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
     };
   }, [onClose, localPost, isReportModalOpen]);
 
-  // 모달이 열려있을 때 배경 스크롤 방지
+  // 모달이 열려있을 때 배경 스크롤 방지 (실제 스크롤 컨테이너는 <main>)
   useEffect(() => {
-    // 완벽한 스크롤 차단을 위해 body를 고정(fixed)하고 현재 스크롤 위치 유지
-    const scrollY = window.scrollY;
-    const originalPosition = document.body.style.position;
-    const originalTop = document.body.style.top;
-    const originalWidth = document.body.style.width;
-    const originalOverflow = document.body.style.overflow;
-
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-
+    const main = document.querySelector('main') as HTMLElement | null;
+    if (!main) return;
+    const prevOverflow = main.style.overflow;
+    main.style.overflow = 'hidden';
     return () => {
-      // 원래 상태로 복구 및 스크롤 위치 되돌리기
-      document.body.style.position = originalPosition;
-      document.body.style.top = originalTop;
-      document.body.style.width = originalWidth;
-      document.body.style.overflow = originalOverflow;
-      window.scrollTo(0, scrollY);
+      main.style.overflow = prevOverflow;
     };
   }, []);
 

@@ -50,12 +50,6 @@ const STICKER_LIST = [
   { id: 16, name: '졸림', url: 'https://cdn-icons-png.flaticon.com/512/742/742751.png' },
 ];
 
-const BUBBLE_FORMATS = [
-  { fmt: 'bold', label: 'B', cls: 'font-bold' },
-  { fmt: 'italic', label: 'I', cls: 'italic' },
-  { fmt: 'underline', label: 'U', cls: 'underline' },
-  { fmt: 'strike', label: 'S', cls: 'line-through' },
-];
 
 const IMAGE_SIZES = [
   { label: '25%', value: '25%' },
@@ -90,7 +84,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [isStickerOpen, setIsStickerOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [charCount, setCharCount] = useState(0);
-  const [bubble, setBubble] = useState({ visible: false, top: 0, left: 0 });
   const [imgResize, setImgResize] = useState<{
     visible: boolean; imgEl: HTMLImageElement | null; top: number; left: number;
   }>({ visible: false, imgEl: null, top: 0, left: 0 });
@@ -162,31 +155,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       return () => { quill.off('text-change', update); };
     } catch { return; }
   }, []);
-
-  // Bubble toolbar on text selection (full mode only)
-  useEffect(() => {
-    if (compact) return;
-    const quill = quillRef.current?.getEditor();
-    if (!quill) return;
-    const handler = (range: any) => {
-      if (range && range.length > 0) {
-        try {
-          const bounds = quill.getBounds(range.index, range.length);
-          const editorRect = (quill.root as HTMLElement).getBoundingClientRect();
-          const contRect = containerRef.current?.getBoundingClientRect() ?? { top: 0, left: 0 };
-          setBubble({
-            visible: true,
-            top: bounds.top + (editorRect.top - contRect.top) - 46,
-            left: bounds.left + (editorRect.left - contRect.left) + bounds.width / 2,
-          });
-        } catch { setBubble({ visible: false, top: 0, left: 0 }); }
-      } else {
-        setBubble({ visible: false, top: 0, left: 0 });
-      }
-    };
-    quill.on('selection-change', handler);
-    return () => { quill.off('selection-change', handler); };
-  }, [compact]);
 
   // Image click → resize menu
   useEffect(() => {
@@ -291,44 +259,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       className={`relative flex flex-col border rounded-xl bg-transparent transition-all duration-150 ${isFocused ? 'border-ring ring-2 ring-ring/10' : 'border-border'
         } ${className}`}
     >
-      {/* ── Floating bubble toolbar ── */}
-      {bubble.visible && !readOnly && (
-        <div
-          className="absolute z-[70] flex items-center gap-0.5 bg-foreground text-background
-                     rounded-lg shadow-xl px-1.5 py-1 -translate-x-1/2 pointer-events-auto"
-          style={{ top: bubble.top, left: bubble.left }}
-        >
-          {BUBBLE_FORMATS.map(({ fmt, label, cls }) => (
-            <button
-              key={fmt}
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const q = quillRef.current?.getEditor();
-                if (!q) return;
-                q.format(fmt, !q.getFormat()[fmt]);
-              }}
-              className={`w-6 h-6 flex items-center justify-center text-xs rounded hover:bg-white/20 transition-colors ${cls}`}
-            >
-              {label}
-            </button>
-          ))}
-          <div className="w-px h-4 bg-white/30 mx-0.5" />
-          <button
-            type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              const q = quillRef.current?.getEditor();
-              if (!q) return;
-              const url = prompt('링크 URL을 입력하세요:');
-              if (url) q.format('link', url);
-            }}
-            className="px-1.5 py-0.5 text-xs rounded hover:bg-white/20 transition-colors"
-          >
-            링크
-          </button>
-        </div>
-      )}
 
       {/* ── Image resize menu ── */}
       {imgResize.visible && !readOnly && (

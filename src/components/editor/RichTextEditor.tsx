@@ -124,6 +124,31 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   useEffect(() => { imageUploadRef.current = handleImageUpload; }, [handleImageUpload]);
 
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
+
+  // 구매한 이모티콘 상태
+  const [purchasedEmotes, setPurchasedEmotes] = useState<Array<{ id: number; name: string; imageUrl: string }>>([]);
+  const [emotesLoading, setEmotesLoading] = useState(false);
+
+  const isAdmin = useMemo(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return user?.role === 'admin';
+    } catch { return false; }
+  }, []);
+
+  // 스티커 피커 열릴 때 이모티콘 fetch (관리자=전체, 일반=구매한 것)
+  useEffect(() => {
+    if (!isStickerOpen) return;
+    setEmotesLoading(true);
+    const url = isAdmin
+      ? 'shop/emotes?page=0&size=100'
+      : 'shop/emotes?purchasedOnly=true&page=0&size=100';
+    jwtAxios.get(url)
+      .then(res => setPurchasedEmotes(res.data.content ?? []))
+      .catch(() => setPurchasedEmotes([]))
+      .finally(() => setEmotesLoading(false));
+  }, [isStickerOpen, isAdmin]);
+
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
@@ -135,23 +160,54 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const modules = useMemo(() => ({
     toolbar: {
       container: `#${toolbarId}`,
-      handlers: { image: () => imageUploadRef.current() },
+      handlers: {
+        image: () => imageUploadRef.current(),
+        // code-block 적용 시 이미지가 있는 블록은 건드리지 않고 다음 줄에 삽입
+        'code-block': () => {
+          const quill = quillRef.current?.getEditor();
+          if (!quill) return;
+          const range = quill.getSelection(true);
+          if (!range) return;
+          const format = quill.getFormat(range.index, range.length);
+          if (!format['code-block']) {
+            const ops = quill.getContents(range.index, Math.max(range.length, 1)).ops ?? [];
+            const hasImage = ops.some(
+              (op: any) => op.insert && typeof op.insert === 'object' && 'image' in op.insert
+            );
+            if (hasImage) {
+              const end = range.index + range.length;
+              quill.insertText(end, '\n', 'user');
+              quill.setSelection(end + 1, 0, 'user');
+              quill.format('code-block', true, 'user');
+              return;
+            }
+          }
+          quill.format('code-block', !format['code-block'], 'user');
+        },
+      },
     },
     history: { delay: 1000, maxStack: 100, userOnly: true },
     syntax: false,
   }), [toolbarId]);
 
-  // Sticker insert
+  // Sticker insert — 스티커 후 줄바꿈으로 커서를 다음 빈 줄에 고정
   const insertSticker = (url: string) => {
     const quill = quillRef.current?.getEditor();
     if (!quill) return;
     const range = quill.getSelection(true);
     const pos = range ? range.index : quill.getLength();
-    quill.insertEmbed(pos, 'image', url, 'user');
-    quill.insertText(pos + 1, ' ', 'user');
-    quill.setSelection(pos + 2, 0);
+    const Delta = Quill.import('delta') as any;
+    quill.updateContents(
+      new Delta().retain(pos).insert({ image: url }).insert('\n'),
+      'user'
+    );
     setIsStickerOpen(false);
-    setTimeout(() => quill.focus(), 0);
+    setTimeout(() => {
+      const q = quillRef.current?.getEditor();
+      if (!q) return;
+      q.focus();
+      q.setSelection(pos + 2, 0, 'user');
+    }, 10);
   };
 
   // Character count
@@ -574,27 +630,65 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 <FiX size={16} />
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-2 max-h-[260px] overflow-y-auto pr-1">
-              {STICKER_LIST.map(s => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => insertSticker(s.url)}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl
-                             hover:bg-secondary transition-all border border-transparent
-                             hover:border-border focus:outline-none group"
-                  title={s.name}
-                >
-                  <img
-                    src={s.url}
-                    alt={s.name}
-                    className="w-10 h-10 object-contain drop-shadow-sm group-hover:scale-110 transition-transform"
-                  />
-                  <span className="text-[9px] text-muted-foreground truncate w-full text-center">
-                    {s.name}
-                  </span>
-                </button>
-              ))}
+            <div className="max-h-[320px] overflow-y-auto pr-1 space-y-3">
+              {/* 기본 스티커 */}
+              <div className="grid grid-cols-4 gap-2">
+                {STICKER_LIST.map(s => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => insertSticker(s.url)}
+                    className="flex flex-col items-center gap-1 p-2 rounded-xl
+                               hover:bg-secondary transition-all border border-transparent
+                               hover:border-border focus:outline-none group"
+                    title={s.name}
+                  >
+                    <img
+                      src={s.url}
+                      alt={s.name}
+                      className="w-10 h-10 object-contain drop-shadow-sm group-hover:scale-110 transition-transform"
+                    />
+                    <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                      {s.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* 구매한 이모티콘 */}
+              {emotesLoading ? (
+                <p className="text-[10px] text-muted-foreground text-center py-1">불러오는 중...</p>
+              ) : purchasedEmotes.length > 0 && (
+                <>
+                  <div className="border-t border-border pt-2">
+                    <p className="text-[10px] text-muted-foreground mb-2 font-medium">
+                      {isAdmin ? '등록된 이모티콘' : '구매한 이모티콘'}
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {purchasedEmotes.map(e => (
+                        <button
+                          key={`pe-${e.id}`}
+                          type="button"
+                          onClick={() => insertSticker(e.imageUrl)}
+                          className="flex flex-col items-center gap-1 p-2 rounded-xl
+                                     hover:bg-secondary transition-all border border-transparent
+                                     hover:border-border focus:outline-none group"
+                          title={e.name}
+                        >
+                          <img
+                            src={e.imageUrl}
+                            alt={e.name}
+                            className="w-10 h-10 object-contain drop-shadow-sm group-hover:scale-110 transition-transform"
+                          />
+                          <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                            {e.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </>

@@ -3,6 +3,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { getRecentNotifications, markAsRead } from '../../api/notification';
 import { FiBell, FiCheckCircle } from 'react-icons/fi';
+// WebSocket 훅: 폴링(setInterval) 대신 서버 푸시를 통해 알림을 실시간으로 받습니다.
+import useNotificationSocket from '../../hooks/useNotificationSocket';
+import ChatDropdown from '../chat/ChatDropdown';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -17,7 +20,9 @@ const Header = () => {
 
   const [notifications, setNotifications] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const chatRef = useRef(null);
 
   const fetchNotifications = async () => {
     try {
@@ -29,16 +34,24 @@ const Header = () => {
   };
 
   useEffect(() => {
+    // 마운트 시 알림을 한 번 보장합니다.
+    // 이후 업데이트는 useNotificationSocket 훅이 WebSocket 통해 연동합니다.
     fetchNotifications();
-    // Poll every 1 minute
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
   }, []);
+
+  // WebSocket 훅 등록: 서버에서 알림 푸시 신호를 받으면 fetchNotifications를 호출합니다.
+  // 이는 기존 setInterval(60초) 폴링을 완전히 대체합니다.
+  useNotificationSocket({ onNewNotification: fetchNotifications });
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // 알림 드롭다운 외부 클릭 감지
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
+      }
+      // 채팅 드롭다운 외부 클릭 감지
+      if (chatRef.current && !chatRef.current.contains(event.target)) {
+        setIsChatOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -177,19 +190,26 @@ const Header = () => {
 
       {/* 오른쪽 알림 및 메시지 아이콘 */}
       <div className="flex items-center gap-3 min-w-[200px] justify-end">
-        <button className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors">
-           <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" 
-          stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" 
-          className="lucide lucide-bot-message-square-icon lucide-bot-message-square">
-            <path d="M12 6V2H8"/>
-            <path d="M15 11v2"/>
-            <path d="M2 12h2"/>
-            <path d="M20 12h2"/>
-            <path d="M20 16a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 
-            2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>
-            <path d="M9 11v2"/>
-          </svg>
-        </button>
+        <div className="relative" ref={chatRef}>
+          <button 
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" 
+            stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" 
+            className="lucide lucide-bot-message-square-icon lucide-bot-message-square">
+              <path d="M12 6V2H8"/>
+              <path d="M15 11v2"/>
+              <path d="M2 12h2"/>
+              <path d="M20 12h2"/>
+              <path d="M20 16a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 
+              2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>
+              <path d="M9 11v2"/>
+            </svg>
+          </button>
+          
+          {isChatOpen && <ChatDropdown />}
+        </div>
         
         <div className="relative" ref={dropdownRef}>
           <button 

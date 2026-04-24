@@ -16,7 +16,6 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const [contentError, setContentError] = useState('');
   const [submitError, setSubmitError] = useState('');
 
-  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
   const [attachedUrl, setAttachedUrl] = useState('');
   const [isUrlFocused, setIsUrlFocused] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState('');

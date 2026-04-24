@@ -11,7 +11,7 @@ const ALLOWED_MIME = ['image/jpeg', 'image/png'];
 const AdminEmoteCard = ({ emote, onEdit, isEditing }) => (
   <div className={`flex flex-col items-center rounded-xl border overflow-hidden transition-all
     ${isEditing ? 'border-primary ring-2 ring-primary' : 'border-border bg-surface'}`}>
-    <div className="relative w-full aspect-square bg-background group cursor-pointer">
+    <div className="relative w-full h-20 bg-background group cursor-pointer">
       <img
         src={emote.imageUrl}
         alt={emote.name}
@@ -209,11 +209,11 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
   const isEditMode = editTarget !== null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="🛍️ 포인트 샵 관리" maxWidth="max-w-[90vw]" maxHeight="max-h-[90vh]">
+    <Modal isOpen={isOpen} onClose={handleClose} title="🛍️ 포인트 샵 관리" maxWidth="max-w-[55vw]" maxHeight="max-h-[70vh]">
       <div className="flex gap-6 h-full">
 
         {/* ── 왼쪽: 등록 / 수정 섹션 (50%) ── */}
-        <div className="w-1/2 flex-shrink-0">
+        <div className="w-[40%] flex-shrink-0">
           <div className="bg-surface rounded-xl p-4 border border-border space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               {isEditMode ? '이모티콘 수정' : '이모티콘 등록'}
@@ -304,7 +304,7 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
             <p className="text-center py-10 text-muted-foreground">등록된 이모티콘이 없습니다.</p>
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {emotes.map(emote => (
                   <AdminEmoteCard
                     key={emote.id}

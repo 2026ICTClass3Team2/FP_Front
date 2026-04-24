@@ -17,6 +17,8 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const channelSectionRef = useRef(null);
+  const contentSectionRef = useRef(null);
 
   // 채널 선택 상태
   const [selectedChannel, setSelectedChannel] = useState(null); // { channelId, name, imageUrl }
@@ -114,12 +116,15 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     e.preventDefault();
     
     const isContentEmpty = content.replace(/<(.|\n)*?>/g, '').trim().length === 0 && !content.includes('<img');
-    if (isContentEmpty) {
-      setError('내용을 필수로 입력해주세요.');
+    if (!selectedChannel) {
+      setError('채널을 선택하지 않았습니다.');
+      channelSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => setShowChannelSearch(true), 300);
       return;
     }
-    if (!selectedChannel) {
-      setError('채널을 선택해주세요.');
+    if (isContentEmpty) {
+      setError('내용을 입력해주세요.');
+      contentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     
@@ -184,7 +189,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
       {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
 
       {/* 채널 선택 (필수) */}
-      <div className="flex flex-col gap-1.5">
+      <div ref={channelSectionRef} className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">
           채널 <span className="text-red-500">*</span>
         </label>
@@ -267,7 +272,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div ref={contentSectionRef} className="flex flex-col gap-2">
         <label className="text-sm font-semibold text-foreground">내용</label>
         <RichTextEditor
           value={content}
@@ -393,7 +398,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
 
       <div className="flex justify-end gap-2 mt-4">
         <button type="button" onClick={onClose} className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-sm font-medium transition-colors">취소</button>
-        <button type="submit" disabled={loading || isUploading} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg">
+        <button type="submit" disabled={loading || isUploading} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-md hover:shadow-lg">
           {isUploading ? '이미지 업로드 중...' : loading ? (postToEdit ? '수정 중...' : '작성 중...') : (postToEdit ? '수정' : '작성')}
         </button>
       </div>

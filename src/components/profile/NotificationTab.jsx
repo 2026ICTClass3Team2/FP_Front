@@ -254,20 +254,22 @@ const NotificationTab = () => {
                 { key: 'mention', label: '멘션', desc: '다른 유저가 나를 @멘션하면 알림을 받습니다.'},
                 { key: 'chat', label: '채팅 (준비 중)', desc: '새로운 채팅 메시지가 오면 알림을 받습니다.', disabled: true },
               ].map((opt) => (
-                <div key={opt.key} className={`flex items-center justify-between p-4 rounded-3xl transition-all ${opt.disabled ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:bg-muted/50 group'}`}>
+                <div key={opt.key} className={`flex items-center justify-between p-4 rounded-3xl transition-all ${opt.disabled ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:bg-muted/30 group'}`}>
                   <div className="flex-1 pr-6">
                     <p className="text-sm font-black text-foreground group-hover:text-primary transition-colors">{opt.label}</p>
-                    <p className="text-[11px] text-muted-foreground/80 font-medium leading-snug mt-0.5">{opt.desc}</p>
+                    <p className="text-[11px] text-muted-foreground font-semibold leading-snug mt-0.5">{opt.desc}</p>
                   </div>
                   <button 
                     disabled={opt.disabled}
                     onClick={() => handleToggleSetting(opt.key)}
                     className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring ${
-                      settings[opt.key] ? 'bg-primary' : 'bg-muted-foreground/30 hover:bg-muted-foreground/40'
+                      settings[opt.key] ? 'bg-primary' : 'bg-muted-foreground/20 hover:bg-muted-foreground/30'
                     }`}
                   >
-                    <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-300 ease-in-out ${
-                      settings[opt.key] ? 'translate-x-5' : 'translate-x-0'
+                    <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-lg ring-0 transition duration-300 ease-in-out ${
+                      settings[opt.key] 
+                        ? 'translate-x-5 bg-primary-foreground' 
+                        : 'translate-x-0 bg-white'
                     }`} />
                   </button>
                 </div>

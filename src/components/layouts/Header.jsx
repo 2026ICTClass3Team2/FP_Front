@@ -3,6 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { getRecentNotifications, markAsRead } from '../../api/notification';
 import { FiBell, FiCheckCircle } from 'react-icons/fi';
+// WebSocket 훅: 폴링(setInterval) 대신 서버 푸시를 통해 알림을 실시간으로 받습니다.
+import useNotificationSocket from '../../hooks/useNotificationSocket';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -29,11 +31,14 @@ const Header = () => {
   };
 
   useEffect(() => {
+    // 마운트 시 알림을 한 번 보장합니다.
+    // 이후 업데이트는 useNotificationSocket 훅이 WebSocket 통해 연동합니다.
     fetchNotifications();
-    // Poll every 1 minute
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
   }, []);
+
+  // WebSocket 훅 등록: 서버에서 알림 푸시 신호를 받으면 fetchNotifications를 호출합니다.
+  // 이는 기존 setInterval(60초) 폴링을 완전히 대체합니다.
+  useNotificationSocket({ onNewNotification: fetchNotifications });
 
   useEffect(() => {
     const handleClickOutside = (event) => {

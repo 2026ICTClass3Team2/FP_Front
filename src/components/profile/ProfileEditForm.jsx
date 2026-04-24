@@ -1,29 +1,16 @@
 import React, { useState, useRef } from 'react';
 import TechStackModal from '../auth/TechStackModal';
 
-
 const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChange }) => {
   const [nickname, setNickname] = useState(initial.nickname);
   const [email, setEmail] = useState(initial.email);
   const [profilePicUrl, setProfilePicUrl] = useState(initial.profilePicUrl || '');
   const [techStacks, setTechStacks] = useState(initial.techStacks || []);
+  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(initial.profilePicUrl || '');
   const fileInputRef = useRef();
-  const [showTechModal, setShowTechModal] = useState(false);
-
-  // TechStackModal 토글 및 선택
-  const handleTechModal = () => setShowTechModal((v) => !v);
-  const handleToggleTech = (tech) => {
-    setTechStacks((prev) =>
-      prev.includes(tech)
-        ? prev.filter((t) => t !== tech)
-        : prev.length < 5
-        ? [...prev, tech]
-        : prev
-    );
-  };
 
   // 이미지 업로드 핸들러
   const handleImageChange = (e) => {
@@ -104,29 +91,30 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
             required
           />
         </div>
-        {/* 기술 스택 모달 */}
-        <div>
-          <label className="block text-sm font-semibold mb-2">기술 스택(최대 5개)</label>
-          <div
-            className="w-full border border-border rounded-xl px-3 py-2 bg-surface text-foreground cursor-pointer flex flex-wrap gap-2 min-h-[2.5rem] items-center"
-            onClick={handleTechModal}
+        {/* 기술 스택 선택 */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold">기술스택 (최대 5개)</label>
+          <button
+            type="button"
+            onClick={() => setIsTechStackModalOpen(true)}
+            className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
           >
-            {techStacks.length === 0 && (
-              <span className="text-gray-400 select-none">관련된 기술 스택을 선택해 주세요.</span>
+            {techStacks.length > 0 ? (
+              <>
+                {techStacks.map(tag => (
+                  <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+                ))}
+                <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
             )}
-            {techStacks.map((tech) => (
-              <span key={tech} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1">
-                {tech}
-                <button type="button" className="ml-1 text-gray-400 hover:text-red-500" onClick={e => { e.stopPropagation(); handleToggleTech(tech); }}>×</button>
-              </span>
-            ))}
-            <span className="ml-auto text-gray-400 text-lg">▼</span>
-          </div>
+          </button>
           <TechStackModal
-            isOpen={showTechModal}
-            onClose={handleTechModal}
+            isOpen={isTechStackModalOpen}
+            onClose={() => setIsTechStackModalOpen(false)}
             selectedTechStack={techStacks}
-            onToggle={handleToggleTech}
+            onConfirm={(tags) => setTechStacks(tags)}
           />
         </div>
         {/* 비밀번호 변경 필드형 버튼 */}

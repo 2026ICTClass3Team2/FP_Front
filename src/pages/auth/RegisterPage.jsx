@@ -27,8 +27,8 @@ const RegisterPage = () => {
   const [verificationCode, setVerificationCode] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [selectedTechStack, setSelectedTechStack] = useState([]);
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [passwordValidations, setPasswordValidations] = useState({
     combo: false,         // 조건 A: 영문/숫자/특수문자 중 2가지 이상
@@ -97,14 +97,6 @@ const RegisterPage = () => {
         ...prevErrors,
         [name]: undefined
       }));
-    }
-  };
-
-  const handleTechStackToggle = (tech) => {
-    if (selectedTechStack.includes(tech)) {
-      setSelectedTechStack(selectedTechStack.filter(t => t !== tech));
-    } else {
-      setSelectedTechStack([...selectedTechStack, tech]);
     }
   };
 
@@ -357,28 +349,30 @@ const RegisterPage = () => {
           </div>
           
           {/* 기술 스택 선택 (선택 사항) */}
-          <div className="flex flex-col gap-1.5 mt-2">
-            <label className="text-sm font-semibold text-foreground">관심 기술 스택 (선택)</label>
+          <div className="flex flex-col gap-1 mt-2">
+            <label className="text-sm font-semibold text-foreground">기술스택 (최대 5개)</label>
             <button
               type="button"
               onClick={() => setIsTechStackModalOpen(true)}
-              className="flex items-center justify-between w-full min-h-[46px] p-3 border border-border rounded-xl bg-background text-left focus:outline-none focus:border-primary transition-colors hover:bg-muted/30"
+              className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
             >
-              <div className="flex flex-wrap gap-1.5">
-                {selectedTechStack.length > 0 ? (
-                  selectedTechStack.map(tech => (
-                    <span key={tech} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg shadow-sm">
-                      {tech}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-muted-foreground text-sm">관심 있는 기술을 선택해주세요...</span>
-                )}
-              </div>
-              <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
+              {selectedTechStack.length > 0 ? (
+                <>
+                  {selectedTechStack.map(tag => (
+                    <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+                  ))}
+                  <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+              )}
             </button>
+            <TechStackModal
+              isOpen={isTechStackModalOpen}
+              onClose={() => setIsTechStackModalOpen(false)}
+              selectedTechStack={selectedTechStack}
+              onConfirm={(tags) => setSelectedTechStack(tags)}
+            />
           </div>
 
           <button disabled={loading} type="submit" className="mt-4 w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
@@ -386,13 +380,6 @@ const RegisterPage = () => {
           </button>
         </form>
         
-        <TechStackModal
-          isOpen={isTechStackModalOpen}
-          onClose={() => setIsTechStackModalOpen(false)}
-          selectedTechStack={selectedTechStack}
-          onToggle={handleTechStackToggle}
-        />
-
         <div className="flex items-center my-4">
           <div className="flex-1 h-px bg-border"></div>
           <span className="px-3 text-sm text-muted-foreground">또는 소셜로 시작하기</span>

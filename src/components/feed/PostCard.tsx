@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark, FiAlertTriangle, FiLink } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
@@ -54,6 +55,7 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onNotInterested, onDetailClick, onReportSuccess }) => {
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localPost, setLocalPost] = useState<Post>(post);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -238,8 +240,11 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
                   onClick={(e) => { e.stopPropagation(); if (post.authorUserId) setProfileModalUserId(post.authorUserId); }}
                 >{authorNickname}</span>
                 <span className="text-sm text-muted-foreground">@{authorUsername}</span>
-                {post.channelName && (
-                  <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+                {post.channelName && post.channelId && (
+                  <span
+                    className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md cursor-pointer hover:bg-primary/20 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); navigate(`/channels/${post.channelId}`); }}
+                  >
                     {post.channelImageUrl ? (
                       <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
                     ) : (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
@@ -370,7 +371,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
         {/* 분리된 하위 컴포넌트 렌더링 */}
         <AuthorHeader post={localPost} onProfileClick={(uid) => setProfileModalUserId(uid)} />
-        <PostContent post={localPost} />
+        <PostContent post={localPost} onClose={handleClose} />
         <ActionButtons 
           post={localPost} 
           onLike={handleLike}
@@ -439,14 +440,18 @@ const AuthorHeader = ({ post, onProfileClick }: { post: Post; onProfileClick?: (
 };
 
 // 2. 본문 영역 (Content)
-const PostContent = ({ post }: { post: Post }) => {
+const PostContent = ({ post, onClose }: { post: Post; onClose: () => void }) => {
+  const navigate = useNavigate();
 
   return (
   <div className="mb-6">
     {/* 채널 정보 */}
-    {post.channelName && (
+    {post.channelName && post.channelId && (
       <div className="flex items-center gap-1.5 mb-3">
-        <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+        <span
+          className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md cursor-pointer hover:bg-primary/20 transition-colors"
+          onClick={() => { onClose(); navigate(`/channels/${post.channelId}`); }}
+        >
           {post.channelImageUrl ? (
             <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
           ) : (

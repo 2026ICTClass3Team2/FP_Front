@@ -305,10 +305,10 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
 
         {/* Title and body */}
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 line-clamp-2">
+          <h2 className="text-lg font-semibold text-foreground line-clamp-2">
             {localPost.title}
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
+          <p className="text-sm text-muted-foreground line-clamp-3">
             {localPost.body?.replace(/<[^>]*>/g, '') || '내용 없음'}
           </p>
         </div>
@@ -319,7 +319,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
             {tags.map((tag) => (
               <span 
                 key={tag} 
-                className="text-xs px-2.5 py-1 bg-secondary text-muted-foreground rounded-full font-semibold"
+                className="text-xs px-2.5 py-1 bg-secondary text-secondary-foreground rounded-full font-semibold"
               >
                 {tag}
               </span>

@@ -159,9 +159,9 @@ const QuestionBoard = () => {
       <div className="max-w-2xl mx-auto w-full px-4 pt-8">
         <header className="rounded-[2rem] border border-border bg-card p-8 shadow-sm mb-8">
           <div>
-            <p className="text-sm text-muted">Dead Bug</p>
+            <p className="text-sm text-muted-foreground">Dead Bug</p>
             <h1 className="mt-1 text-3xl font-bold text-foreground">질문답변 게시판</h1>
-            <p className="mt-3 text-sm text-muted">
+            <p className="mt-3 text-sm text-muted-foreground">
               질문을 올리고 더 나은 답변을 받아보세요. 피드 형식의 포럼으로 좋아요, 댓글, 공유 기능을 지원합니다.
             </p>
           </div>
@@ -206,15 +206,15 @@ const QuestionBoard = () => {
         {/* Stats cards */}
         <div className="grid gap-4 md:grid-cols-3 mb-8">
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-            <p className="text-sm text-muted">전체 질문</p>
+            <p className="text-sm text-muted-foreground">전체 질문</p>
             <p className="mt-3 text-3xl font-bold text-foreground">{items.length}</p>
           </div>
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-            <p className="text-sm text-muted">해결된 질문</p>
+            <p className="text-sm text-muted-foreground">해결된 질문</p>
             <p className="mt-3 text-3xl font-bold text-foreground">{stats.solved}</p>
           </div>
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-            <p className="text-sm text-muted">미해결 질문</p>
+            <p className="text-sm text-muted-foreground">미해결 질문</p>
             <p className="mt-3 text-3xl font-bold text-foreground">{stats.unsolved}</p>
           </div>
         </div>
@@ -229,7 +229,7 @@ const QuestionBoard = () => {
         )}
 
         {loading && (
-          <div className="rounded-3xl bg-card p-6 text-center text-muted">
+          <div className="rounded-3xl bg-card p-6 text-center text-muted-foreground">
             목록을 불러오는 중입니다...
           </div>
         )}
@@ -284,7 +284,7 @@ const QuestionBoard = () => {
                   />
                 ))
               ) : (
-                <div className="rounded-3xl border border-border bg-card p-12 text-center text-muted">
+                <div className="rounded-3xl border border-border bg-card p-12 text-center text-muted-foreground">
                   검색 결과가 없습니다. 다른 검색어로 다시 시도해보세요.
                 </div>
               )}

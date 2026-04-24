@@ -8,10 +8,14 @@ import { FiImage, FiX } from 'react-icons/fi';
 const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [selectedTechStacks, setSelectedTechStacks] = useState([]);
   const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [channelError, setChannelError] = useState('');
+  const [contentError, setContentError] = useState('');
+  const [submitError, setSubmitError] = useState('');
+
   const [attachedUrl, setAttachedUrl] = useState('');
   const [isUrlFocused, setIsUrlFocused] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState('');
@@ -34,7 +38,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     if (postToEdit) {
       setTitle(postToEdit.title || '');
       setContent(postToEdit.body || '');
-      setTags(postToEdit.tags?.join(', ') || '');
+      setSelectedTechStacks(postToEdit.tags || []);
       setAttachedUrl(Array.isArray(postToEdit.attachedUrls) && postToEdit.attachedUrls.length > 0 ? postToEdit.attachedUrls[0] : '');
       setThumbnailUrl(postToEdit.thumbnailUrl || '');
       // 수정 시 기존 채널 정보가 있으면 복원
@@ -46,7 +50,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     } else {
       setTitle('');
       setContent('');
-      setTags('');
+      setSelectedTechStacks([]);
       setAttachedUrl('');
       setThumbnailUrl('');
       setSelectedChannel(initialChannel || null);
@@ -112,42 +116,38 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     }
   };
 
-  const handleTechStackToggle = (tech) => {
-    const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
-    if (currentTags.includes(tech)) {
-      setTags(currentTags.filter(t => t !== tech).join(', '));
-    } else {
-      if (currentTags.length >= 5) {
-        alert('기술 스택은 최대 5개까지만 선택 가능합니다.');
-        return;
-      }
-      setTags([...currentTags, tech].join(', '));
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    setChannelError('');
+    setContentError('');
+    setSubmitError('');
+
     const isContentEmpty = content.replace(/<(.|\n)*?>/g, '').trim().length === 0 && !content.includes('<img');
+    let hasError = false;
+
     if (!selectedChannel) {
-      setError('채널을 선택하지 않았습니다.');
+      setChannelError('채널을 선택하지 않았습니다.');
       channelSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setTimeout(() => setShowChannelSearch(true), 300);
-      return;
+      hasError = true;
     }
     if (isContentEmpty) {
-      setError('내용을 입력해주세요.');
-      contentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
+      setContentError('내용을 입력해주세요.');
+      if (!hasError) {
+        contentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      hasError = true;
     }
-    
+    if (hasError) return;
+
     setLoading(true);
-    setError('');
+    
 
     // 현재 로그인된 유저 정보 가져오기
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
 
-    const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    const tagArray = selectedTechStacks;
     const attachedUrlValue = attachedUrl.trim(); // 백엔드가 단일 문자열을 기대하므로, 배열이 아닌 문자열 자체를 보냅니다.
 
     const postData = {
@@ -175,15 +175,15 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
       onPostCreated(); // 작성/수정 성공 후 부모 컴포넌트에 알림 (피드 새로고침)
     } catch (err) {
       console.error('게시글 작성/수정 API 에러 데이터:', err.response?.data);
-      
+
       const errData = err.response?.data;
       if (errData) {
         // 백엔드에서 온 에러 데이터를 화면에 그대로 표시 (원인 파악용)
         if (typeof errData === 'string') setError(errData);
         else if (errData.message) setError(errData.message);
-        else setError(`오류 원인: ${JSON.stringify(errData)}`);
+        else setSubmitError(`오류 원인: ${JSON.stringify(errData)}`);
       } else {
-        setError('서버와 통신할 수 없거나 작성 중 오류가 발생했습니다.');
+        setSubmitError('서버와 통신할 수 없거나 작성 중 오류가 발생했습니다.');
       }
     } finally {
       setLoading(false);
@@ -199,7 +199,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
+      {submitError && <div className="text-red-500 text-sm font-medium">{submitError}</div>}
 
       {/* 채널 선택 (필수) */}
       <div ref={channelSectionRef} className="flex flex-col gap-1.5">
@@ -271,15 +271,16 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
             )}
           </button>
         )}
+        {channelError && <div className="text-red-500 text-sm font-medium mt-1">{channelError}</div>}      
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">제목(선택 사항)</label>
-        <input 
-          type="text" 
+        <input
+          type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="제목을 입력하세요 (최대 250자)" 
+          placeholder="제목을 입력하세요 (최대 250자)"
           className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:border-primary transition-colors"
           maxLength={250}
         />
@@ -295,44 +296,40 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           onImageUpload={uploadToS3}
           className="rounded-xl transition-shadow mt-1"
         />
+        {contentError && <div className="text-red-500 text-sm font-medium">{contentError}</div>}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-foreground">기술스택(최대5개)</label>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-semibold text-foreground">기술스택 (최대 5개)</label>
         <button
           type="button"
           onClick={() => setIsTechStackModalOpen(true)}
-          className="flex items-center justify-between w-full min-h-[46px] p-3 border border-border rounded-xl bg-background text-left focus:outline-none focus:border-primary transition-colors hover:bg-muted/30"
+          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
         >
-          <div className="flex flex-wrap gap-1.5">
-            {tags.split(',').map(t => t.trim()).filter(t => t).length > 0 ? (
-              tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
-                <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg shadow-sm">
-                  {tag}
-                </span>
-              ))
-            ) : (
-              <span className="text-muted-foreground text-sm">관련된 기술 스택을 선택해 주세요.</span>
-            )}
-          </div>
-          <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
+          {selectedTechStacks.length > 0 ? (
+            <>
+              {selectedTechStacks.map(tag => (
+                <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+              ))}
+              <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+          )}
         </button>
-      </div>  
-
-      <TechStackModal
-        isOpen={isTechStackModalOpen}
-        onClose={() => setIsTechStackModalOpen(false)}
-        selectedTechStack={tags.split(',').map(t => t.trim()).filter(t => t)}
-        onToggle={handleTechStackToggle}
-      />
+        <TechStackModal
+          isOpen={isTechStackModalOpen}
+          onClose={() => setIsTechStackModalOpen(false)}
+          selectedTechStack={selectedTechStacks}
+          onConfirm={(tags) => setSelectedTechStacks(tags)}
+        />
+      </div>
       
       {/* 링크 입력 영역 */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">첨부 링크 (선택)</label>
         {!isUrlFocused && attachedUrl ? (
-          <div 
+          <div
             className="w-full flex items-center px-3 py-2 border border-border rounded-xl bg-background cursor-pointer hover:bg-muted/30 transition-colors overflow-hidden"
             onClick={() => setIsUrlFocused(true)}
           >
@@ -349,8 +346,8 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
               >
                 첨부 링크
               </a>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); setAttachedUrl(''); setIsUrlFocused(true); }}
                 className="ml-1 p-0.5 rounded-full hover:bg-primary/20 shrink-0 transition-colors"
               >
@@ -363,14 +360,14 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
             <svg className="absolute left-4 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
             </svg>
-            <input 
+            <input
               autoFocus={isUrlFocused}
-              type="url" 
-              value={attachedUrl} 
-              onChange={(e) => setAttachedUrl(e.target.value)} 
+              type="url"
+              value={attachedUrl}
+              onChange={(e) => setAttachedUrl(e.target.value)}
               onFocus={() => setIsUrlFocused(true)}
               onBlur={() => setIsUrlFocused(false)}
-              placeholder="https://example.com" 
+              placeholder="https://example.com"
               className="w-full pl-11 pr-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:border-primary transition-all"
             />
           </div>

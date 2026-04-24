@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Modal from '../common/Modal';
 import TechStackModal from '../auth/TechStackModal';
 import jwtAxios from '../../api/jwtAxios';
-import { FiImage, FiCode } from 'react-icons/fi';
+import { FiImage } from 'react-icons/fi';
 
 const CreateChannelModal = ({ isOpen, onClose, onSuccess }) => {
   const [channelName, setChannelName] = useState('');
@@ -39,16 +39,6 @@ const CreateChannelModal = ({ isOpen, onClose, onSuccess }) => {
     const reader = new FileReader();
     reader.onload = (ev) => setImagePreview(ev.target.result);
     reader.readAsDataURL(file);
-  };
-
-  const handleTechStackToggle = (tech) => {
-    setSelectedTechStacks((prev) =>
-      prev.includes(tech)
-        ? prev.filter((t) => t !== tech)
-        : prev.length < 5
-        ? [...prev, tech]
-        : prev
-    );
   };
 
   const handleSubmit = async (e) => {
@@ -89,8 +79,7 @@ const CreateChannelModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <>
-      <Modal isOpen={isOpen} onClose={onClose} title="채널 만들기">
+    <Modal isOpen={isOpen} onClose={onClose} title="채널 만들기">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {error && (
             <div className="text-red-500 text-sm font-semibold bg-red-500/10 p-3 rounded-xl">
@@ -167,30 +156,30 @@ const CreateChannelModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
 
           {/* 기술 스택 선택 */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-foreground">관련 기술 스택</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-semibold text-foreground">기술스택 (최대 5개)</label>
             <button
               type="button"
               onClick={() => setIsTechStackModalOpen(true)}
-              className="flex items-center gap-2 border border-border rounded-xl px-4 py-2.5 bg-background text-foreground hover:bg-secondary transition text-sm"
+              className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
             >
-              <FiCode size={16} className="text-muted-foreground" />
-              {selectedTechStacks.length > 0
-                ? `${selectedTechStacks.join(', ')} (${selectedTechStacks.length}/5)`
-                : '기술 스택 선택 (최대 5개)'}
+              {selectedTechStacks.length > 0 ? (
+                <>
+                  {selectedTechStacks.map(tag => (
+                    <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+                  ))}
+                  <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
+                </>
+              ) : (
+                <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+              )}
             </button>
-            {selectedTechStacks.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-1">
-                {selectedTechStacks.map((tech) => (
-                  <span
-                    key={tech}
-                    className="px-3 py-1 text-xs font-bold rounded-full bg-primary/10 text-primary border border-primary/20"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            )}
+            <TechStackModal
+              isOpen={isTechStackModalOpen}
+              onClose={() => setIsTechStackModalOpen(false)}
+              selectedTechStack={selectedTechStacks}
+              onConfirm={(tags) => setSelectedTechStacks(tags)}
+            />
           </div>
 
           {/* 제출 버튼 */}
@@ -202,15 +191,7 @@ const CreateChannelModal = ({ isOpen, onClose, onSuccess }) => {
             {loading ? '생성 중...' : '채널 만들기'}
           </button>
         </form>
-      </Modal>
-
-      <TechStackModal
-        isOpen={isTechStackModalOpen}
-        onClose={() => setIsTechStackModalOpen(false)}
-        selectedTechStack={selectedTechStacks}
-        onToggle={handleTechStackToggle}
-      />
-    </>
+    </Modal>
   );
 };
 

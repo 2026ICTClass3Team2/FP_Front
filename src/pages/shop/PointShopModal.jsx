@@ -98,7 +98,8 @@ const PointShopModal = ({ isOpen, onClose, currentUser }) => {
     setHistoryLoading(true);
     try {
       const endpoint = type === 'purchase' ? 'shop/purchase-history' : 'shop/point-history';
-      const res = await jwtAxios.get(`${endpoint}?page=${page}&size=10`);
+      const sortParam = type === 'purchase' ? '&sort=purchasedAt,desc' : '';
+      const res = await jwtAxios.get(`${endpoint}?page=${page}&size=10${sortParam}`);
       setHistoryData(res.data.content ?? []);
       setHistoryTotal(res.data.totalPages ?? 0);
       setHistoryPage(page);
@@ -345,9 +346,16 @@ const HistoryPanel = ({ type, data, loading, currentPage, totalPages, onPageChan
                   {new Date(item.purchasedAt).toLocaleDateString('ko-KR')}
                 </p>
               </div>
-              <span className="text-sm font-semibold text-red-500 flex-shrink-0">
-                -{item.pricePaid.toLocaleString()}P
-              </span>
+              <div className="flex flex-col items-end flex-shrink-0">
+                <span className="text-sm font-semibold text-red-500">
+                  -{item.pricePaid.toLocaleString()}P
+                </span>
+                {item.pointBalance != null && (
+                  <span className="text-xs text-blue-400">
+                    잔여 포인트 {item.pointBalance.toLocaleString()}P
+                  </span>
+                )}
+              </div>
             </div>
           ))
           : data.map((item, i) => (

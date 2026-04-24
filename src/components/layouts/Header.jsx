@@ -84,23 +84,31 @@ const Header = () => {
       case 'post':
       case 'comment':
       case 'mention':
-        if (n.postId) {
-          navigate(`/posts/${n.postId}${n.targetType !== 'post' ? `#comment-${n.targetId}` : ''}`);
+        if (n.qnaId) {
+          window.location.href = `/qna?qnaId=${n.qnaId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`;
+        } else if (n.postId) {
+          window.location.href = `/?postId=${n.postId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`;
+        }
+        break;
+      case 'user': 
+        // If it's a profile-related notification (like a follow), go to profile
+        // Otherwise (like admin warnings), go to mypage
+        if (n.message.includes('팔로우')) {
+          window.location.href = `/profile/${n.targetId}`;
+        } else {
+          window.location.href = '/mypage';
         }
         break;
       case 'system':
-        if (n.message.includes('point')) {
-          navigate('/mypage/points'); // or wherever point history is
+        if (n.message.includes('point') || n.message.includes('포인트')) {
+          window.location.href = '/mypage/points';
         }
         break;
       case 'channel':
-        navigate(`/channel/${n.targetId}`);
-        break;
-      case 'user':
-        navigate(`/profile/${n.targetId}`);
+        window.location.href = `/channel/${n.targetId}`;
         break;
       default:
-        navigate('/mypage/notifications');
+        fetchNotifications();
     }
   };
 

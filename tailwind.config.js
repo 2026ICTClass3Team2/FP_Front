@@ -34,6 +34,10 @@ export default {
           foreground: "var(--color-sidebar-foreground)",
           muted: "var(--color-sidebar-muted)",
           border: "var(--color-sidebar-border)",
+        },
+        card: {
+          DEFAULT: "var(--color-card)",
+          foreground: "var(--color-card-foreground)",
         }
       },
       borderRadius: {

@@ -169,8 +169,24 @@ const StudyPage = () => {
         if (!newLangName) return alert("언어 이름을 입력해주세요.");
 
         const trimmedName = newLangName.trim();
+        const trimmedLower = trimmedName.toLowerCase();
 
-        // DB에 존재하고 숨겨진 언어 이름과 100% 일치 → 숨김 해제 (n8n 호출 없음)
+        // 1. 정확히 같은 이름이 현재 표시 중 → 차단
+        if (visibleLanguages.includes(trimmedName)) {
+            alert('이미 등록된 파일입니다.');
+            return;
+        }
+
+        // 2. 대소문자만 다른 동일 언어 존재 → 차단
+        const caseInsensitiveMatch = incomingLanguages.find(
+            l => l.toLowerCase() === trimmedLower && l !== trimmedName
+        );
+        if (caseInsensitiveMatch) {
+            alert('이미 등록되어 등록할 수 없습니다.');
+            return;
+        }
+
+        // 3. DB에 존재하고 숨겨진 언어 이름과 100% 일치 → 숨김 해제 (n8n 호출 없음)
         const hiddenResourceId = languageIdMap[trimmedName];
         if (hiddenResourceId !== undefined && hiddenLanguages.includes(hiddenResourceId)) {
             try {
@@ -182,12 +198,6 @@ const StudyPage = () => {
             } catch {
                 alert("복원 중 오류가 발생했습니다.");
             }
-            return;
-        }
-
-        // 이미 표시 중인 이름 → 차단
-        if (visibleLanguages.includes(trimmedName)) {
-            alert(`'${trimmedName}' 언어는 이미 등록되어 있습니다.`);
             return;
         }
 
@@ -257,11 +267,17 @@ const StudyPage = () => {
         [visibleChapters, selectedLanguage]
     );
 
-    const isRestoring = (() => {
+    // 'duplicate-exact' | 'duplicate-case' | 'restore' | null
+    const modalStatus = (() => {
         const t = newLangName.trim();
-        if (!t) return false;
+        if (!t) return null;
+        const tLower = t.toLowerCase();
+        if (visibleLanguages.includes(t)) return 'duplicate-exact';
+        const caseMatch = incomingLanguages.find(l => l.toLowerCase() === tLower && l !== t);
+        if (caseMatch) return 'duplicate-case';
         const rid = languageIdMap[t];
-        return rid !== undefined && hiddenLanguages.includes(rid);
+        if (rid !== undefined && hiddenLanguages.includes(rid)) return 'restore';
+        return null;
     })();
 
     return (
@@ -391,7 +407,11 @@ const StudyPage = () => {
                                     onChange={(e) => setNewLangName(e.target.value)}
                                     className="w-full mb-3 p-3 border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground"
                                 />
-                                {isRestoring ? (
+                                {modalStatus === 'duplicate-exact' ? (
+                                    <p className="text-xs text-red-500 mb-4">이미 등록된 파일입니다.</p>
+                                ) : modalStatus === 'duplicate-case' ? (
+                                    <p className="text-xs text-red-500 mb-4">이미 등록된 언어입니다. 등록할 수 없습니다.</p>
+                                ) : modalStatus === 'restore' ? (
                                     <p className="text-xs text-primary mb-4">
                                         이전에 삭제된 언어입니다. 추가 버튼을 누르면 복원됩니다.
                                     </p>
@@ -417,10 +437,11 @@ const StudyPage = () => {
                                     <button
                                         ref={addButtonRef}
                                         onClick={handleAddLanguage}
-                                        disabled={isSubmitting}
-                                        className={`flex-1 p-3 rounded-xl transition-colors ${isSubmitting
-                                            ? "bg-muted text-muted-foreground cursor-not-allowed"
-                                            : "bg-primary text-primary-foreground hover:bg-primary/90"
+                                        disabled={isSubmitting || modalStatus === 'duplicate-exact' || modalStatus === 'duplicate-case'}
+                                        className={`flex-1 p-3 rounded-xl transition-colors ${
+                                            isSubmitting || modalStatus === 'duplicate-exact' || modalStatus === 'duplicate-case'
+                                                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                                : "bg-primary text-primary-foreground hover:bg-primary/90"
                                         }`}
                                     >
                                         {isSubmitting ? "추가 중..." : "추가"}

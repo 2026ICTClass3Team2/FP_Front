@@ -1,6 +1,6 @@
 import { FiEdit2, FiMail, FiCalendar, FiUser, FiAward } from 'react-icons/fi';
 
-const ProfileCard = ({ profile, onEdit }) => {
+const ProfileCard = ({ profile, onEdit, onPointShop }) => {
   return (
     <div className="flex items-start bg-surface rounded-2xl shadow p-12 border border-border min-h-[220px] w-full max-w-[1200px] min-w-[900px] mx-auto">
       {/* 프로필 이미지 */}
@@ -33,9 +33,9 @@ const ProfileCard = ({ profile, onEdit }) => {
             <div className="flex items-center gap-3 text-yellow-500 font-bold text-xl mt-3">
               <FiAward className="w-6 h-6" />
               <span className="mr-2">{profile.currentPoint} 포인트</span>
-              <button className="flex items-center gap-2 px-3 py-1.5 text-base font-semibold border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 rounded-xl hover:bg-yellow-500/20 transition-colors ml-3">
+              <button onClick={onPointShop} className="flex items-center gap-2 px-3 py-1.5 text-base font-semibold border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 rounded-xl hover:bg-yellow-500/20 transition-colors ml-3">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-yellow-500"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" /></svg>
-                코인샵
+                포인트샵
               </button>
             </div>
           </div>

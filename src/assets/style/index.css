@@ -22,6 +22,9 @@
     --color-primary: #0a0a0a;
     --color-primary-foreground: #ffffff;
     --color-primary-hover: #262626;
+
+    --color-card: #ffffff;
+    --color-card-foreground: #0a0a0a;
     
     /* Left sidebar */
     --color-sidebar: #020617;
@@ -72,6 +75,9 @@
     --color-primary: #ffffff;
     --color-primary-foreground: #0a0a0a;
     --color-primary-hover: #e5e5e5;
+
+    --color-card: #171717;
+    --color-card-foreground: #ffffff;
     
     /* Sidebar typically stays dark across both modes in this design */
     --color-sidebar: #020617;

@@ -9,18 +9,18 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
   // 폼 상태 관리
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [tags, setTags] = useState('');
+  const [selectedTechStacks, setSelectedTechStacks] = useState([]);
+  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
   const [rewardPoints, setRewardPoints] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
 
   // 수정 모드일 경우 초기값 세팅
   useEffect(() => {
     if (postToEdit) {
       setTitle(postToEdit.title || '');
       setBody(postToEdit.body || '');
-      setTags(postToEdit.techStacks?.join(', ') || postToEdit.tags?.join(', ') || '');
+      setSelectedTechStacks(postToEdit.techStacks || postToEdit.tags || []);
       setRewardPoints(postToEdit.points || 0);
     }
   }, [postToEdit]);
@@ -37,8 +37,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
     setLoading(true);
     setError('');
 
-    // 태그 문자열을 배열로 변환
-    const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    const tagArray = selectedTechStacks;
 
     // 전송 데이터 구성
     const questionData = {
@@ -76,19 +75,6 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
     return publicUrl;
   }, []);
 
-  const handleTechStackToggle = (tech) => {
-    const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
-    if (currentTags.includes(tech)) {
-      setTags(currentTags.filter(t => t !== tech).join(', '));
-    } else {
-      if (currentTags.length >= 5) {
-        alert('기술 스택은 최대 5개까지만 선택 가능합니다.');
-        return;
-      }
-      setTags([...currentTags, tech].join(', '));
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
@@ -119,45 +105,31 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-foreground">기술스택(최대5개)</label>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-semibold text-foreground">기술스택 (최대 5개)</label>
         <button
           type="button"
           onClick={() => setIsTechStackModalOpen(true)}
-          className="flex items-center justify-between w-full min-h-[46px] 
-          p-3 border border-border rounded-xl bg-background text-left 
-          focus:outline-none focus:border-primary transition-colors 
-          hover:bg-muted/30"
+          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
         >
-          <div className="flex flex-wrap gap-1.5">
-            {tags.split(',').map(t => t.trim()).filter(t => t).length > 0 ? (
-              tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
-                <span key={tag} className="px-2.5 py-1 
-                bg-primary/10 text-primary text-xs font-semibold rounded-lg shadow-sm">
-                  {tag}
-                </span>
-              ))
-            ) : (
-              <span className="text-muted-foreground text-sm">관련된 기술 스택을 선택해 주세요.</span>
-            )}
-          </div>
-          <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24" 
-          xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" 
-            strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
+          {selectedTechStacks.length > 0 ? (
+            <>
+              {selectedTechStacks.map(tag => (
+                <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+              ))}
+              <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+          )}
         </button>
+        <TechStackModal
+          isOpen={isTechStackModalOpen}
+          onClose={() => setIsTechStackModalOpen(false)}
+          selectedTechStack={selectedTechStacks}
+          onConfirm={(tags) => setSelectedTechStacks(tags)}
+        />
       </div>
-
-      <TechStackModal
-        isOpen={isTechStackModalOpen}
-        onClose={() => setIsTechStackModalOpen(false)}
-        selectedTechStack={tags.split(',').map(t => t.trim()).filter(t => t)}
-        onToggle={handleTechStackToggle}
-      />
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">채택 포인트 (선택)</label>

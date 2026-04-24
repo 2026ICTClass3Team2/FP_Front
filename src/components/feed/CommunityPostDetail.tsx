@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
@@ -74,7 +75,16 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         try {
           // 이 API를 호출하면 백엔드에서 조회수가 1 증가합니다.
           const response = await jwtAxios.get(`posts/${post.postId}`);
-          setLocalPost(response.data); // 응답받은 최신 데이터로 상태를 업데이트합니다.
+          // interaction 상태(isLiked, isDisliked, isBookmarked)는 낙관적 업데이트가 선행했을 수 있으므로 현재 localPost 값 유지
+          setLocalPost(prev => ({
+            ...response.data,
+            isLiked: prev.isLiked,
+            isDisliked: prev.isDisliked,
+            isBookmarked: prev.isBookmarked,
+            bookmarked: prev.bookmarked,
+            liked: prev.liked,
+            disliked: prev.disliked,
+          }));
         } catch (error: any) {
           console.error("게시글 상세 정보 로딩 실패:", error);
           const status = error?.response?.status;
@@ -361,7 +371,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
         {/* 분리된 하위 컴포넌트 렌더링 */}
         <AuthorHeader post={localPost} onProfileClick={(uid) => setProfileModalUserId(uid)} />
-        <PostContent post={localPost} />
+        <PostContent post={localPost} onClose={handleClose} />
         <ActionButtons 
           post={localPost} 
           onLike={handleLike}
@@ -430,14 +440,18 @@ const AuthorHeader = ({ post, onProfileClick }: { post: Post; onProfileClick?: (
 };
 
 // 2. 본문 영역 (Content)
-const PostContent = ({ post }: { post: Post }) => {
+const PostContent = ({ post, onClose }: { post: Post; onClose: () => void }) => {
+  const navigate = useNavigate();
 
   return (
   <div className="mb-6">
     {/* 채널 정보 */}
-    {post.channelName && (
+    {post.channelName && post.channelId && (
       <div className="flex items-center gap-1.5 mb-3">
-        <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+        <span
+          className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md cursor-pointer hover:bg-primary/20 transition-colors"
+          onClick={() => { onClose(); navigate(`/channels/${post.channelId}`); }}
+        >
           {post.channelImageUrl ? (
             <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
           ) : (

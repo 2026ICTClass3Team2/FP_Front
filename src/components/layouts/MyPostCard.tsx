@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiHeart, FiMessageCircle, FiClock, FiEye } from 'react-icons/fi';
 
 interface MyPostCardProps {
@@ -7,6 +8,7 @@ interface MyPostCardProps {
 }
 
 const MyPostCard: React.FC<MyPostCardProps> = ({ post, onClick }) => {
+  const navigate = useNavigate();
   return (
     <div 
       onClick={onClick}
@@ -22,8 +24,11 @@ const MyPostCard: React.FC<MyPostCardProps> = ({ post, onClick }) => {
           }`}>
             {post.contentType === 'qna' ? '질문' : '피드'}
           </span>
-          {post.channelName && (
-            <span className="flex items-center gap-1 text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-md">
+          {post.channelName && post.channelId && (
+            <span
+              className="flex items-center gap-1 text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-md cursor-pointer hover:bg-primary/20 transition-colors"
+              onClick={(e) => { e.stopPropagation(); navigate(`/channels/${post.channelId}`); }}
+            >
               {post.channelImageUrl ? (
                 <img src={post.channelImageUrl} alt={post.channelName} className="w-3.5 h-3.5 rounded-sm object-cover flex-shrink-0" />
               ) : (

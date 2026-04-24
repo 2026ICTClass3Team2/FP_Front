@@ -25,6 +25,7 @@ export interface Post {
   dislikeCount: number;
   viewCount: number;
   commentCount: number;
+  bookmarkCount: number;
   shareCount: number;
   
   isLiked: boolean;
@@ -47,11 +48,12 @@ interface PostCardProps {
   onBookmark?: (id: string) => void;
   onEdit?: (post: Post) => void;
   onDelete?: (postId: number) => void;
+  onNotInterested?: (postId: number) => void;
   onDetailClick?: () => void;
   onReportSuccess?: (reportData: any) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onDetailClick, onReportSuccess }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onNotInterested, onDetailClick, onReportSuccess }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localPost, setLocalPost] = useState<Post>(post);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -183,15 +185,29 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
     }
   };
 
-  // 공유 (클립보드 복사)
+  // 공유 (클립보드 복사 + 알고리즘 추적)
   const handleShareClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const url = `${window.location.origin}${window.location.pathname}?postId=${localPost.postId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('클립보드에 복사되었습니다.');
+      // 알고리즘 관심도 반영 (실패해도 UX 영향 없음)
+      jwtAxios.post(`posts/${localPost.postId}/share`).catch(() => {});
     } catch (err) {
       alert('복사에 실패했습니다.');
+    }
+  };
+
+  // 관심없음
+  const handleNotInterested = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDropdownOpen(false);
+    try {
+      await jwtAxios.post(`posts/${localPost.postId}/not-interested`);
+      onNotInterested?.(localPost.postId);
+    } catch (err: any) {
+      alert(err.response?.data?.message || '요청에 실패했습니다.');
     }
   };
 
@@ -250,9 +266,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
                 {isMyPost ? (<>
                   <button onClick={(e) => { e.stopPropagation(); onEdit?.(post); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
                   <button onClick={(e) => { e.stopPropagation(); onDelete?.(post.postId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
-                </>) : (
+                </>) : (<>
+                  <button onClick={handleNotInterested} className="w-full text-left px-4 py-2 text-sm text-muted-foreground hover:bg-secondary transition-colors">관심없음</button>
                   <button onClick={(e) => { e.stopPropagation(); setIsReportModalOpen(true); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-2"><FiAlertTriangle size={14} /> 신고</button>
-                )}
+                </>)}
               </div>
             )}
           </div>

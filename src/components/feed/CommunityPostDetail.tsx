@@ -74,7 +74,16 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         try {
           // 이 API를 호출하면 백엔드에서 조회수가 1 증가합니다.
           const response = await jwtAxios.get(`posts/${post.postId}`);
-          setLocalPost(response.data); // 응답받은 최신 데이터로 상태를 업데이트합니다.
+          // interaction 상태(isLiked, isDisliked, isBookmarked)는 낙관적 업데이트가 선행했을 수 있으므로 현재 localPost 값 유지
+          setLocalPost(prev => ({
+            ...response.data,
+            isLiked: prev.isLiked,
+            isDisliked: prev.isDisliked,
+            isBookmarked: prev.isBookmarked,
+            bookmarked: prev.bookmarked,
+            liked: prev.liked,
+            disliked: prev.disliked,
+          }));
         } catch (error: any) {
           console.error("게시글 상세 정보 로딩 실패:", error);
           const status = error?.response?.status;

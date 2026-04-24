@@ -103,7 +103,7 @@ const TechStackModal = ({ isOpen, onClose, selectedTechStack = [], onConfirm }) 
         )}
 
         {/* 태그 목록 */}
-        <div className="min-h-[120px] max-h-64 overflow-y-auto flex flex-wrap gap-2.5 content-start">
+        <div className="min-h-[120px] max-h-64 overflow-y-auto flex flex-wrap gap-2.5 content-start pt-1">
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground w-full text-center py-8">
               {searchQuery ? `'${searchQuery}'에 해당하는 기술 스택이 없습니다.` : '불러오는 중...'}

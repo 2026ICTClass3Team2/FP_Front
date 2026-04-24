@@ -6,8 +6,9 @@ import jwtAxios from '../../api/jwtAxios';
 import ConfirmationModal from '../common/ConfirmationModal';
 import CommunityPostDetail from './CommunityPostDetail';
 
-// 백엔드 Spring Data JPA Slice 응답 인터페이스
-interface SliceResponse {
+type FeedTab = 'LATEST' | 'POPULAR' | 'ALGORITHM' | 'SUBSCRIBED';
+
+interface PagedResponse {
   content: Post[];
   last: boolean;
 }
@@ -16,8 +17,15 @@ interface FeedListProps {
   onEditClick: (post: Post) => void;
 }
 
+const TABS: { key: FeedTab; label: string }[] = [
+  { key: 'ALGORITHM', label: '맞춤' },
+  { key: 'POPULAR',   label: '인기' },
+  { key: 'LATEST',    label: '최신' },
+  { key: 'SUBSCRIBED',label: '구독' },
+];
+
 const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
-  // 상태 관리
+  const [activeTab, setActiveTab] = useState<FeedTab>('ALGORITHM');
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
@@ -28,22 +36,25 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
+  // LATEST 탭용 커서
   const lastPostIdRef = useRef<string | null>(null);
-  const isLoadingRef = useRef(false); // 무한 스크롤 옵저버 내에서 최신 로딩 상태를 확인하기 위한 Ref
+  // POPULAR / ALGORITHM / SUBSCRIBED 탭용 오프셋
+  const pageRef = useRef<number>(0);
+  const isLoadingRef = useRef(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // 게시글 삭제 핸들러
+  // ─── 삭제 ────────────────────────────────────────────────────────────────────
+
   const handleDeletePost = (postId: number) => {
     setPostToDelete(postId);
     setIsConfirmModalOpen(true);
   };
 
-  // 모달에서 확인 시 실제 삭제를 실행하는 함수
   const confirmDeletePost = async () => {
     if (!postToDelete) return;
     try {
       await jwtAxios.delete(`posts/${postToDelete}`);
-      setPosts(currentPosts => currentPosts.filter(p => p.postId !== postToDelete));
+      setPosts(prev => prev.filter(p => p.postId !== postToDelete));
       alert('게시글이 삭제되었습니다.');
     } catch (err: any) {
       alert(err.response?.data?.message || '게시글 삭제 중 오류가 발생했습니다.');
@@ -52,40 +63,64 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     }
   };
 
-  // API 요청 함수
-  const fetchPosts = async (isRefresh = false) => {
-    if (isLoadingRef.current || !hasNextPage) return;
+  // ─── 관심없음 ────────────────────────────────────────────────────────────────
 
+  const handleNotInterested = (postId: number) => {
+    setPosts(prev => prev.filter(p => p.postId !== postId));
+  };
+
+  // ─── 신고 ────────────────────────────────────────────────────────────────────
+
+  const handleReportSuccess = (reportData: any) => {
+    if (reportData.targetType.toUpperCase() === 'POST') {
+      setPosts(prev => prev.filter(p => p.postId !== reportData.targetId));
+      if (reportData.additionalAction) {
+        resetAndFetch();
+      }
+    }
+  };
+
+  // ─── 데이터 페칭 ──────────────────────────────────────────────────────────────
+
+  const fetchPosts = async (tab: FeedTab, isRefresh = false) => {
+    if (isLoadingRef.current || !hasNextPage) return;
     setIsLoading(true);
-    isLoadingRef.current = true; 
+    isLoadingRef.current = true;
     setError(null);
 
     try {
-      // URL 및 파라미터 조합
-      let url = `posts?size=10`;
-      if (lastPostIdRef.current) {
-        url += `&lastPostId=${lastPostIdRef.current}`;
+      let url: string;
+
+      if (tab === 'LATEST') {
+        // 커서 기반 — Slice 응답
+        url = `posts?tab=LATEST&size=10`;
+        if (lastPostIdRef.current) url += `&lastPostId=${lastPostIdRef.current}`;
+      } else {
+        // 오프셋 기반 — Page 응답
+        url = `posts?tab=${tab}&page=${pageRef.current}&size=10`;
       }
 
       const response = await jwtAxios.get(url);
-      const data: SliceResponse = response.data;
+      const data: PagedResponse = response.data;
 
-      // 데이터 추가 및 커서(마지막 ID) 갱신
       if (data.content && data.content.length > 0) {
         if (isRefresh) {
           setPosts(data.content);
         } else {
-          setPosts((prev) => [...prev, ...data.content]);
+          setPosts(prev => [...prev, ...data.content]);
         }
-        const lastPost = data.content[data.content.length - 1];
-        lastPostIdRef.current = String(lastPost.postId); 
+
+        if (tab === 'LATEST') {
+          const lastPost = data.content[data.content.length - 1];
+          lastPostIdRef.current = String(lastPost.postId);
+        } else {
+          pageRef.current += 1;
+        }
       }
-      
-      // 마지막 페이지 여부에 따라 추가 로딩 가능 상태 변경
+
       setHasNextPage(data.last !== undefined ? !data.last : false);
     } catch (err: any) {
-      // 백엔드에서 데이터가 없을 때 404 에러를 던진다면, 에러창 대신 조용히 빈 화면으로 처리합니다.
-      if (err.response && err.response.status === 404) {
+      if (err.response?.status === 404) {
         setHasNextPage(false);
       } else {
         setError(err.response?.data?.message || err.message || '피드 데이터를 불러오는 데 실패했습니다.');
@@ -96,73 +131,91 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     }
   };
 
-  // 3. 게시물 신고 후 성공 시 목록에서 즉시 숨김 처리
-  const handleReportSuccess = (reportData: any) => {
-    if (reportData.targetType.toUpperCase() === 'POST') {
-      // `blockPost`는 항상 true이므로, 신고 성공 시 해당 게시글을 목록에서 제거합니다.
-      setPosts(prev => prev.filter(p => p.postId !== reportData.targetId));
-
-      // `blockUser` 옵션이 선택되었다면(additionalAction: true), 전체 목록을 새로고침하여
-      // 서버에서 필터링된 새로운 데이터를 받아옵니다.
-      if (reportData.additionalAction) {
-        // `refresh` 함수를 호출하여 피드를 새로고침합니다.
-        ref.current?.refresh();
-      }
-    }
+  // 탭 전환 / 새로고침 시 상태 초기화 후 재조회
+  const resetAndFetch = (tab: FeedTab = activeTab) => {
+    setPosts([]);
+    setHasNextPage(true);
+    setError(null);
+    lastPostIdRef.current = null;
+    pageRef.current = 0;
+    isLoadingRef.current = false;
+    // 다음 렌더에서 fetchPosts가 새 상태로 실행되도록 setTimeout
+    setTimeout(() => fetchPosts(tab, true), 0);
   };
 
-  // 부모 컴포넌트에서 호출할 수 있도록 함수 노출
+  const handleTabChange = (tab: FeedTab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    resetAndFetch(tab);
+  };
+
+  // ─── imperative handle ───────────────────────────────────────────────────────
+
   useImperativeHandle(ref, () => ({
-    refresh: () => {
-      setPosts([]);
-      setHasNextPage(true);
-      lastPostIdRef.current = null;
-      // fetchPosts를 isRefresh 플래그와 함께 호출하여 목록을 새로고침
-      fetchPosts(true);
-    }
+    refresh: () => resetAndFetch(activeTab),
   }));
 
-  // 컴포넌트 마운트 시 초기 데이터 로드 (1번 페이지)
+  // ─── 초기 로드 ───────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    fetchPosts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps 
+    fetchPosts(activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Intersection Observer를 활용한 무한 스크롤 감지 로직
+  // ─── 무한 스크롤 ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        // 스크롤이 타겟에 도달했고, 다음 페이지가 있으며, 로딩 중이 아닐 때만 API 호출
         if (entries[0].isIntersecting && hasNextPage && !isLoadingRef.current) {
-          fetchPosts();
+          fetchPosts(activeTab);
         }
       },
       { threshold: 0.5 }
     );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
+    if (observerTarget.current) observer.observe(observerTarget.current);
     return () => observer.disconnect();
-  }, [hasNextPage]); // hasNextPage가 변경될 때마다 옵저버 재등록
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasNextPage, activeTab]);
 
-  // URL 파라미터 감지하여 모달 자동 오픈
+  // ─── URL 파라미터로 모달 오픈 ────────────────────────────────────────────────
+
   useEffect(() => {
     const postIdParam = searchParams.get('postId');
     if (postIdParam && !selectedPost) {
       setSelectedPost({ postId: Number(postIdParam) } as Post);
-      if (searchParams.get('commentId')) {
-        setAutoScrollToComment(true);
-      }
+      if (searchParams.get('commentId')) setAutoScrollToComment(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // ─── 렌더 ────────────────────────────────────────────────────────────────────
 
   return (
     <div className="relative max-w-2xl mx-auto w-full pb-20 pt-4 px-4">
-      {error && <div className="text-center text-red-500 bg-red-500/10 p-4 rounded-xl mb-4">{error}</div>}
 
-      {/* 초기 로드 중 스피너 */}
+      {/* 탭 바 */}
+      <div className="flex gap-1 mb-5 bg-muted/40 rounded-xl p-1">
+        {TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => handleTabChange(key)}
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+              activeTab === key
+                ? 'bg-surface text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {error && (
+        <div className="text-center text-red-500 bg-red-500/10 p-4 rounded-xl mb-4">{error}</div>
+      )}
+
+      {/* 초기 로드 스피너 */}
       {isLoading && posts.length === 0 && (
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -176,6 +229,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
             post={post}
             onEdit={onEditClick}
             onDelete={handleDeletePost}
+            onNotInterested={handleNotInterested}
             onDetailClick={() => setSelectedPost(post)}
             onComment={() => {
               setSelectedPost(post);
@@ -187,38 +241,37 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
       </div>
 
       {posts.length === 0 && !isLoading && !error && (
-        <div className="text-center py-10 text-muted-foreground">작성된 게시글이 없습니다.</div>
+        <div className="text-center py-10 text-muted-foreground">
+          {activeTab === 'SUBSCRIBED'
+            ? '구독한 채널이 없거나 게시글이 없습니다.'
+            : '게시글이 없습니다.'}
+        </div>
       )}
 
-      {/* 무한 스크롤 감지용 타겟 요소 */}
+      {/* 무한 스크롤 감지 타겟 */}
       <div ref={observerTarget} className="h-14 flex items-center justify-center mt-4">
-        {isLoading && <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>}
+        {isLoading && posts.length > 0 && (
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        )}
       </div>
 
-      {/* 상세 보기 모달 렌더링 */}
+      {/* 게시글 상세 모달 */}
       {selectedPost && (
         <CommunityPostDetail
           post={selectedPost}
           autoScrollToComment={autoScrollToComment}
-          onEditClick={(post) => {
-            onEditClick(post);
-          }}
-          onDeleteClick={(postId) => {
-            handleDeletePost(postId);
-          }}
+          onEditClick={onEditClick}
+          onDeleteClick={handleDeletePost}
           onClose={(updatedPost?: Post, wasBlocked: boolean = false) => {
             if (updatedPost) {
-              setPosts(prevPosts =>
-                prevPosts.map(p => (p.postId === updatedPost.postId ? updatedPost : p))
+              setPosts(prev =>
+                prev.map(p => (p.postId === updatedPost.postId ? updatedPost : p))
               );
-            } else {
-              // updatedPost가 없거나 차단(wasBlocked)으로 인해 닫힌 경우 피드를 새로고침
-              if (wasBlocked || !updatedPost) ref.current?.refresh();
+            } else if (wasBlocked || !updatedPost) {
+              resetAndFetch();
             }
             setSelectedPost(null);
             setAutoScrollToComment(false);
-
-            // 모달이 닫힐 때 URL 파라미터 제거
             if (searchParams.has('postId')) {
               searchParams.delete('postId');
               searchParams.delete('commentId');

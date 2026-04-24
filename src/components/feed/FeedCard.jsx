@@ -8,10 +8,10 @@ import { FiImage, FiX } from 'react-icons/fi';
 const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
+  const [selectedTechStacks, setSelectedTechStacks] = useState([]);
+  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
   const [attachedUrl, setAttachedUrl] = useState('');
   const [isUrlFocused, setIsUrlFocused] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState('');
@@ -32,7 +32,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     if (postToEdit) {
       setTitle(postToEdit.title || '');
       setContent(postToEdit.body || '');
-      setTags(postToEdit.tags?.join(', ') || '');
+      setSelectedTechStacks(postToEdit.tags || []);
       setAttachedUrl(Array.isArray(postToEdit.attachedUrls) && postToEdit.attachedUrls.length > 0 ? postToEdit.attachedUrls[0] : '');
       setThumbnailUrl(postToEdit.thumbnailUrl || '');
       // 수정 시 기존 채널 정보가 있으면 복원
@@ -44,7 +44,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     } else {
       setTitle('');
       setContent('');
-      setTags('');
+      setSelectedTechStacks([]);
       setAttachedUrl('');
       setThumbnailUrl('');
       setSelectedChannel(initialChannel || null);
@@ -110,19 +110,6 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     }
   };
 
-  const handleTechStackToggle = (tech) => {
-    const currentTags = tags.split(',').map(t => t.trim()).filter(t => t);
-    if (currentTags.includes(tech)) {
-      setTags(currentTags.filter(t => t !== tech).join(', '));
-    } else {
-      if (currentTags.length >= 5) {
-        alert('기술 스택은 최대 5개까지만 선택 가능합니다.');
-        return;
-      }
-      setTags([...currentTags, tech].join(', '));
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -142,7 +129,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
     // 현재 로그인된 유저 정보 가져오기
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
 
-    const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    const tagArray = selectedTechStacks;
     const attachedUrlValue = attachedUrl.trim(); // 백엔드가 단일 문자열을 기대하므로, 배열이 아닌 문자열 자체를 보냅니다.
 
     const postData = {
@@ -292,36 +279,31 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-foreground">기술스택(최대5개)</label>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-semibold text-foreground">기술스택 (최대 5개)</label>
         <button
           type="button"
           onClick={() => setIsTechStackModalOpen(true)}
-          className="flex items-center justify-between w-full min-h-[46px] p-3 border border-border rounded-xl bg-background text-left focus:outline-none focus:border-primary transition-colors hover:bg-muted/30"
+          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
         >
-          <div className="flex flex-wrap gap-1.5">
-            {tags.split(',').map(t => t.trim()).filter(t => t).length > 0 ? (
-              tags.split(',').map(t => t.trim()).filter(t => t).map(tag => (
-                <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg shadow-sm">
-                  {tag}
-                </span>
-              ))
-            ) : (
-              <span className="text-muted-foreground text-sm">관련된 기술 스택을 선택해 주세요.</span>
-            )}
-          </div>
-          <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
+          {selectedTechStacks.length > 0 ? (
+            <>
+              {selectedTechStacks.map(tag => (
+                <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+              ))}
+              <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+          )}
         </button>
-      </div>  
-
-      <TechStackModal
-        isOpen={isTechStackModalOpen}
-        onClose={() => setIsTechStackModalOpen(false)}
-        selectedTechStack={tags.split(',').map(t => t.trim()).filter(t => t)}
-        onToggle={handleTechStackToggle}
-      />
+        <TechStackModal
+          isOpen={isTechStackModalOpen}
+          onClose={() => setIsTechStackModalOpen(false)}
+          selectedTechStack={selectedTechStacks}
+          onConfirm={(tags) => setSelectedTechStacks(tags)}
+        />
+      </div>
       
       {/* 링크 입력 영역 */}
       <div className="flex flex-col gap-1.5">

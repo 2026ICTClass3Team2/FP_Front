@@ -6,7 +6,6 @@ import AlertModal from '../../components/common/AlertModal';
 import Modal from '../../components/common/Modal';
 import PasswordEditForm from '../../components/profile/PasswordEditForm';
 import ProfileEditForm from '../../components/profile/ProfileEditForm';
-import TechStackModal from '../../components/auth/TechStackModal';
 import EmailVerifyModal from '../../components/profile/EmailVerifyModal';
 import PointShopModal from '../shop/PointShopModal';
 

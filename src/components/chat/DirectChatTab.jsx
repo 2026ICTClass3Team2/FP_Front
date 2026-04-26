@@ -19,15 +19,20 @@ const DirectChatTab = () => {
 
   const scrollRef = useRef(null);
   const me = JSON.parse(localStorage.getItem('user')); // 내 정보
+  const myId = me?.userId || me?.id; // AuthContext 규격(userId) 대응
 
   // ─── Socket Hook ───
   const { sendMessage } = useChatSocket({
     onNewMessage: (msg) => {
       // 1. 현재 열려있는 채팅방의 메시지인 경우 메시지 목록에 추가
-      if (activePartner && (msg.senderId === activePartner.id || msg.senderId === me.id)) {
+      // ID 타입이 다를 수 있으므로 문자열로 변환하여 비교합니다.
+      const isFromPartner = String(msg.senderId) === String(activePartner?.id);
+      const isFromMe = String(msg.senderId) === String(myId);
+
+      if (activePartner && (isFromPartner || isFromMe)) {
         setMessages((prev) => [...prev, msg]);
         // 내가 받은 메시지라면 읽음 처리 전송
-        if (msg.senderId === activePartner.id) {
+        if (isFromPartner) {
           markChatRead(activePartner.id).catch(console.error);
         }
       }
@@ -230,25 +235,39 @@ const DirectChatTab = () => {
         className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5 custom-scrollbar"
       >
         {messages.map((msg, idx) => {
-          const isMe = msg.senderId === me.id;
+          const isMe = String(msg.senderId) === String(myId);
           const showTime = idx === messages.length - 1 || 
                            format(new Date(msg.createdAt), 'HH:mm') !== format(new Date(messages[idx+1].createdAt), 'HH:mm');
 
           return (
-            <div key={msg.chatId || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+            <div key={msg.chatId || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2 group`}>
               {!isMe && (
-                 <div className="w-8 h-8 rounded-full bg-muted border border-border overflow-hidden flex-shrink-0 mb-1">
-                   {msg.senderProfilePic ? <img src={msg.senderProfilePic} className="w-full h-full object-cover" /> : <FiUser className="m-auto text-muted-foreground" size={14} />}
+                 <div className="w-9 h-9 rounded-full bg-muted border border-border overflow-hidden flex-shrink-0 mb-1 shadow-sm">
+                   {msg.senderProfilePic ? (
+                     <img src={msg.senderProfilePic} className="w-full h-full object-cover" alt="profile" />
+                   ) : (
+                     <FiUser className="m-auto text-muted-foreground" size={16} />
+                   )}
                  </div>
               )}
-              <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm leading-relaxed ${
-                  isMe ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-surface border border-border rounded-tl-none text-foreground'
+              
+              <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%]`}>
+                {!isMe && (
+                  <span className="text-[11px] font-bold text-muted-foreground ml-1 mb-1 px-1">
+                    {msg.senderNickname}
+                  </span>
+                )}
+                
+                <div className={`relative px-4 py-2.5 rounded-2xl text-[13px] shadow-sm leading-relaxed transition-all ${
+                  isMe 
+                    ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-tr-none hover:shadow-indigo-500/20' 
+                    : 'bg-surface border border-border rounded-tl-none text-foreground hover:border-primary/30'
                 }`}>
                   {msg.content}
                 </div>
+
                 {showTime && (
-                  <span className="text-[9px] text-muted-foreground mt-1 px-1">
+                  <span className="text-[9px] text-muted-foreground mt-1 px-1 opacity-70 group-hover:opacity-100 transition-opacity">
                     {format(new Date(msg.createdAt), 'a h:mm', { locale: ko })}
                   </span>
                 )}

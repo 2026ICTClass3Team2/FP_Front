@@ -36,11 +36,15 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
-  // LATEST 탭용 커서
+  // 커서 기반 탭(LATEST, SUBSCRIBED)용
   const lastPostIdRef = useRef<string | null>(null);
+  // 오프셋 기반 탭(POPULAR, ALGORITHM)용
+  const pageRef = useRef<number>(0);
   const isLoadingRef = useRef(false);
-  const hasNextPageRef = useRef(true); // stale closure 방지용 ref
+  const hasNextPageRef = useRef(true);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const isOffsetTab = (tab: FeedTab) => tab === 'POPULAR' || tab === 'ALGORITHM';
 
   // ─── 삭제 ────────────────────────────────────────────────────────────────────
 
@@ -88,9 +92,12 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     setError(null);
 
     try {
-      // 백엔드는 tab/page 파라미터를 지원하지 않으므로 모든 탭에서 커서 기반 사용
       let url = `posts?tab=${tab}&size=10`;
-      if (lastPostIdRef.current) url += `&lastPostId=${lastPostIdRef.current}`;
+      if (isOffsetTab(tab)) {
+        url += `&page=${pageRef.current}`;
+      } else if (lastPostIdRef.current) {
+        url += `&lastPostId=${lastPostIdRef.current}`;
+      }
 
       const response = await jwtAxios.get(url);
       const data: PagedResponse = response.data;
@@ -102,8 +109,12 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
           setPosts(prev => [...prev, ...data.content]);
         }
 
-        const lastPost = data.content[data.content.length - 1];
-        lastPostIdRef.current = String(lastPost.postId);
+        if (isOffsetTab(tab)) {
+          pageRef.current += 1;
+        } else {
+          const lastPost = data.content[data.content.length - 1];
+          lastPostIdRef.current = String(lastPost.postId);
+        }
       }
 
       const next = data.last !== undefined ? !data.last : false;
@@ -131,6 +142,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     setHasNextPage(true);
     setError(null);
     lastPostIdRef.current = null;
+    pageRef.current = 0;
     setTimeout(() => {
       isLoadingRef.current = false;
       fetchPosts(tab, true);

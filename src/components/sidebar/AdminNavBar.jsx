@@ -34,7 +34,7 @@ const AdminNavBar = () => {
     <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0 select-none">
       {/* 1. 상단 프로필 구역 (어드민) */}
       <div className="p-5 flex flex-col gap-4">
-        <Link to="/mypage" className="flex items-center gap-3 hover:bg-foreground/10 rounded-lg p-2 -m-2 transition-colors">
+        <Link to="/mypage" className="flex items-center gap-3 hover:bg-foreground/10 dark:hover:bg-foreground/20 rounded-lg p-2 -m-2 transition-colors cursor-pointer">
           <div className="w-9 h-9 bg-red-500 rounded-2xl flex items-center justify-center text-xl text-white flex-shrink-0 font-bold">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
               fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -51,7 +51,7 @@ const AdminNavBar = () => {
           <button
             onClick={() => setIsPointShopOpen(true)}
             title="포인트 샵 관리"
-            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm transition-all duration-150 hover:border-foreground/30 hover:bg-foreground/5 group"
+            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm transition-all duration-150 hover:border-foreground/30 hover:bg-foreground/5 group cursor-pointer"
           >
             <span className="transition-transform duration-150 group-hover:scale-110">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -66,7 +66,7 @@ const AdminNavBar = () => {
 
           <button
             onClick={toggleTheme}
-            className="flex items-center justify-center px-3 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors"
+            className="flex items-center justify-center px-3 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors cursor-pointer"
             title={isDarkMode ? '라이트 모드' : '다크 모드'}
           >
             {isDarkMode ? <FiSun className="w-5 h-5 text-foreground" /> : <FiMoon className="w-5 h-5 text-foreground" />}
@@ -108,7 +108,7 @@ const AdminNavBar = () => {
         <div className="px-4 pt-6">
           <button
             onClick={() => setIsCreateChannelOpen(true)}
-            className="btn-primary w-full py-3 text-sm font-black flex items-center justify-center gap-2"
+            className="btn-primary w-full py-3 text-sm font-black flex items-center justify-center gap-2 cursor-pointer"
           >
             <FiPlus className="w-4 h-4" />
             채널 만들기
@@ -131,7 +131,7 @@ const AdminNavBar = () => {
       <div className="mt-auto p-4 border-t border-border">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-foreground/10 transition-all text-sm font-medium"
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-foreground/10 transition-all text-sm font-medium cursor-pointer"
         >
           <FiLogOut className="w-5 h-5" />
           로그아웃

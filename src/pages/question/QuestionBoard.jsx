@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import Modal from '../../components/common/Modal';
 import QuestionCard from '../../components/question/QuestionCard';
@@ -7,12 +7,27 @@ import QnADetailModal from '../../components/question/QnADetailModal';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import jwtAxios from '../../api/jwtAxios';
 
+const STATUS_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'resolved', label: '해결된 질문' },
+  { value: 'unresolved', label: '미해결 질문' },
+];
+
+const SORT_OPTIONS_QNA = [
+  { value: 'latest', label: '최신순' },
+  { value: 'popular', label: '인기순' },
+  { value: 'comments', label: '댓글 많은 순' },
+];
+
 // Q&A 게시판 메인 페이지
 const QuestionBoard = () => {
   // 검색 및 필터 상태
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('latest');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const statusRef = useRef(null);
+  const sortRef = useRef(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -84,6 +99,19 @@ const QuestionBoard = () => {
 
     return () => clearTimeout(searchTimer);
   }, [query, sort, statusFilter, fetchQnaList]);
+
+  // 드롭다운 외부 클릭 감지
+  useEffect(() => {
+    if (!openDropdown) return;
+    const handler = (e) => {
+      const activeRef = openDropdown === 'status' ? statusRef : sortRef;
+      if (activeRef.current && !activeRef.current.contains(e.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
+  }, [openDropdown]);
 
   // URL 파라미터로 모달 열기
   useEffect(() => {
@@ -178,27 +206,55 @@ const QuestionBoard = () => {
             />
 
             <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded-3xl border border-border bg-background 
-                px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="all">전체</option>
-                <option value="resolved">해결된 질문</option>
-                <option value="unresolved">미해결 질문</option>
-              </select>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="rounded-3xl border border-border bg-background 
-                px-4 py-3 text-sm text-foreground 
-                focus:outline-none focus:border-primary"
-              >
-                <option value="latest">최신순</option>
-                <option value="popular">인기순</option>
-                <option value="comments">댓글 많은 순</option>
-              </select>
+              {/* 상태 필터 드롭다운 */}
+              <div ref={statusRef} className="relative">
+                <button
+                  onClick={() => setOpenDropdown(p => p === 'status' ? null : 'status')}
+                  className="flex items-center gap-2 rounded-3xl border border-border bg-background px-4 py-3 text-sm text-foreground hover:bg-gray-500/25 transition-colors cursor-pointer"
+                >
+                  <span>{STATUS_OPTIONS.find(o => o.value === statusFilter)?.label ?? '전체'}</span>
+                  <span className="text-[10.5px] leading-none">{openDropdown === 'status' ? '▴' : '▾'}</span>
+                </button>
+                {openDropdown === 'status' && (
+                  <div className="absolute top-full left-0 mt-1 bg-background border border-border rounded-xl shadow-lg z-20 overflow-hidden min-w-[140px]">
+                    {STATUS_OPTIONS.map(o => (
+                      <button
+                        key={o.value}
+                        onClick={() => { setStatusFilter(o.value); setOpenDropdown(null); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-gray-500/25
+                          ${statusFilter === o.value ? 'text-primary font-semibold bg-primary/5' : 'text-foreground'}`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 정렬 드롭다운 */}
+              <div ref={sortRef} className="relative">
+                <button
+                  onClick={() => setOpenDropdown(p => p === 'sort' ? null : 'sort')}
+                  className="flex items-center gap-2 rounded-3xl border border-border bg-background px-4 py-3 text-sm text-foreground hover:bg-gray-500/25 transition-colors cursor-pointer"
+                >
+                  <span>{SORT_OPTIONS_QNA.find(o => o.value === sort)?.label ?? '최신순'}</span>
+                  <span className="text-[10.5px] leading-none">{openDropdown === 'sort' ? '▴' : '▾'}</span>
+                </button>
+                {openDropdown === 'sort' && (
+                  <div className="absolute top-full left-0 mt-1 bg-background border border-border rounded-xl shadow-lg z-20 overflow-hidden min-w-[150px]">
+                    {SORT_OPTIONS_QNA.map(o => (
+                      <button
+                        key={o.value}
+                        onClick={() => { setSort(o.value); setOpenDropdown(null); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-gray-500/25
+                          ${sort === o.value ? 'text-primary font-semibold bg-primary/5' : 'text-foreground'}`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>

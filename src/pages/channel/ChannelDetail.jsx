@@ -302,7 +302,7 @@ const ChannelDetail = () => {
     <div className="max-w-2xl mx-auto w-full px-4 py-6">
 
       {/* 채널 헤더 */}
-      <div className="bg-surface border border-border rounded-2xl p-6 mb-6">
+      <div className="bg-card dark:bg-muted border border-border rounded-2xl p-6 mb-6">
 
         {/* 채널 이미지 + 기본 정보 */}
         <div className="flex items-start gap-5">

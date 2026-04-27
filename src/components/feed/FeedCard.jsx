@@ -253,7 +253,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           <button
             type="button"
             onClick={() => setShowChannelSearch(true)}
-            className="flex items-center gap-3 w-full min-h-[46px] px-4 py-2.5 border border-border rounded-xl bg-background hover:bg-muted/30 transition-colors text-left"
+            className="flex items-center gap-3 w-full min-h-[46px] px-4 py-2.5 border border-border rounded-xl bg-background hover:bg-muted/30 transition-colors text-left cursor-pointer"
           >
             {selectedChannel ? (
               <>
@@ -281,7 +281,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="제목을 입력하세요 (최대 250자)"
-          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:border-primary transition-colors"
+          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none hover:border-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           maxLength={250}
         />
       </div>
@@ -294,7 +294,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           placeholder="내용을 입력하세요 (최대 10,000자)"
           readOnly={loading}
           onImageUpload={uploadToS3}
-          className="rounded-xl transition-shadow mt-1"
+          className="rounded-xl transition-all mt-1 hover:border-foreground/40"
         />
         {contentError && <div className="text-red-500 text-sm font-medium">{contentError}</div>}
       </div>
@@ -412,8 +412,8 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-sm font-medium transition-colors">취소</button>
-        <button type="submit" disabled={loading || isUploading} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-md hover:shadow-lg">
+        <button type="button" onClick={onClose} className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-sm font-medium transition-colors cursor-pointer">취소</button>
+        <button type="submit" disabled={loading || isUploading} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-md hover:shadow-lg cursor-pointer">
           {isUploading ? '이미지 업로드 중...' : loading ? (postToEdit ? '수정 중...' : '작성 중...') : (postToEdit ? '수정' : '작성')}
         </button>
       </div>

@@ -186,7 +186,7 @@ const CreateChannelModal = ({ isOpen, onClose, onSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground rounded-xl font-bold text-base transition-colors"
+            className="mt-2 w-full py-3 bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground rounded-xl font-bold text-base transition-colors cursor-pointer"
           >
             {loading ? '생성 중...' : '채널 만들기'}
           </button>

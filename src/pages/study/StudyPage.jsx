@@ -75,7 +75,7 @@ const StudyPage = () => {
     const fetchDBData = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch("http://localhost:5679/webhook/study-data", {
+            const res = await fetch("/webhook/study-data", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({ user_id: 1 }),
@@ -243,7 +243,7 @@ const StudyPage = () => {
 
         setIsSubmitting(true);
         try {
-            const res = await fetch("http://localhost:5679/webhook/add-language", {
+            const res = await fetch("/webhook/add-language", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: trimmedName, content: selectedFile })

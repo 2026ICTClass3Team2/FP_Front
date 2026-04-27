@@ -11,7 +11,6 @@ const ProfileCard = ({ profile, onEdit, onPointShop }) => {
           (profile.nickname?.[0] || '닉')
         )}
       </div>
-      {/* 우측 정보 */}
 
       <div className="flex-1 flex flex-col gap-2">
         <div className="flex items-start justify-between">
@@ -47,31 +46,7 @@ const ProfileCard = ({ profile, onEdit, onPointShop }) => {
 
             </div>
           </div>
-          {/* username */}
-          <div className="flex items-center gap-2 text-muted-foreground text-base sm:text-lg flex-wrap">
-            <FiUser className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-            <span className="break-all">@{profile.username}</span>
-          </div>
-          {/* 이메일 */}
-          <div className="flex items-center gap-2 text-muted-foreground text-sm sm:text-lg flex-wrap">
-            <FiMail className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-            <span className="break-all">{profile.email}</span>
-          </div>
-          {/* 포인트 */}
-          <div className="flex flex-wrap items-center gap-2 text-yellow-500 font-bold text-lg sm:text-xl mt-1">
-            <FiAward className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
-            <span>{profile.currentPoint} 포인트</span>
-            <button onClick={onPointShop} className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm sm:text-base font-semibold border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 rounded-xl hover:bg-yellow-500/20 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                fill="none" stroke="#f0b100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/>
-                <path d="M15 6h1v4"/>
-                <path d="m6.134 14.768.866-.5 2 3.464"/>
-                <circle cx="16" cy="8" r="6"/>
-              </svg>
-              포인트샵
-            </button>
-          </div>
+          
         </div>
         <div className="mt-4 sm:mt-7">
           <div className="font-bold text-base sm:text-lg mb-3 text-foreground">관심 기술 스택</div>

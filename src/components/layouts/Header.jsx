@@ -6,6 +6,8 @@ import { FiBell, FiCheckCircle } from 'react-icons/fi';
 // WebSocket 훅: 폴링(setInterval) 대신 서버 푸시를 통해 알림을 실시간으로 받습니다.
 import useNotificationSocket from '../../hooks/useNotificationSocket';
 import ChatDropdown from '../chat/ChatDropdown';
+import { globalSearch } from '../../api/search';
+
 
 const Header = () => {
   const navigate = useNavigate();
@@ -21,8 +23,18 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  
+  // 검색 관련 상태
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ posts: [], users: [], channels: [] });
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const dropdownRef = useRef(null);
   const chatRef = useRef(null);
+  const searchRef = useRef(null);
+  const debounceTimer = useRef(null);
+
 
   const fetchNotifications = async () => {
     try {
@@ -53,10 +65,47 @@ const Header = () => {
       if (chatRef.current && !chatRef.current.contains(event.target)) {
         setIsChatOpen(false);
       }
+      // 검색 결과 외부 클릭 감지
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 검색 디바운싱 처리
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    if (!searchQuery.trim()) {
+      setSearchResults({ posts: [], users: [], channels: [] });
+      setIsSearchOpen(false);
+      return;
+    }
+
+    setIsLoading(true);
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        const results = await globalSearch(searchQuery);
+        setSearchResults(results);
+        setIsSearchOpen(true);
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 400); // 400ms 디바운스
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [searchQuery]);
+
 
   const handleMarkAsRead = async () => {
     if (notifications.length === 0) return;
@@ -162,8 +211,8 @@ const Header = () => {
 
       {/* 중앙 검색바 */}
       <div className="flex-1 flex justify-center px-4 md:px-12">
-        <div className="relative w-full max-w-2xl">
-          <div className="search-input flex items-center w-full h-11 pl-11 pr-4 text-sm">
+        <div className="relative w-full max-w-2xl" ref={searchRef}>
+          <div className="search-input flex items-center w-full h-11 pl-11 pr-4 text-sm relative">
             {/* 검색 아이콘 */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -181,19 +230,100 @@ const Header = () => {
             </svg>
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchQuery && setIsSearchOpen(true)}
               placeholder="무엇이든 검색하세요"
               className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-base"
             />
+            {isLoading && (
+              <div className="absolute right-4 animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+            )}
           </div>
+
+          {/* 검색 결과 드롭다운 */}
+          {isSearchOpen && (searchResults.posts.length > 0 || searchResults.users.length > 0 || searchResults.channels.length > 0) && (
+            <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2">
+              <div className="max-h-[480px] overflow-y-auto">
+                {/* 포스트 결과 */}
+                {searchResults.posts.length > 0 && (
+                  <div className="p-2">
+                    <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">포스트</div>
+                    {searchResults.posts.map(post => (
+                      <div 
+                        key={post.id} 
+                        onClick={() => { navigate(`/?postId=${post.id}`); setIsSearchOpen(false); }}
+                        className="flex flex-col p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-foreground line-clamp-1">{post.title}</span>
+                        <span className="text-[11px] text-muted-foreground line-clamp-1">{post.body}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 채널 결과 */}
+                {searchResults.channels.length > 0 && (
+                  <div className="p-2 border-t border-border/50">
+                    <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">채널</div>
+                    <div className="grid grid-cols-1 gap-1">
+                      {searchResults.channels.map(channel => (
+                        <div 
+                          key={channel.id} 
+                          onClick={() => { navigate(`/channels/${channel.id}`); setIsSearchOpen(false); }}
+                          className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
+                            {channel.imageUrl ? <img src={channel.imageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-primary/10" />}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-foreground">{channel.name}</span>
+                            <span className="text-[10px] text-muted-foreground line-clamp-1">{channel.description}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 유저 결과 */}
+                {searchResults.users.length > 0 && (
+                  <div className="p-2 border-t border-border/50">
+                    <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">사용자</div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {searchResults.users.map(user => (
+                        <div 
+                          key={user.id} 
+                          onClick={() => { navigate(`/user/${user.id}`); setIsSearchOpen(false); }}
+                          className="flex items-center gap-2 p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
+                            {user.nickname.charAt(0)}
+                          </div>
+                          <div className="flex flex-col truncate">
+                            <span className="text-sm font-semibold text-foreground truncate">{user.nickname}</span>
+                            <span className="text-[10px] text-muted-foreground truncate">@{user.username}</span>
+                          </div>
+
+
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
 
       {/* 오른쪽 알림 및 메시지 아이콘 */}
       <div className="flex items-center gap-3 min-w-[200px] justify-end">
         <div className="relative" ref={chatRef}>
           <button 
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors cursor-pointer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" 
             stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" 
@@ -214,7 +344,7 @@ const Header = () => {
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors relative"
+            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors relative cursor-pointer"
           >
             <FiBell size={24} />
             {notifications.length > 0 && (

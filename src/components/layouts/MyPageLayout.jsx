@@ -12,21 +12,24 @@ const MyPageLayout = () => {
 
   // 활성화된 탭 스타일을 지정하는 함수
   const getNavLinkClass = ({ isActive }) =>
-    `pb-3 px-2 text-sm font-medium transition-colors border-b-2 ${
+
+
+    `pb-3 px-2 text-sm font-medium transition-colors border-b-2 cursor-pointer ${
+
       isActive
         ? 'border-primary text-primary'
         : 'border-transparent text-muted-foreground hover:text-foreground'
     }`;
     
   return (
-    <section className="max-w-[1200px] min-w-[900px] mx-auto w-full px-4 py-8 min-h-screen bg-background">
+    <section className="max-w-[1200px] mx-auto w-full px-4 py-8 min-h-screen bg-background">
       {/* 1. 상단 타이틀 */}
       <header className="mb-8">
-        <h2 className="text-3xl font-bold text-foreground">{isMyPage ? '마이페이지' : '프로필'}</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">{isMyPage ? '마이페이지' : '프로필'}</h2>
       </header>
 
       {/* 2. 조건부 탭 메뉴 영역 */}
-      <nav className="flex gap-4 border-b border-border mb-6">
+      <nav className="flex gap-2 sm:gap-4 border-b border-border mb-6 overflow-x-auto scrollbar-hide">
         {isMyPage ? (
           /* --- [마이페이지일 때 보여줄 리스트] --- */
           <>

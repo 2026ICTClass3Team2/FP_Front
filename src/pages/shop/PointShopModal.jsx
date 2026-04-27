@@ -192,7 +192,7 @@ const PointShopModal = ({ isOpen, onClose, currentUser }) => {
       maxHeight="max-h-[700px]"
     >
       {/* 작업: h-[508px] -> h-[540px]로 늘려 하단 여백 최적화 및 gap 조정 */}
-      <div className="flex gap-8 h-[560px] mt-2">
+      <div className="flex gap-8 h-[600px] mt-2">
 
         {/* ── 왼쪽: 프로필 + 내역 전용 패널 ── */}
         <div className="w-[32%] flex-shrink-0 flex flex-col gap-3 h-full">
@@ -216,7 +216,13 @@ const PointShopModal = ({ isOpen, onClose, currentUser }) => {
           {/* 내역 전용 패널 */}
           <div className="flex-1 min-h-0 flex flex-col bg-surface rounded-xl border border-border overflow-hidden">
             <div className="flex items-center px-4 py-3 border-b border-border flex-shrink-0">
-              <HistoryTypeDropdown type={panel} onChange={switchPanel} />
+              <HistoryTypeDropdown
+                type={panel}
+                onChange={switchPanel}
+                dropdownId="history"
+                activeDropdown={openDropdown}
+                setActiveDropdown={setOpenDropdown}
+              />
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide divide-y divide-border">
@@ -374,8 +380,8 @@ const FilterDropdown = ({ filter, onFilter, dropdownId, activeDropdown, setActiv
         isControlled ? setActiveDropdown(null) : setLocalOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
   }, [open, isControlled, setActiveDropdown]);
 
   const current = FILTER_OPTIONS.find(o => o.value === filter) ?? FILTER_OPTIONS[0];
@@ -426,8 +432,8 @@ export const SortDropdown = ({ sort, onSort, dropdownId, activeDropdown, setActi
         isControlled ? setActiveDropdown(null) : setLocalOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
   }, [open, isControlled, setActiveDropdown]);
 
   const current = SORT_OPTIONS.find(o => o.value === sort) ?? SORT_OPTIONS[0];
@@ -462,25 +468,31 @@ export const SortDropdown = ({ sort, onSort, dropdownId, activeDropdown, setActi
 };
 
 // 작업4: 내역 유형 전환 드롭다운
-const HistoryTypeDropdown = ({ type, onChange }) => {
-  const [open, setOpen] = useState(false);
+const HistoryTypeDropdown = ({ type, onChange, dropdownId, activeDropdown, setActiveDropdown }) => {
+  const [localOpen, setLocalOpen] = useState(false);
+  const isControlled = dropdownId !== undefined;
+  const open = isControlled ? activeDropdown === dropdownId : localOpen;
   const ref = useRef(null);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) {
+        isControlled ? setActiveDropdown(null) : setLocalOpen(false);
+      }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
+  }, [open, isControlled, setActiveDropdown]);
 
   const current = HISTORY_OPTIONS.find(o => o.value === type) ?? HISTORY_OPTIONS[0];
 
   return (
     <div ref={ref} className="relative inline-block">
       <button
-        onClick={() => setOpen(p => !p)}
+        onClick={() => isControlled
+          ? setActiveDropdown(p => p === dropdownId ? null : dropdownId)
+          : setLocalOpen(p => !p)}
         className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-semibold border border-border bg-background text-foreground hover:bg-muted/10 transition-colors"
       >
         {current.label}
@@ -491,7 +503,7 @@ const HistoryTypeDropdown = ({ type, onChange }) => {
           {HISTORY_OPTIONS.map(o => (
             <button
               key={o.value}
-              onClick={() => { onChange(o.value); setOpen(false); }}
+              onClick={() => { onChange(o.value); isControlled ? setActiveDropdown(null) : setLocalOpen(false); }}
               className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-500/25
                 ${type === o.value ? 'text-primary font-semibold bg-primary/5' : 'text-foreground'}`}
             >

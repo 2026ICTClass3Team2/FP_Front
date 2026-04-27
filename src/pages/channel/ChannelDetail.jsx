@@ -159,18 +159,29 @@ const ChannelDetail = () => {
     fetchMoreRef.current = fetchMorePosts;
   }, [fetchMorePosts]);
 
+  // 실제 스크롤 컨테이너(MainLayout의 <main>)를 root로 지정해야 함
+  // window가 아닌 overflow-y:auto 인 <main> div에서 스크롤이 발생하기 때문
   useEffect(() => {
+    if (loading) return;
+
+    // MainLayout의 <main> 태그 찾기
+    const scrollContainer = document.querySelector('main');
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPageRef.current && !isLoadingRef.current) {
           fetchMoreRef.current?.();
         }
       },
-      { threshold: 0.5 }
+      {
+        root: scrollContainer || null,
+        threshold: 0,
+        rootMargin: '0px 0px 200px 0px',
+      }
     );
     if (observerTarget.current) observer.observe(observerTarget.current);
     return () => observer.disconnect();
-  }, []);
+  }, [loading]);
 
   // 차단 등으로 인한 포스트 목록 전체 새로고침
   const refreshPosts = () => {

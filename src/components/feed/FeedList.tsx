@@ -38,9 +38,8 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const observerTarget = useRef<HTMLDivElement | null>(null);
   // LATEST 탭용 커서
   const lastPostIdRef = useRef<string | null>(null);
-  // POPULAR / ALGORITHM / SUBSCRIBED 탭용 오프셋
-  const pageRef = useRef<number>(0);
   const isLoadingRef = useRef(false);
+  const hasNextPageRef = useRef(true); // stale closure 방지용 ref
   const [searchParams, setSearchParams] = useSearchParams();
 
   // ─── 삭제 ────────────────────────────────────────────────────────────────────
@@ -83,22 +82,15 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   // ─── 데이터 페칭 ──────────────────────────────────────────────────────────────
 
   const fetchPosts = async (tab: FeedTab, isRefresh = false) => {
-    if (isLoadingRef.current || !hasNextPage) return;
+    if (isLoadingRef.current || !hasNextPageRef.current) return;
     setIsLoading(true);
     isLoadingRef.current = true;
     setError(null);
 
     try {
-      let url: string;
-
-      if (tab === 'LATEST') {
-        // 커서 기반 — Slice 응답
-        url = `posts?tab=LATEST&size=10`;
-        if (lastPostIdRef.current) url += `&lastPostId=${lastPostIdRef.current}`;
-      } else {
-        // 오프셋 기반 — Page 응답
-        url = `posts?tab=${tab}&page=${pageRef.current}&size=10`;
-      }
+      // 백엔드는 tab/page 파라미터를 지원하지 않으므로 모든 탭에서 커서 기반 사용
+      let url = `posts?tab=${tab}&size=10`;
+      if (lastPostIdRef.current) url += `&lastPostId=${lastPostIdRef.current}`;
 
       const response = await jwtAxios.get(url);
       const data: PagedResponse = response.data;
@@ -110,17 +102,16 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
           setPosts(prev => [...prev, ...data.content]);
         }
 
-        if (tab === 'LATEST') {
-          const lastPost = data.content[data.content.length - 1];
-          lastPostIdRef.current = String(lastPost.postId);
-        } else {
-          pageRef.current += 1;
-        }
+        const lastPost = data.content[data.content.length - 1];
+        lastPostIdRef.current = String(lastPost.postId);
       }
 
-      setHasNextPage(data.last !== undefined ? !data.last : false);
+      const next = data.last !== undefined ? !data.last : false;
+      hasNextPageRef.current = next;
+      setHasNextPage(next);
     } catch (err: any) {
       if (err.response?.status === 404) {
+        hasNextPageRef.current = false;
         setHasNextPage(false);
       } else {
         setError(err.response?.data?.message || err.message || '피드 데이터를 불러오는 데 실패했습니다.');
@@ -133,14 +124,17 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
 
   // 탭 전환 / 새로고침 시 상태 초기화 후 재조회
   const resetAndFetch = (tab: FeedTab = activeTab) => {
+    // isLoadingRef를 먼저 true로 설정해 Observer의 경쟁 호출 차단
+    isLoadingRef.current = true;
     setPosts([]);
+    hasNextPageRef.current = true;
     setHasNextPage(true);
     setError(null);
     lastPostIdRef.current = null;
-    pageRef.current = 0;
-    isLoadingRef.current = false;
-    // 다음 렌더에서 fetchPosts가 새 상태로 실행되도록 setTimeout
-    setTimeout(() => fetchPosts(tab, true), 0);
+    setTimeout(() => {
+      isLoadingRef.current = false;
+      fetchPosts(tab, true);
+    }, 0);
   };
 
   const handleTabChange = (tab: FeedTab) => {
@@ -165,18 +159,26 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   // ─── 무한 스크롤 ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    // MainLayout의 <main>이 실제 스크롤 컨테이너 (overflow-y:auto)
+    // root를 지정하지 않으면 window 기준으로 감지해 동작 안 함
+    const scrollContainer = document.querySelector('main');
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isLoadingRef.current) {
+        if (entries[0].isIntersecting && hasNextPageRef.current && !isLoadingRef.current) {
           fetchPosts(activeTab);
         }
       },
-      { threshold: 0.5 }
+      {
+        root: scrollContainer || null,
+        threshold: 0,
+        rootMargin: '0px 0px 200px 0px',
+      }
     );
     if (observerTarget.current) observer.observe(observerTarget.current);
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasNextPage, activeTab]);
+  }, [activeTab]); // ref로 관리하므로 hasNextPage deps 불필요
 
   // ─── URL 파라미터로 모달 오픈 ────────────────────────────────────────────────
 

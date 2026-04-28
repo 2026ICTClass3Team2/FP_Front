@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCpu, FiCode, FiMessageCircle, FiArrowLeft, FiSend, FiPlay } from 'react-icons/fi';
 import { reviewCode } from '../../api/chatbot';
+import { markTypeAsRead } from '../../api/notification';
 
 const ChatBotTab = () => {
   const [mode, setMode] = useState(null); // 'faq' or 'code'
@@ -45,6 +46,11 @@ const ChatBotTab = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // 탭을 열 때 챗봇 알림(bot 타입)을 모두 읽음 처리합니다.
+    markTypeAsRead('bot').catch(err => console.error('Failed to mark bot notifications as read:', err));
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {

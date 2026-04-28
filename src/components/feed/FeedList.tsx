@@ -25,7 +25,6 @@ const TABS: { key: FeedTab; label: string }[] = [
 ];
 
 const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
-  const [activeTab, setActiveTab] = useState<FeedTab>('ALGORITHM');
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
@@ -43,6 +42,8 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
   const isLoadingRef = useRef(false);
   const hasNextPageRef = useRef(true);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = (searchParams.get('tab') as FeedTab) || 'ALGORITHM';
 
   const isOffsetTab = (tab: FeedTab) => tab === 'POPULAR' || tab === 'ALGORITHM';
 
@@ -149,30 +150,22 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     }, 0);
   };
 
-  const handleTabChange = (tab: FeedTab) => {
-    if (tab === activeTab) return;
-    setActiveTab(tab);
-    resetAndFetch(tab);
-  };
-
   // ─── imperative handle ───────────────────────────────────────────────────────
 
   useImperativeHandle(ref, () => ({
     refresh: () => resetAndFetch(activeTab),
   }));
 
-  // ─── 초기 로드 ───────────────────────────────────────────────────────────────
+  // ─── 탭 변경에 따른 데이터 재조회 ──────────────────────────────────────────────────
 
   useEffect(() => {
-    fetchPosts(activeTab);
+    resetAndFetch(activeTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeTab]);
 
   // ─── 무한 스크롤 ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    // MainLayout의 <main>이 실제 스크롤 컨테이너 (overflow-y:auto)
-    // root를 지정하지 않으면 window 기준으로 감지해 동작 안 함
     const scrollContainer = document.querySelector('main');
 
     const observer = new IntersectionObserver(
@@ -190,7 +183,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     if (observerTarget.current) observer.observe(observerTarget.current);
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]); // ref로 관리하므로 hasNextPage deps 불필요
+  }, [activeTab]);
 
   // ─── URL 파라미터로 모달 오픈 ────────────────────────────────────────────────
 
@@ -207,23 +200,6 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
 
   return (
     <div className="relative max-w-2xl mx-auto w-full pb-20 pt-4 px-4">
-
-      {/* 탭 바 */}
-      <div className="flex gap-1 mb-5 bg-muted/40 rounded-xl p-1">
-        {TABS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => handleTabChange(key)}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
-              activeTab === key
-                ? 'bg-surface text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-foreground/10'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
 
       {error && (
         <div className="text-center text-red-500 bg-red-500/10 p-4 rounded-xl mb-4">{error}</div>

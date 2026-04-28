@@ -99,9 +99,11 @@
     @apply bg-background text-foreground antialiased;
   }
 
-  /* 전역 placeholder 색상 다크 모드 동기화 */
+  /* 전역 placeholder 스타일 - 실제 입력값과 구분되도록 투명도 및 굵기 조정 */
   ::placeholder {
     color: var(--color-muted-foreground);
+    opacity: 0.5;
+    font-weight: 400 !important;
   }
 
   /* 테마 전환 시 부드러운 색상 전환을 위한 전역 트랜지션 */
@@ -369,6 +371,7 @@
   .ql-editor.ql-blank::before {
     color: var(--color-muted-foreground) !important;
     font-style: normal !important;
+    opacity: 0.5 !important;
   }
 
   /* Quill – blockquote */

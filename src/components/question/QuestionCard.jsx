@@ -120,7 +120,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
               <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
             </>
           ) : (
-            <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+            <span className="text-sm text-muted-foreground/60">관련된 기술 스택을 선택해 주세요.</span>
           )}
         </button>
         <TechStackModal

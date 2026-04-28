@@ -33,7 +33,7 @@ pipeline {
                     echo "3. Waiting for Frontend (Nginx) to fully start..."
                     sh '''
                         sleep 3
-                        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
+                        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://172.17.0.1:3000 || true)
                         if [ "$STATUS" = "200" ]; then
                             echo "✅ Nginx is UP and serving React!"
                         else

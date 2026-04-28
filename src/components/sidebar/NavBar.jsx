@@ -6,15 +6,17 @@ import CreateChannelModal from '../channel/CreateChannelModal';
 import PointShopModal from '../../pages/shop/PointShopModal';
 import jwtAxios from '../../api/jwtAxios';
 import Modal from '../common/Modal';
-import { FiBookOpen, FiHome, FiMessageCircle, FiMoon, FiSun } from 'react-icons/fi';
+import { FiBookOpen, FiHome, FiMessageCircle, FiMoon, FiSun, FiStar } from 'react-icons/fi';
 
 const NavBar = ({ collapsed = false }) => {
   const [subscribedOpen, setSubscribedOpen] = useState(false);
   const [popularOpen, setPopularOpen]       = useState(false);
+  const [favoritesOpen, setFavoritesOpen]   = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [isPointShopOpen, setIsPointShopOpen]         = useState(false);
   const [subscribedChannels, setSubscribedChannels]   = useState([]);
   const [popularChannels, setPopularChannels]         = useState([]);
+  const [favoriteUsers, setFavoriteUsers]             = useState([]);
   const [currentPoint, setCurrentPoint] = useState(null);
   const [profilePicUrl, setProfilePicUrl] = useState(null);
 
@@ -46,6 +48,15 @@ const NavBar = ({ collapsed = false }) => {
     }
   };
 
+  const fetchFavoriteUsers = async () => {
+    try {
+      const res = await jwtAxios.get('favorites/users');
+      setFavoriteUsers(res.data);
+    } catch {
+      setFavoriteUsers([]);
+    }
+  };
+
   const fetchCurrentPoint = async () => {
     if (!currentUser) return;
     try {
@@ -70,9 +81,11 @@ const NavBar = ({ collapsed = false }) => {
     if (currentUser) {
       fetchChannels();
       fetchProfilePic();
+      fetchFavoriteUsers();
     } else {
       setSubscribedChannels([]);
       setPopularChannels([]);
+      setFavoriteUsers([]);
       setProfilePicUrl(null);
     }
   }, [currentUser]);
@@ -166,6 +179,44 @@ const NavBar = ({ collapsed = false }) => {
           <FiBookOpen className="w-5 h-5" />
           <span>학습</span>
         </Link>
+
+        {/* 즐겨찾기 */}
+        <Link to="/favorites" className={getNavClass('/favorites')}>
+          <FiStar className="w-5 h-5" />
+          <span>즐겨찾기</span>
+        </Link>
+
+        <div className="pt-2 px-4">
+          <button
+            onClick={() => setFavoritesOpen(!favoritesOpen)}
+            className="w-full flex justify-between items-center font-semibold text-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            즐겨찾는 유저
+            <span className={`text-lg leading-none transition-transform duration-200 ${favoritesOpen ? 'rotate-180' : ''}`}>▾</span>
+          </button>
+
+          {favoritesOpen && (
+            <div className="mt-2 flex flex-col gap-0.5 max-h-48 overflow-y-auto scrollbar-hide pr-1">
+              {favoriteUsers.length === 0 ? (
+                <p className="text-xs text-muted-foreground pl-2 py-1">즐겨찾기한 유저가 없습니다.</p>
+              ) : (
+                favoriteUsers.map((u) => (
+                  <Link key={u.userId} to={`/user/${u.userId}`}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-foreground/10 transition-colors cursor-pointer">
+                    {u.profilePicUrl ? (
+                      <img src={u.profilePicUrl} alt={u.nickname} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-yellow-400/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-yellow-600">{u.nickname?.[0]?.toUpperCase()}</span>
+                      </div>
+                    )}
+                    <span className="text-sm text-foreground truncate">{u.nickname}</span>
+                  </Link>
+                ))
+              )}
+            </div>
+          )}
+        </div>
 
         {/* 구독한 채널 */}
         <div className="pt-4 px-4">

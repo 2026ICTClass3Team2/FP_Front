@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiCalendar, FiUser, FiMessageCircle, FiAlertTriangle, FiSlash, FiUserPlus } from 'react-icons/fi';
+import { FiX, FiCalendar, FiUser, FiMessageCircle, FiAlertTriangle, FiSlash, FiStar } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import ReportModal from './ReportModal';
 
@@ -8,6 +8,8 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
   const [loading, setLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const backdropRef = useRef(null);
 
@@ -19,6 +21,7 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
       .then(res => {
         setProfile(res.data);
         setIsBlocked(res.data.isBlocked ?? false);
+        setIsFavorited(res.data.isFavorited ?? false);
       })
       .catch(() => setProfile(null))
       .finally(() => setLoading(false));
@@ -54,6 +57,19 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
       alert(err.response?.data?.message || '오류가 발생했습니다.');
     } finally {
       setBlockLoading(false);
+    }
+  };
+
+  const handleFavoriteToggle = async () => {
+    if (favoriteLoading) return;
+    setFavoriteLoading(true);
+    try {
+      const res = await jwtAxios.post(`favorites/users/${userId}`);
+      setIsFavorited(res.data.favorited);
+    } catch (err) {
+      alert(err.response?.data?.message || '오류가 발생했습니다.');
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -140,14 +156,18 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
                     1:1 채팅 (준비 중)
                   </button>
 
-                  {/* 팔로우 (기능 미구현) */}
+                  {/* 즐겨찾기 */}
                   <button
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-semibold hover:bg-secondary transition-colors opacity-60 cursor-not-allowed"
-                    disabled
-                    title="준비 중인 기능입니다."
+                    onClick={handleFavoriteToggle}
+                    disabled={favoriteLoading}
+                    className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${
+                      isFavorited
+                        ? 'border border-yellow-400 bg-yellow-400/20 text-yellow-500 hover:bg-yellow-400/30'
+                        : 'border border-border bg-background text-foreground hover:bg-secondary'
+                    }`}
                   >
-                    <FiUserPlus size={16} />
-                    팔로우 (준비 중)
+                    <FiStar size={16} className={isFavorited ? 'fill-yellow-400' : ''} />
+                    {favoriteLoading ? '처리 중...' : isFavorited ? '즐겨찾기 중' : '즐겨찾기'}
                   </button>
 
                   {/* 차단 / 차단 해제 */}

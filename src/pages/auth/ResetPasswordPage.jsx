@@ -36,7 +36,7 @@ const ResetPasswordPage = () => {
   }, [token, testURI]);
 
   const handlePasswordChange = (e) => {
-    const value = e.target.value;
+    const value = e.target.value.replace(/\s/g, ''); // 공백 차단
     setNewPassword(value);
     const hasLetter = /[a-zA-Z]/.test(value);
     const hasNumber = /[0-9]/.test(value);
@@ -44,7 +44,7 @@ const ResetPasswordPage = () => {
     const comboCount = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length;
     setPasswordValidations({
       combo: comboCount >= 2,
-      length: value.length >= 8 && value.length <= 32 && !/\s/.test(value),
+      length: value.length >= 8 && value.length <= 32,
       noConsecutive: value.length > 0 && !/(.)\1\1/.test(value),
     });
     if (passwordConfirm.length > 0 && value !== passwordConfirm) {

@@ -8,7 +8,7 @@ import jwtAxios from '../../api/jwtAxios';
 import Modal from '../common/Modal';
 import { FiBookOpen, FiHome, FiMessageCircle, FiMoon, FiSun } from 'react-icons/fi';
 
-const NavBar = () => {
+const NavBar = ({ collapsed = false }) => {
   const [subscribedOpen, setSubscribedOpen] = useState(false);
   const [popularOpen, setPopularOpen]       = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
@@ -93,7 +93,9 @@ const NavBar = () => {
   };
 
   return (
-    <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0 select-none">
+    <aside
+      className={`border-r border-border flex flex-col h-full bg-surface shrink-0 select-none overflow-hidden transition-all duration-300 ease-in-out shadow-[4px_0_20px_rgba(0,0,0,0.08)] ${collapsed ? 'w-0 border-r-0 shadow-none' : 'w-64'}`}
+    >
 
       {/* 1. 상단 프로필 구역 */}
       <div className="p-5 flex flex-col gap-4">

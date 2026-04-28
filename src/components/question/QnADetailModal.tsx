@@ -240,7 +240,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
   if (isLoadingDetails) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
         <div className="w-16 h-16 border-4 border-foreground/40 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -259,7 +259,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" 
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" 
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           backdropClickRef.current = true;
@@ -379,10 +379,17 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
           {/* Points info */}
           {localPost.points !== undefined && (
-            <div className="mt-4 p-3 bg-secondary border border-border rounded-lg">
-              <p className="text-sm text-foreground">
-                <span className="font-semibold">채택 포인트: +{localPost.points}P</span>
-              </p>
+            <div className="mt-4 flex items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                  fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/><path d="M15 6h1v4"/>
+                  <path d="m6.134 14.768.866-.5 2 3.464"/><circle cx="16" cy="8" r="6"/>
+                </svg>
+                <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                  채택 시 +{localPost.points}P 지급
+                </span>
+              </div>
             </div>
           )}
         </div>

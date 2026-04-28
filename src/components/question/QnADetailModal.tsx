@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle } from 'react-icons/fi';
+import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { QnAPost } from './QnAPostCard';
 import CommentList from '../feed/CommentList';
 import ReportModal from '../common/ReportModal';
@@ -12,17 +12,23 @@ interface QnADetailModalProps {
   post: QnAPost;
   onClose: (updatedPost?: QnAPost) => void;
   autoScrollToComment?: boolean;
+  onEditClick?: (post: QnAPost) => void;
+  onDeleteClick?: (qnaId: number) => void;
 }
 
-const QnADetailModal: React.FC<QnADetailModalProps> = ({ 
-  post, 
-  onClose, 
-  autoScrollToComment = false 
+const QnADetailModal: React.FC<QnADetailModalProps> = ({
+  post,
+  onClose,
+  autoScrollToComment = false,
+  onEditClick,
+  onDeleteClick,
 }) => {
   const [localPost, setLocalPost] = useState<QnAPost>(post);
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const viewCountIncrementedRef = useRef<Set<number>>(new Set());
   const commentSectionRef = useRef<HTMLDivElement>(null);
   const backdropClickRef = useRef(false);
@@ -107,6 +113,29 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
       }, 100);
     }
   }, [isLoadingDetails, autoScrollToComment]);
+
+  // 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
+
+  const handleEdit = () => {
+    setIsMenuOpen(false);
+    onClose(localPost);
+    onEditClick?.(localPost);
+  };
+
+  const handleDelete = () => {
+    setIsMenuOpen(false);
+    onClose();
+    onDeleteClick?.(localPost.qnaId);
+  };
 
   // Optimistic update - Like
   const handleLike = async () => {
@@ -243,12 +272,40 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
         backdropClickRef.current = false;
       }}
     >
-      <div className="relative w-full max-w-2xl bg-surface rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
+      <div className="relative w-full max-w-2xl bg-background rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
         
-        {/* 우측 상단: 신고 + 닫기 버튼 */}
+        {/* 우측 상단: 작성자면 수정/삭제 메뉴, 타인이면 신고 + 닫기 버튼 */}
         <div className="absolute top-5 right-5 flex items-center gap-1">
-          {!(localPost.isAuthor || localPost.author === true) && (
+          {(localPost.isAuthor || (localPost as any).author === true) ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setIsMenuOpen(prev => !prev)}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
+                aria-label="게시글 메뉴"
+              >
+                <FiMoreVertical size={20} />
+              </button>
+              {isMenuOpen && (
+                <div className="absolute right-0 top-10 w-32 bg-background border border-border rounded-xl shadow-lg z-10 overflow-hidden">
+                  <button
+                    onClick={handleEdit}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
+                  >
+                    <FiEdit2 size={14} />
+                    수정
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                  >
+                    <FiTrash2 size={14} />
+                    삭제
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
             <button
               onClick={() => setIsReportModalOpen(true)}
               className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
@@ -331,46 +388,46 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-between items-center mb-8 px-2 border-t border-b border-gray-200 dark:border-gray-700 py-4">
+        <div className="flex justify-between items-center mb-8 px-2">
           <div className="flex gap-2">
-            <button 
-              onClick={handleLike} 
-              className={`relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-white dark:bg-slate-700 border border-gray-200 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors shrink-0 ${isLiked ? 'text-rose-500 border-rose-200 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/20' : 'text-gray-500 dark:text-gray-400'}`}
+            <button
+              onClick={handleLike}
+              className={`relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0 ${isLiked ? 'text-rose-500 border-rose-500/20 bg-rose-500/10' : ''}`}
             >
               <FiHeart size={18} className={isLiked ? 'fill-current' : ''} />
               <span className="text-sm font-semibold">{likeCount}</span>
             </button>
-            
-            <button 
-              onClick={handleDislike} 
-              className={`relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-white dark:bg-slate-700 border border-gray-200 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors shrink-0 ${isDisliked ? 'text-purple-500 border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20' : 'text-gray-500 dark:text-gray-400'}`}
+
+            <button
+              onClick={handleDislike}
+              className={`relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0 ${isDisliked ? 'text-purple-500 border-purple-500/20 bg-purple-500/10' : ''}`}
             >
               <FiThumbsDown size={18} className={isDisliked ? 'fill-current' : ''} />
               <span className="text-sm font-semibold">{dislikeCount}</span>
             </button>
-            
-            <button className="relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-white dark:bg-slate-700 border border-gray-200 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-500 dark:text-gray-400 transition-colors shrink-0">
+
+            <button className="relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0">
               <FiMessageCircle size={18} />
               <span className="text-sm font-semibold">{commentCount}</span>
             </button>
-            
-            <div className="relative group flex items-center justify-center gap-1.5 px-3 h-10 text-gray-400 dark:text-gray-500 shrink-0">
+
+            <div className="relative group flex items-center justify-center gap-1.5 px-3 h-10 text-muted-foreground shrink-0">
               <FiEye size={18} />
               <span className="text-sm font-semibold">{viewCount}</span>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
-            <button 
-              onClick={handleShare} 
-              className="relative group flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-700 border border-gray-200 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
+            <button
+              onClick={handleShare}
+              className="relative group flex items-center justify-center w-10 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0"
             >
               <FiShare2 size={18} />
             </button>
-            
-            <button 
-              onClick={handleBookmark} 
-              className={`relative group flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-700 border border-gray-200 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors shrink-0 ${isBookmarked ? 'text-amber-500 border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20' : 'text-gray-500 dark:text-gray-400'}`}
+
+            <button
+              onClick={handleBookmark}
+              className={`relative group flex items-center justify-center w-10 h-10 bg-background border rounded-full hover:bg-secondary transition-colors shrink-0 ${isBookmarked ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : 'text-muted-foreground border-border'}`}
             >
               <FiBookmark size={18} className={isBookmarked ? 'fill-current' : ''} />
             </button>

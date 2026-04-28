@@ -22,7 +22,7 @@ const PasswordValidation = ({ isVisible, validations }) => {
           {validations.combo ? '✔️' : '❌'} 영문/숫자 포함
         </p>
         <p className={`flex items-center gap-1.5 transition-colors ${validations.length ? 'text-green-500' : 'text-gray-400'}`}>
-          {validations.length ? '✔️' : '❌'} 8자 이상 32자 이하 입력 (공백 제외)
+          {validations.length ? '✔️' : '❌'} 8자 이상 32자 이하 입력
         </p>
         <p className={`flex items-center gap-1.5 transition-colors ${validations.noConsecutive ? 'text-green-500' : 'text-gray-400'}`}>
           {validations.noConsecutive ? '✔️' : '❌'} 연속 3자 이상 동일한 문자/숫자 제외

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
+import { stripHtml } from '../../utils/text';
 
 // QnA 게시글 카드 컴포넌트
 export interface QnAPost {
@@ -309,7 +310,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
             {localPost.title}
           </h2>
           <p className="text-sm text-muted-foreground line-clamp-3">
-            {localPost.body?.replace(/<[^>]*>/g, '') || '내용 없음'}
+            {stripHtml(localPost.body || '') || '내용 없음'}
           </p>
         </div>
 

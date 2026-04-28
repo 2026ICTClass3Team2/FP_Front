@@ -214,7 +214,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
   };
 
   return (
-    <article className="bg-surface border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+    <article className="bg-surface border border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col gap-4 cursor-pointer">
       {/* 메인 컨텐츠 영역 (클릭 시 상세 모달 열림) */}
       <div onClick={onDetailClick} className="cursor-pointer flex flex-col gap-4">
         {/* 상단: 프로필 및 정보 영역 */}
@@ -309,7 +309,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
         {/* 태그 영역 */}
         <div className="flex flex-wrap gap-2 mt-1">
           {tags.map((tag, idx) => (
-            <span key={idx} className="px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full cursor-pointer hover:bg-secondary transition-colors">
+            <span key={idx} className="px-3 py-1 bg-muted text-foreground text-xs font-medium rounded-full cursor-pointer hover:bg-foreground/20 transition-colors">
               #{tag}
             </span>
           ))}

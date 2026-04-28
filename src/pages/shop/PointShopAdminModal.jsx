@@ -1,28 +1,44 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
-import { SortFilterBar } from './PointShopModal';
+import { SortDropdown } from './PointShopModal';
 import jwtAxios from '../../api/jwtAxios';
 
 const ACCEPTED_TYPES = '.jpg,.jpeg,.png';
 const ALLOWED_MIME = ['image/jpeg', 'image/png'];
 
-// ── 관리자용 이모티콘 카드 (hover → 블라인드 + 수정 버튼)
+const getChosung = (str) => {
+  const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  return [...str].map(ch => {
+    const code = ch.charCodeAt(0) - 0xAC00;
+    return code >= 0 && code <= 11171 ? CHO[Math.floor(code / 588)] : ch;
+  }).join('');
+};
+const isChosung = (str) => /^[ㄱ-ㅎ]+$/.test(str);
+const matchesKorean = (name, query) => {
+  if (!query) return true;
+  if (isChosung(query)) return getChosung(name).includes(query);
+  return name.toLowerCase().includes(query.toLowerCase());
+};
+
+// 작업6: 카드 크기를 유저 EmoteCard와 동일하게 (h-[76px], p-1)
 const AdminEmoteCard = ({ emote, onEdit, isEditing }) => (
-  <div className={`flex flex-col items-center rounded-xl border overflow-hidden transition-all
+  <div className={`w-[95%] mx-auto flex flex-col items-center rounded-xl border overflow-hidden transition-all
     ${isEditing ? 'border-primary ring-2 ring-primary' : 'border-border bg-surface'}`}>
-    <div className="relative w-full h-20 bg-background group cursor-pointer">
+    <div className="relative w-full h-[90px] bg-background group cursor-pointer">
       <img
         src={emote.imageUrl}
         alt={emote.name}
-        className="w-full h-full object-contain p-3"
+        className="w-full h-full object-contain p-1"
         onError={e => { e.currentTarget.style.display = 'none'; }}
       />
-      {/* hover 블라인드 + 수정 버튼 */}
-      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+      <div
+        onClick={() => onEdit(emote)}
+        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+      >
         <button
-          onClick={() => onEdit(emote)}
-          className="px-3 py-1.5 bg-white text-gray-900 rounded-lg text-xs font-semibold hover:bg-gray-100 transition-colors"
+          onClick={e => { e.stopPropagation(); onEdit(emote); }}
+          className="px-3 py-1.5 bg-white text-gray-900 rounded-lg text-xs font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
         >
           수정
         </button>
@@ -39,14 +55,15 @@ const AdminEmoteCard = ({ emote, onEdit, isEditing }) => (
 // 관리자 전용 포인트 샵 모달
 // ────────────────────────────────────────────────
 const PointShopAdminModal = ({ isOpen, onClose }) => {
-  // ── 이모티콘 목록
   const [emotes, setEmotes]           = useState([]);
   const [totalPages, setTotalPages]   = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [sort, setSort]               = useState('latest');
+  const [search, setSearch]           = useState('');
+  const [inputValue, setInputValue]   = useState('');
   const [loading, setLoading]         = useState(false);
+  const searchTimerRef = useRef(null);
 
-  // ── 업로드/수정 공통 폼 상태
   const [uploadFile, setUploadFile]       = useState(null);
   const [uploadPreview, setUploadPreview] = useState(null);
   const [uploadName, setUploadName]       = useState('');
@@ -55,14 +72,17 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
   const [uploadError, setUploadError]     = useState('');
   const fileInputRef = useRef(null);
 
-  // ── 수정 모드: null이면 등록 모드, emote 객체면 수정 모드
   const [editTarget, setEditTarget] = useState(null);
 
-  // ── 이모티콘 목록 fetch
   const fetchEmotes = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ sort, page: currentPage, size: 9 });
+      const isSearching = search.trim().length > 0;
+      const params = new URLSearchParams({
+        sort,
+        page: isSearching ? 0 : currentPage,
+        size: isSearching ? 100 : 9,
+      });
       const res = await jwtAxios.get(`shop/emotes?${params}`);
       setEmotes(res.data.content ?? []);
       setTotalPages(res.data.totalPages ?? 0);
@@ -71,15 +91,28 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
     } finally {
       setLoading(false);
     }
-  }, [sort, currentPage]);
+  }, [sort, currentPage, search]);
+
+  const filteredEmotes = useMemo(() => {
+    const q = search.trim();
+    if (!q) return emotes;
+    return emotes.filter(e => matchesKorean(e.name, q));
+  }, [emotes, search]);
 
   useEffect(() => {
     if (isOpen) fetchEmotes();
   }, [isOpen, fetchEmotes]);
 
   const handleSortChange = (val) => { setSort(val); setCurrentPage(0); };
+  const handleSearchChange = (val) => {
+    setInputValue(val);
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setSearch(val);
+      setCurrentPage(0);
+    }, 300);
+  };
 
-  // ── 폼 초기화
   const resetForm = () => {
     setUploadFile(null);
     setUploadPreview(null);
@@ -89,7 +122,6 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // ── 파일 선택 (등록/수정 공통)
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -104,7 +136,6 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
     if (!uploadName) setUploadName(file.name.replace(/\.[^.]+$/, ''));
   };
 
-  // ── 유효성 검사 공통
   const validate = () => {
     if (!uploadName.trim() || uploadPrice === '') {
       setUploadError('이름과 가격을 입력해주세요.');
@@ -118,7 +149,6 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
     return price;
   };
 
-  // ── S3 업로드 공통 (새 파일이 있을 때만)
   const uploadToS3 = async (file) => {
     const s3Res = await jwtAxios.get(`s3/presigned-url?filename=${encodeURIComponent(file.name)}`);
     const { presignedUrl, publicUrl } = s3Res.data;
@@ -130,7 +160,6 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
     return publicUrl;
   };
 
-  // ── 이모티콘 등록
   const handleUpload = async () => {
     if (!uploadFile) {
       setUploadError('파일, 이름, 가격을 모두 입력해주세요.');
@@ -154,24 +183,21 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // ── 수정 모드 시작 (이모티콘 카드 수정 버튼 클릭)
   const handleEditStart = (emote) => {
     setEditTarget(emote);
     setUploadFile(null);
-    setUploadPreview(emote.imageUrl); // 기존 이미지 미리보기
+    setUploadPreview(emote.imageUrl);
     setUploadName(emote.name);
     setUploadPrice(String(emote.price));
     setUploadError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // ── 수정 모드 취소
   const cancelEdit = () => {
     setEditTarget(null);
     resetForm();
   };
 
-  // ── 이모티콘 수정 (이름/가격/이미지 중 하나 이상 변경)
   const handleUpdate = async () => {
     const price = validate();
     if (price === null) return;
@@ -179,7 +205,6 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
     setUploadLoading(true);
     setUploadError('');
     try {
-      // 새 파일이 있으면 S3 업로드, 없으면 기존 URL 유지
       const imageUrl = uploadFile
         ? await uploadToS3(uploadFile)
         : editTarget.imageUrl;
@@ -192,7 +217,7 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
 
       setEditTarget(null);
       resetForm();
-      fetchEmotes(); // DB에서 다시 불러와 화면 갱신
+      fetchEmotes();
     } catch (err) {
       setUploadError(err?.response?.data?.message ?? '수정 중 오류가 발생했습니다.');
     } finally {
@@ -202,6 +227,9 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
 
   const handleClose = () => {
     setEditTarget(null);
+    setSearch('');
+    setInputValue('');
+    clearTimeout(searchTimerRef.current);
     resetForm();
     onClose();
   };
@@ -209,19 +237,21 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
   const isEditMode = editTarget !== null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="🛍️ 포인트 샵 관리" maxWidth="max-w-[55vw]" maxHeight="max-h-[70vh]">
-      <div className="flex gap-6 h-full">
+    <Modal isOpen={isOpen} onClose={handleClose} title="🛍️ 포인트 샵 관리" maxWidth="max-w-[1200px]" maxHeight="max-h-[650px]">
+      <div className="flex gap-6 h-[540px]">
 
-        {/* ── 왼쪽: 등록 / 수정 섹션 (50%) ── */}
-        <div className="w-[40%] flex-shrink-0">
+        {/* ── 왼쪽: 등록 / 수정 섹션 ── */}
+        <div className="w-[40%] flex-shrink-0 h-full flex flex-col gap-3">
+          {/* 드롭바 행 높이만큼 스페이서 → 등록창이 이모티콘 그리드와 수직 정렬 */}
+          <div className="h-[34px] flex-shrink-0" />
           <div className="bg-surface rounded-xl p-4 border border-border space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               {isEditMode ? '이모티콘 수정' : '이모티콘 등록'}
             </p>
 
-            <div className="flex gap-3 items-start">
-              {/* 파일 선택 영역 */}
-              <label className="flex-shrink-0 w-20 h-20 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors bg-background overflow-hidden">
+            {/* 작업7: 파일 선택을 이름 입력 위로, 크기 30% 확대 */}
+            <div className="space-y-3">
+              <label className="w-[125px] h-[125px] border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors bg-background overflow-hidden">
                 {uploadPreview ? (
                   <img src={uploadPreview} alt="미리보기" className="w-full h-full object-contain" />
                 ) : uploadFile ? (
@@ -243,50 +273,47 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
                 />
               </label>
 
-              {/* 이름 / 가격 / 버튼 */}
-              <div className="flex-1 space-y-2">
+              <input
+                type="text"
+                placeholder="이모티콘 이름"
+                value={uploadName}
+                onChange={e => setUploadName(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <div className="flex gap-2">
                 <input
-                  type="text"
-                  placeholder="이모티콘 이름"
-                  value={uploadName}
-                  onChange={e => setUploadName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  type="number"
+                  placeholder="가격 (포인트)"
+                  value={uploadPrice}
+                  onChange={e => setUploadPrice(e.target.value)}
+                  min={0}
+                  className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 />
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="가격 (포인트)"
-                    value={uploadPrice}
-                    onChange={e => setUploadPrice(e.target.value)}
-                    min={0}
-                    className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                  {isEditMode ? (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={cancelEdit}
-                        className="px-3 py-2 border border-border text-foreground rounded-lg text-sm hover:bg-muted/10 transition-colors whitespace-nowrap"
-                      >
-                        취소
-                      </button>
-                      <button
-                        onClick={handleUpdate}
-                        disabled={uploadLoading}
-                        className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 whitespace-nowrap"
-                      >
-                        {uploadLoading ? '수정 중...' : '수정'}
-                      </button>
-                    </div>
-                  ) : (
+                {isEditMode ? (
+                  <div className="flex gap-1">
                     <button
-                      onClick={handleUpload}
-                      disabled={uploadLoading}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 whitespace-nowrap"
+                      onClick={cancelEdit}
+                      className="px-3 py-2 border border-border text-foreground rounded-lg text-sm hover:bg-muted/10 transition-colors whitespace-nowrap"
                     >
-                      {uploadLoading ? '등록 중...' : '등록'}
+                      취소
                     </button>
-                  )}
-                </div>
+                    <button
+                      onClick={handleUpdate}
+                      disabled={uploadLoading}
+                      className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {uploadLoading ? '수정 중...' : '수정'}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleUpload}
+                    disabled={uploadLoading}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {uploadLoading ? '등록 중...' : '등록'}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -294,18 +321,28 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* ── 오른쪽: 이모티콘 목록 (50%) ── */}
-        <div className="w-1/2 flex flex-col gap-3">
-          <SortFilterBar sort={sort} filter={null} onSort={handleSortChange} onFilter={null} />
+        {/* ── 오른쪽: 이모티콘 목록 ── */}
+        <div className="flex-1 flex flex-col gap-3 h-full">
+          {/* 작업6: 정렬 드롭다운 */}
+          <div className="flex gap-2 items-center flex-shrink-0">
+            <SortDropdown sort={sort} onSort={handleSortChange} />
+            <input
+              type="text"
+              value={inputValue}
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="이모티콘 검색..."
+              className="w-[500px] px-3 py-1.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
 
-          {loading ? (
-            <p className="text-center py-10 text-muted-foreground">불러오는 중...</p>
-          ) : emotes.length === 0 ? (
-            <p className="text-center py-10 text-muted-foreground">등록된 이모티콘이 없습니다.</p>
-          ) : (
-            <>
+          <div className="flex-1 min-h-0 overflow-hidden pt-1">
+            {loading ? (
+              <p className="text-center py-10 text-muted-foreground">불러오는 중...</p>
+            ) : filteredEmotes.length === 0 ? (
+              <p className="text-center py-10 text-muted-foreground">등록된 이모티콘이 없습니다.</p>
+            ) : (
               <div className="grid grid-cols-3 gap-2">
-                {emotes.map(emote => (
+                {filteredEmotes.map(emote => (
                   <AdminEmoteCard
                     key={emote.id}
                     emote={emote}
@@ -314,12 +351,17 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
                   />
                 ))}
               </div>
+            )}
+          </div>
+
+          {!search.trim() && (
+            <div className="flex-shrink-0 [&_nav]:mt-3">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
               />
-            </>
+            </div>
           )}
         </div>
 

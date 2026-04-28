@@ -20,11 +20,11 @@ const ChatDropdown = () => {
       
       {/* 왼쪽 사이드바 (내비게이션) */}
       <div className="w-20 bg-muted/40 border-r border-border flex flex-col items-center py-6 gap-6">
-        <button 
+        <button
           onClick={() => setActiveTab('bot')}
-          className={`p-3 rounded-2xl transition-all ${
-            activeTab === 'bot' 
-            ? 'bg-primary text-primary-foreground shadow-lg scale-110' 
+          className={`p-3 rounded-2xl transition-all cursor-pointer ${
+            activeTab === 'bot'
+            ? 'bg-primary text-primary-foreground shadow-lg scale-110'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           }`}
           title="AI 챗봇"
@@ -32,11 +32,11 @@ const ChatDropdown = () => {
           <FiCpu size={24} />
         </button>
 
-        <button 
+        <button
           onClick={() => setActiveTab('chat')}
-          className={`p-3 rounded-2xl transition-all ${
-            activeTab === 'chat' 
-            ? 'bg-primary text-primary-foreground shadow-lg scale-110' 
+          className={`p-3 rounded-2xl transition-all cursor-pointer ${
+            activeTab === 'chat'
+            ? 'bg-primary text-primary-foreground shadow-lg scale-110'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           }`}
           title="1:1 채팅"
@@ -46,11 +46,11 @@ const ChatDropdown = () => {
 
         {/* 아래쪽 배치되는 건의사항 버튼 */}
         <div className="mt-auto">
-          <button 
+          <button
             onClick={() => setActiveTab('suggestion')}
-            className={`p-3 rounded-2xl transition-all ${
-              activeTab === 'suggestion' 
-              ? 'bg-primary text-primary-foreground shadow-lg scale-110' 
+            className={`p-3 rounded-2xl transition-all cursor-pointer ${
+              activeTab === 'suggestion'
+              ? 'bg-primary text-primary-foreground shadow-lg scale-110'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
             title="건의사항 보내기"

@@ -217,7 +217,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
   };
 
   return (
-    <article className="bg-surface border border-border rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+    <article className="bg-surface border border-border rounded-3xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col gap-4 cursor-pointer">
       {/* Main content area (clickable for detail modal) */}
       <div onClick={onDetailClick} className="cursor-pointer flex flex-col gap-4">
         {/* Top: Profile and info section */}
@@ -317,9 +317,9 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
-              <span 
-                key={tag} 
-                className="text-xs px-2.5 py-1 bg-secondary text-secondary-foreground rounded-full font-semibold"
+              <span
+                key={tag}
+                className="text-xs px-2.5 py-1 bg-secondary text-foreground rounded-full font-semibold cursor-pointer hover:bg-foreground/20 transition-colors"
               >
                 {tag}
               </span>

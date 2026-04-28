@@ -344,7 +344,7 @@ const Header = () => {
         <div className="relative" ref={chatRef}>
           <button 
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors"
+            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors cursor-pointer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" 
             stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" 
@@ -365,7 +365,7 @@ const Header = () => {
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors relative"
+            className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors relative cursor-pointer"
           >
             <FiBell size={24} />
             {notifications.length > 0 && (

@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCpu, FiCode, FiMessageCircle, FiArrowLeft, FiSend, FiPlay } from 'react-icons/fi';
+<<<<<<< HEAD
 import jwtAxios from '../../api/jwtAxios';
+=======
+import { reviewCode } from '../../api/chatbot';
+import { markTypeAsRead } from '../../api/notification';
+>>>>>>> ea26bb57025fe7308ea83cce188004922bcc61e7
 
 const ChatBotTab = () => {
   const [mode, setMode] = useState(null); // 'faq' or 'code'
@@ -35,11 +40,9 @@ const ChatBotTab = () => {
     setLoading(true);
     setCodeReview('');
     try {
-      // Direct call to Python backend
-      const res = await jwtAxios.post('chatbot/review', {
-        code: codeInput
-      });
-      setCodeReview(res.data.review);
+      // Use the dedicated chatbot API service
+      const data = await reviewCode(codeInput);
+      setCodeReview(data.review);
     } catch (err) {
       console.error(err);
       setCodeReview("분석 중 오류가 발생했습니다. AI 서버 연결을 확인해주세요.");
@@ -47,6 +50,11 @@ const ChatBotTab = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // 탭을 열 때 챗봇 알림(bot 타입)을 모두 읽음 처리합니다.
+    markTypeAsRead('bot').catch(err => console.error('Failed to mark bot notifications as read:', err));
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {

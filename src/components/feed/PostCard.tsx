@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark, FiAlertTriangle, FiLink } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
+import { stripHtml } from '../../utils/text';
 import ReportModal from '../common/ReportModal';
 import UserProfileModal from '../common/UserProfileModal';
 
@@ -282,8 +283,15 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
 
         {/* 본문 영역: 제목과 우측 첨부 링크 */}
         <div className="flex items-start justify-between gap-4">
-          <h2 className="text-xl font-extrabold text-foreground leading-snug break-words flex-1">{post.title}</h2>
-          
+          <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+            <h2 className="text-xl font-extrabold text-foreground leading-snug break-words">{post.title}</h2>
+            {localPost.body && stripHtml(localPost.body).trim() && (
+              <p className="text-sm text-muted-foreground line-clamp-2 break-words">
+                {stripHtml(localPost.body)}
+              </p>
+            )}
+          </div>
+
           {/* 첨부 링크 영역 */}
           {localPost.attachedUrls && Array.isArray(localPost.attachedUrls) && localPost.attachedUrls.length > 0 && localPost.attachedUrls[0].trim() !== '' && (
             <a
@@ -298,6 +306,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
             </a>
           )}
         </div>
+
 
         {/* 썸네일 이미지 */}
         {localPost.thumbnailUrl && (

@@ -20,6 +20,11 @@ export const markAllAsRead = async () => {
     return res.data;
 };
 
+export const markTypeAsRead = async (targetType) => {
+    const res = await jwtAxios.post(`notifications/read-type`, null, { params: { targetType } });
+    return res.data;
+};
+
 export const getNotificationSettings = async () => {
     const res = await jwtAxios.get(`notifications/settings`);
     return res.data;

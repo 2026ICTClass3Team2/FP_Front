@@ -7,6 +7,7 @@ import { FiBell, FiCheckCircle } from 'react-icons/fi';
 import useNotificationSocket from '../../hooks/useNotificationSocket';
 import ChatDropdown from '../chat/ChatDropdown';
 import { globalSearch } from '../../api/search';
+import UserProfileModal from '../common/UserProfileModal';
 
 
 const Header = () => {
@@ -32,6 +33,10 @@ const Header = () => {
   const [searchResults, setSearchResults] = useState({ posts: [], users: [], channels: [] });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 유저 프로필 모달 상태
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   
   const dropdownRef = useRef(null);
   const chatRef = useRef(null);
@@ -183,6 +188,7 @@ const Header = () => {
   };
 
   return (
+    <>
     <header className="h-16 border-b border-border bg-background flex items-center px-4 md:px-6 shrink-0 relative z-10">
 
       <Link to="/" onClick={handleLogoClick} className="flex items-center gap-3 min-w-[200px] text-foreground">
@@ -303,9 +309,9 @@ const Header = () => {
                     <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">사용자</div>
                     <div className="grid grid-cols-2 gap-1">
                       {searchResults.users.map(user => (
-                        <div 
-                          key={user.id} 
-                          onClick={() => { navigate(`/user/${user.id}`); setIsSearchOpen(false); }}
+                        <div
+                          key={user.id}
+                          onClick={() => { setSelectedUserId(user.id); setIsUserModalOpen(true); setIsSearchOpen(false); }}
                           className="flex items-center gap-2 p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
                         >
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 overflow-hidden">
@@ -436,6 +442,13 @@ const Header = () => {
         </div>
       </div>
     </header>
+
+    <UserProfileModal
+      isOpen={isUserModalOpen}
+      onClose={() => { setIsUserModalOpen(false); setSelectedUserId(null); }}
+      userId={selectedUserId}
+    />
+    </>
   );
 };
 

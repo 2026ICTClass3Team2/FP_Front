@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark, FiAlertTriangle, FiLink } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
@@ -215,6 +216,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
   };
 
   return (
+    <>
     <article onClick={onDetailClick} className="bg-surface border border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col gap-4 cursor-pointer">
       {/* 메인 컨텐츠 영역 */}
       <div className="flex flex-col gap-4">
@@ -361,22 +363,28 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
         </div>
       </div>
 
-      <ReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        targetType="post"
-        targetId={localPost.postId}
-        onSuccess={(reportData: any) => {
-          onReportSuccess?.(reportData);
-        }}
-      />
-
-      <UserProfileModal
-        isOpen={profileModalUserId !== null}
-        onClose={() => setProfileModalUserId(null)}
-        userId={profileModalUserId}
-      />
     </article>
+
+    {ReactDOM.createPortal(
+      <>
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          targetType="post"
+          targetId={localPost.postId}
+          onSuccess={(reportData: any) => {
+            onReportSuccess?.(reportData);
+          }}
+        />
+        <UserProfileModal
+          isOpen={profileModalUserId !== null}
+          onClose={() => setProfileModalUserId(null)}
+          userId={profileModalUserId}
+        />
+      </>,
+      document.body
+    )}
+  </>
   );
 };
 

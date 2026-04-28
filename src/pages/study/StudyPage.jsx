@@ -48,6 +48,8 @@ const StudyPage = () => {
     const [editLoading, setEditLoading] = useState(false);
 
     const addButtonRef = useRef(null);
+    const langRefs = useRef({});
+    const chapterRefs = useRef({});
 
     const checkAdminAccess = (callback) => {
         if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
@@ -75,6 +77,7 @@ const StudyPage = () => {
     const fetchDBData = async () => {
         setIsLoading(true);
         try {
+            
             const res = await fetch("https://n8n.deadbug.site/webhook/study-data", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
@@ -160,6 +163,9 @@ const StudyPage = () => {
         if (first) setSelectedChapter(first);
         setIsSearching(false);
         setSearchQuery("");
+        setTimeout(() => {
+            langRefs.current[lang]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
     };
 
     const handleItemSelect = (item) => {
@@ -167,7 +173,13 @@ const StudyPage = () => {
             handleLanguageSelect(item);
         } else {
             const target = visibleChapters.find(c => c.title === item);
-            if (target) { setSelectedLanguage(target.language); setSelectedChapter(target); }
+            if (target) {
+                setSelectedLanguage(target.language);
+                setSelectedChapter(target);
+                setTimeout(() => {
+                    chapterRefs.current[target.id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
         }
         setSearchQuery("");
         setIsSearching(false);
@@ -434,6 +446,7 @@ const StudyPage = () => {
                                 {visibleLanguages.map((lang, idx) => (
                                     <div
                                         key={`lang-select-${idx}-${lang}`}
+                                        ref={el => { langRefs.current[lang] = el; }}
                                         onClick={() => handleLanguageSelect(lang)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') handleLanguageSelect(lang); }}
                                         tabIndex={0}
@@ -476,6 +489,7 @@ const StudyPage = () => {
                                 {currentChapters.map((chapter, idx) => (
                                     <div
                                         key={chapter.id || `chapter-list-${idx}`}
+                                        ref={el => { chapterRefs.current[chapter.id] = el; }}
                                         onClick={() => setSelectedChapter(chapter)}
                                         className={`group relative w-full text-left px-6 py-5 rounded-2xl border-2 text-foreground cursor-pointer transition-colors duration-200
                                             ${selectedChapter?.id === chapter.id
@@ -510,7 +524,7 @@ const StudyPage = () => {
             </aside>
 
             {/* 메인 콘텐츠 */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background" onClick={() => setIsSearching(false)}>
+            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background transform-gpu" onClick={() => setIsSearching(false)}>
                 {isAdmin && (
                     <div className="mb-6 flex justify-end gap-3">
                         <button
@@ -534,8 +548,8 @@ const StudyPage = () => {
                             <header>
                                 <h1 className="text-2xl md:text-4xl font-black break-words text-foreground">{selectedChapter.title}</h1>
                             </header>
-                            <div className="min-h-[30rem] md:min-h-[40rem] w-full bg-surface border-2 border-border rounded-[2rem] md:rounded-[4rem] p-6 md:p-12 lg:p-20 shadow-sm">
-                                <div className="text-base md:text-xl leading-relaxed prose prose-slate dark:prose-invert max-w-none">
+                            <div className="min-h-[30rem] md:min-h-[40rem] w-full bg-surface border-2 border-border rounded-[2rem] md:rounded-[4rem] p-6 md:p-12 lg:p-20 shadow-sm overflow-hidden">
+                                <div className="text-base md:text-xl leading-relaxed prose prose-slate dark:prose-invert max-w-none break-words [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_table]:block [&_table]:overflow-x-auto [&_img]:max-w-full">
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {selectedChapter.content}
                                     </ReactMarkdown>

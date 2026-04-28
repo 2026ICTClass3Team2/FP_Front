@@ -5,6 +5,7 @@ import { ko } from 'date-fns/locale';
 import jwtAxios from '../../api/jwtAxios';
 import useChatSocket from '../../hooks/useChatSocket';
 import { getChatHistory, getChatConversations, markChatRead } from '../../api/chat';
+import UserProfileModal from '../common/UserProfileModal';
 
 const DirectChatTab = () => {
   // ─── State ───
@@ -16,6 +17,7 @@ const DirectChatTab = () => {
   const [loading, setLoading] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null); // 프로필 모달용
 
   const scrollRef = useRef(null);
   const me = JSON.parse(localStorage.getItem('user')); // 내 정보
@@ -217,11 +219,16 @@ const DirectChatTab = () => {
         <button onClick={() => setActivePartner(null)} className="p-2 hover:bg-muted rounded-full text-muted-foreground transition-colors">
           <FiArrowLeft size={20} />
         </button>
-        <div className="w-10 h-10 rounded-full bg-muted border border-border overflow-hidden">
-          {activePartner.profilePicUrl ? <img src={activePartner.profilePicUrl} className="w-full h-full object-cover" /> : <FiUser className="m-auto text-muted-foreground" size={18} />}
-        </div>
+        <button 
+          onClick={() => setSelectedUserId(activePartner.id)}
+          className="w-10 h-10 rounded-full bg-muted border border-border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          {activePartner.profilePicUrl ? <img src={activePartner.profilePicUrl} className="w-full h-full object-cover" alt="profile" /> : <FiUser className="m-auto text-muted-foreground h-full" size={18} />}
+        </button>
         <div className="flex-1 overflow-hidden">
-          <p className="text-sm font-bold text-foreground truncate">{activePartner.nickname}</p>
+          <button onClick={() => setSelectedUserId(activePartner.id)} className="text-sm font-bold text-foreground truncate cursor-pointer hover:underline">
+            {activePartner.nickname}
+          </button>
           <p className="text-[10px] text-success flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-success rounded-full" /> 실시간 연결됨
           </p>
@@ -242,20 +249,26 @@ const DirectChatTab = () => {
           return (
             <div key={msg.chatId || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2 group`}>
               {!isMe && (
-                 <div className="w-9 h-9 rounded-full bg-muted border border-border overflow-hidden flex-shrink-0 mb-1 shadow-sm">
+                 <button 
+                   onClick={() => setSelectedUserId(msg.senderId)}
+                   className="w-9 h-9 rounded-full bg-muted border border-border overflow-hidden flex-shrink-0 mb-1 shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+                 >
                    {msg.senderProfilePic ? (
                      <img src={msg.senderProfilePic} className="w-full h-full object-cover" alt="profile" />
                    ) : (
-                     <FiUser className="m-auto text-muted-foreground" size={16} />
+                     <FiUser className="m-auto text-muted-foreground h-full" size={16} />
                    )}
-                 </div>
+                 </button>
               )}
               
               <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%]`}>
                 {!isMe && (
-                  <span className="text-[11px] font-bold text-muted-foreground ml-1 mb-1 px-1">
+                  <button 
+                    onClick={() => setSelectedUserId(msg.senderId)}
+                    className="text-[11px] font-bold text-muted-foreground ml-1 mb-1 px-1 cursor-pointer hover:underline text-left"
+                  >
                     {msg.senderNickname}
-                  </span>
+                  </button>
                 )}
                 
                 <div className={`relative px-4 py-2.5 rounded-2xl text-[13px] shadow-sm leading-relaxed transition-all ${
@@ -298,9 +311,18 @@ const DirectChatTab = () => {
   );
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {activePartner ? renderChatWindow() : renderConversationList()}
-    </div>
+    <>
+      <div className="flex flex-col h-full overflow-hidden">
+        {activePartner ? renderChatWindow() : renderConversationList()}
+      </div>
+
+      {/* User Profile Modal */}
+      <UserProfileModal 
+        isOpen={!!selectedUserId}
+        userId={selectedUserId}
+        onClose={() => setSelectedUserId(null)}
+      />
+    </>
   );
 };
 

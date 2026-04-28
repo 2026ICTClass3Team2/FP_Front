@@ -1,11 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCpu, FiCode, FiMessageCircle, FiArrowLeft, FiSend, FiPlay } from 'react-icons/fi';
-<<<<<<< HEAD
 import jwtAxios from '../../api/jwtAxios';
-=======
 import { reviewCode } from '../../api/chatbot';
 import { markTypeAsRead } from '../../api/notification';
->>>>>>> ea26bb57025fe7308ea83cce188004922bcc61e7
 
 const ChatBotTab = () => {
   const [mode, setMode] = useState(null); // 'faq' or 'code'

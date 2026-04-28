@@ -18,9 +18,29 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
+                    echo "1. Stopping old container..."
                     sh "docker stop ${CONTAINER_NAME} || true"
                     sh "docker rm ${CONTAINER_NAME} || true"
-                    sh "docker run -d --name ${CONTAINER_NAME} -p 3000:80 ${DOCKER_IMAGE}:latest"
+                    
+                    echo "2. Booting new container..."
+                    sh """
+                    docker run -d \\
+                      --name ${CONTAINER_NAME} \\
+                      -p 3000:80 \\
+                      ${DOCKER_IMAGE}:latest
+                    """
+
+                    echo "3. Waiting for Frontend (Nginx) to fully start..."
+                    sh '''
+                        sleep 3
+                        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://172.17.0.1:3000 || true)
+                        if [ "$STATUS" = "200" ]; then
+                            echo "✅ Nginx is UP and serving React!"
+                        else
+                            echo "❌ Frontend failed to start. HTTP Status: $STATUS"
+                            exit 1
+                        fi
+                    '''
                 }
             }
         }
@@ -34,10 +54,10 @@ pipeline {
 
     post {
         success {
-            echo "Successfully deployed! Site should be live at your EC2 IP."
+            echo "🟢 Successfully deployed! Site is live and verified healthy."
         }
         failure {
-            echo "Deployment failed. Check the Docker build logs above."
+            echo "🔴 Deployment failed. Check the Docker logs above."
         }
     }
 }

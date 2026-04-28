@@ -15,7 +15,7 @@ const PasswordEditForm = ({ isOpen = true, onSubmit, onCancel }) => {
   // 비밀번호 유효성 검사
   const validations = {
     combo: /(?=.*[a-zA-Z])(?=.*[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{2,}/.test(newPassword),
-    length: /^\S{8,32}$/.test(newPassword),
+    length: newPassword.length >= 8 && newPassword.length <= 32,
     noConsecutive: !/(.)\1\1/.test(newPassword),
   };
   const isPasswordValid = Object.values(validations).every(Boolean);
@@ -73,7 +73,7 @@ const PasswordEditForm = ({ isOpen = true, onSubmit, onCancel }) => {
           <input
             type="password"
             value={newPassword}
-            onChange={e => setNewPassword(e.target.value)}
+            onChange={e => setNewPassword(e.target.value.replace(/\s/g, ''))}
             onFocus={() => setShowValidation(true)}
             onBlur={() => setTimeout(() => setShowValidation(false), 200)}
             className={`w-full border ${isPasswordValid || !newPassword ? 'border-gray-300' : 'border-red-400'} rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary transition`}
@@ -104,14 +104,14 @@ const PasswordEditForm = ({ isOpen = true, onSubmit, onCancel }) => {
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-colors shadow-sm text-sm"
+            className="px-6 py-2 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-colors shadow-sm text-sm cursor-pointer"
           >
             취소
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 rounded-xl bg-blue-500 text-white font-bold hover:bg-blue-600 transition-colors shadow-sm text-sm"
+            className="px-6 py-2 rounded-xl bg-blue-500 text-white font-bold hover:bg-blue-600 transition-colors shadow-sm text-sm cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? '변경 중...' : '변경'}
           </button>

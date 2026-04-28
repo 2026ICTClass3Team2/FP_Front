@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
+import { stripHtml } from '../../utils/text';
 
 // QnA 게시글 카드 컴포넌트
 export interface QnAPost {
@@ -217,7 +218,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
   };
 
   return (
-    <article className="bg-surface border border-border rounded-3xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col gap-4 cursor-pointer">
+    <article className="bg-surface border border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col gap-4 cursor-pointer">
       {/* Main content area (clickable for detail modal) */}
       <div onClick={onDetailClick} className="cursor-pointer flex flex-col gap-4">
         {/* Top: Profile and info section */}
@@ -309,7 +310,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
             {localPost.title}
           </h2>
           <p className="text-sm text-muted-foreground line-clamp-3">
-            {localPost.body?.replace(/<[^>]*>/g, '') || '내용 없음'}
+            {stripHtml(localPost.body || '') || '내용 없음'}
           </p>
         </div>
 
@@ -329,77 +330,51 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
       </div>
 
       {/* Bottom: Action buttons */}
-      <div className="flex items-center justify-between pt-3 border-t border-border">
-        <div className="flex items-center gap-4 text-muted-foreground">
-          {/* Like button */}
+      <div className="flex justify-between items-center pt-4 border-t border-border mt-2">
+        <div className="flex gap-2">
           <button
             onClick={handleLikeClick}
-            className={`flex items-center gap-1 text-sm transition-colors rounded-lg px-2 py-1 ${
-              isLiked 
-                ? 'text-primary bg-primary/10 border border-primary' 
-                : 'hover:text-foreground hover:bg-secondary'
-            }`}
-            title="좋아요"
+            className={`relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0 ${isLiked ? 'text-rose-500 border-rose-500/20 bg-rose-500/10' : ''}`}
           >
-            <FiHeart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-            <span className="text-xs">{likeCount}</span>
+            <FiHeart size={18} className={isLiked ? 'fill-current' : ''} />
+            <span className="text-sm font-semibold">{likeCount}</span>
           </button>
 
-          {/* Dislike button */}
           <button
             onClick={handleDislikeClick}
-            className={`flex items-center gap-1 text-sm transition-colors rounded-lg px-2 py-1 ${
-              isDisliked 
-                ? 'text-primary bg-primary/10 border border-primary' 
-                : 'hover:text-foreground hover:bg-secondary'
-            }`}
-            title="비추천"
+            className={`relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0 ${isDisliked ? 'text-purple-500 border-purple-500/20 bg-purple-500/10' : ''}`}
           >
-            <FiThumbsDown className={`w-4 h-4 ${isDisliked ? 'fill-current' : ''}`} />
-            <span className="text-xs">{dislikeCount}</span>
+            <FiThumbsDown size={18} className={isDisliked ? 'fill-current' : ''} />
+            <span className="text-sm font-semibold">{dislikeCount}</span>
           </button>
 
-          {/* Comment button */}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onComment?.();
-            }}
-            className="flex items-center gap-1 text-sm transition-colors rounded-lg px-2 py-1 hover:text-foreground hover:bg-secondary"
-            title="댓글"
+            onClick={(e) => { e.stopPropagation(); onComment?.(); }}
+            className="relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0"
           >
-            <FiMessageCircle className="w-4 h-4" />
-            <span className="text-xs">{commentCount}</span>
+            <FiMessageCircle size={18} />
+            <span className="text-sm font-semibold">{commentCount}</span>
           </button>
 
-          {/* View count */}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
-            <FiEye className="w-4 h-4" />
-            <span>{viewCount}</span>
+          <div className="relative group flex items-center justify-center gap-1.5 px-3 h-10 text-muted-foreground shrink-0">
+            <FiEye size={18} />
+            <span className="text-sm font-semibold">{viewCount}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Share button */}
+        <div className="flex gap-2">
           <button
             onClick={handleShareClick}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors"
-            title="공유"
+            className="relative group flex items-center justify-center w-10 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0"
           >
-            <FiShare2 className="w-4 h-4 text-muted-foreground" />
+            <FiShare2 size={18} />
           </button>
 
-          {/* Bookmark button */}
           <button
             onClick={handleBookmarkClick}
-            className={`p-2 rounded-lg transition-colors ${
-              isBookmarked 
-                ? 'bg-primary/10 text-primary border border-primary' 
-                : 'hover:bg-secondary text-muted-foreground'
-            }`}
-            title="북마크"
+            className={`relative group flex items-center justify-center w-10 h-10 bg-background border rounded-full hover:bg-secondary transition-colors shrink-0 ${isBookmarked ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : 'text-muted-foreground border-border'}`}
           >
-            <FiBookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+            <FiBookmark size={18} className={isBookmarked ? 'fill-current' : ''} />
           </button>
         </div>
       </div>

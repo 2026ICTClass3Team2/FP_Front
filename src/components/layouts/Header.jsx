@@ -7,6 +7,7 @@ import { FiBell, FiCheckCircle } from 'react-icons/fi';
 import useNotificationSocket from '../../hooks/useNotificationSocket';
 import ChatDropdown from '../chat/ChatDropdown';
 import { globalSearch } from '../../api/search';
+import UserProfileModal from '../common/UserProfileModal';
 
 
 const Header = () => {
@@ -21,6 +22,9 @@ const Header = () => {
   };
 
   const [notifications, setNotifications] = useState([]);
+  const generalNotifications = notifications.filter(n => n.targetType !== 'chat' && n.targetType !== 'bot');
+  const chatNotifications = notifications.filter(n => n.targetType === 'chat' || n.targetType === 'bot');
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   
@@ -29,6 +33,10 @@ const Header = () => {
   const [searchResults, setSearchResults] = useState({ posts: [], users: [], channels: [] });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 유저 프로필 모달 상태
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   
   const dropdownRef = useRef(null);
   const chatRef = useRef(null);
@@ -108,11 +116,11 @@ const Header = () => {
 
 
   const handleMarkAsRead = async () => {
-    if (notifications.length === 0) return;
-    const ids = notifications.map(n => n.id);
+    if (generalNotifications.length === 0) return;
+    const ids = generalNotifications.map(n => n.id);
     try {
       await markAsRead(ids);
-      setNotifications([]);
+      setNotifications(prev => prev.filter(n => n.targetType === 'chat' || n.targetType === 'bot'));
       setIsDropdownOpen(false);
     } catch (error) {
       console.error('Failed to mark as read:', error);
@@ -180,6 +188,7 @@ const Header = () => {
   };
 
   return (
+    <>
     <header className="h-16 border-b border-border bg-background flex items-center px-4 md:px-6 shrink-0 relative z-10">
 
       <Link to="/" onClick={handleLogoClick} className="flex items-center gap-3 min-w-[200px] text-foreground">
@@ -300,9 +309,9 @@ const Header = () => {
                     <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">사용자</div>
                     <div className="grid grid-cols-2 gap-1">
                       {searchResults.users.map(user => (
-                        <div 
-                          key={user.id} 
-                          onClick={() => { navigate(`/user/${user.id}`); setIsSearchOpen(false); }}
+                        <div
+                          key={user.id}
+                          onClick={() => { setSelectedUserId(user.id); setIsUserModalOpen(true); setIsSearchOpen(false); }}
                           className="flex items-center gap-2 p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
                         >
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 overflow-hidden">
@@ -348,7 +357,7 @@ const Header = () => {
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" 
             stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" 
-            className="lucide lucide-bot-message-square-icon lucide-bot-message-square">
+            className="lucide lucide-bot-message-square-icon lucide-bot-message-square relative">
               <path d="M12 6V2H8"/>
               <path d="M15 11v2"/>
               <path d="M2 12h2"/>
@@ -357,6 +366,11 @@ const Header = () => {
               2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>
               <path d="M9 11v2"/>
             </svg>
+            {chatNotifications.length > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full pointer-events-none">
+                {chatNotifications.length > 5 ? '5+' : chatNotifications.length}
+              </span>
+            )}
           </button>
           
           {isChatOpen && <ChatDropdown />}
@@ -368,9 +382,9 @@ const Header = () => {
             className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors relative cursor-pointer"
           >
             <FiBell size={24} />
-            {notifications.length > 0 && (
+            {generalNotifications.length > 0 && (
               <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full">
-                {notifications.length}
+                {generalNotifications.length > 5 ? '5+' : generalNotifications.length}
               </span>
             )}
           </button>
@@ -388,8 +402,8 @@ const Header = () => {
               </div>
 
               <div className="max-h-96 overflow-y-auto bg-surface">
-                {notifications.length > 0 ? (
-                  notifications.map((n) => (
+                {generalNotifications.length > 0 ? (
+                  generalNotifications.map((n) => (
                     <div 
                       key={n.id} 
                       className="group p-4 border-b border-border last:border-0 hover:bg-muted/40 transition-colors cursor-pointer relative"
@@ -428,6 +442,13 @@ const Header = () => {
         </div>
       </div>
     </header>
+
+    <UserProfileModal
+      isOpen={isUserModalOpen}
+      onClose={() => { setIsUserModalOpen(false); setSelectedUserId(null); }}
+      userId={selectedUserId}
+    />
+    </>
   );
 };
 

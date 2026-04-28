@@ -300,7 +300,10 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-semibold text-foreground">기술스택 (최대 5개)</label>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-semibold text-foreground">기술스택 (선택, 최대 5개)</label>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">선택 안 하면 AI가 자동으로 태그를 달아줍니다</span>
+        </div>
         <button
           type="button"
           onClick={() => setIsTechStackModalOpen(true)}
@@ -314,7 +317,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
               <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
             </>
           ) : (
-            <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+            <span className="text-sm text-muted-foreground">직접 선택하거나, 비워두면 AI가 자동으로 추천합니다.</span>
           )}
         </button>
         <TechStackModal

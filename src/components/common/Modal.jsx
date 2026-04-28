@@ -56,7 +56,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl', maxHe
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all"
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
     >

@@ -57,16 +57,21 @@ const RegisterPage = () => {
 
     // 2. 아이디 실시간 검증
     if (name === 'username') {
-      const usernameRegex = /^[a-z0-9]{4,20}$/;
+      const usernameRegex = /^\S{4,}$/;
       if (value.length > 0 && !usernameRegex.test(value)) {
-        setUsernameError('❌ 아이디는 영문 소문자와 숫자 4~20자리여야 합니다.');
+        setUsernameError('❌ 아이디는 공백 없이 4자 이상이어야 합니다.');
       } else {
         setUsernameError('');
       }
     }
 
-    // 3. 비밀번호 실시간 검증
+    // 3. 비밀번호 실시간 검증 (공백 입력 차단)
     if (name === 'password') {
+      const filtered = value.replace(/\s/g, '');
+      if (filtered !== value) {
+        setFormData(prev => ({ ...prev, password: filtered }));
+        return;
+      }
       const hasLetter = /[a-zA-Z]/.test(value);
       const hasNumber = /[0-9]/.test(value);
       const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(value);
@@ -74,7 +79,7 @@ const RegisterPage = () => {
 
       setPasswordValidations({
         combo: comboCount >= 2,
-        length: value.length >= 8 && value.length <= 32 && !/\s/.test(value),
+        length: value.length >= 8 && value.length <= 32,
         noConsecutive: value.length > 0 && !/(.)\1\1/.test(value),
       });
     }

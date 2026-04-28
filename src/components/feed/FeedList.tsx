@@ -214,10 +214,10 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
           <button
             key={key}
             onClick={() => handleTabChange(key)}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === key
                 ? 'bg-surface text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-foreground/10'
             }`}
           >
             {label}

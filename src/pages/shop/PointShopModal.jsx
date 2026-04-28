@@ -394,8 +394,8 @@ const FilterDropdown = ({ filter, onFilter, dropdownId, activeDropdown, setActiv
           : setLocalOpen(p => !p)}
         className={`w-[110px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
           ${filter !== 'all'
-            ? 'bg-primary text-primary-foreground border-primary'
-            : 'bg-background border-border text-foreground hover:bg-muted/10'}`}
+            ? 'bg-primary text-primary-foreground border-primary cursor-pointer'
+            : 'bg-background border-border text-foreground hover:bg-gray-500/25 cursor-pointer'}`}
       >
         <span className="flex-1 min-w-0 truncate">{current.label}</span>
         <span className="text-[10.5px] leading-none shrink-0">{open ? '▴' : '▾'}</span>
@@ -406,7 +406,7 @@ const FilterDropdown = ({ filter, onFilter, dropdownId, activeDropdown, setActiv
             <button
               key={o.value}
               onClick={() => { onFilter(o.value); isControlled ? setActiveDropdown(null) : setLocalOpen(false); }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-500/25
+              className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-500/25 cursor-pointer
                 ${filter === o.value ? 'text-primary font-semibold bg-primary/5' : 'text-foreground'}`}
             >
               {o.label}
@@ -444,7 +444,7 @@ export const SortDropdown = ({ sort, onSort, dropdownId, activeDropdown, setActi
         onClick={() => isControlled
           ? setActiveDropdown(p => p === dropdownId ? null : dropdownId)
           : setLocalOpen(p => !p)}
-        className="w-[110px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors bg-background border-border text-foreground hover:bg-muted/10"
+        className="w-[110px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors bg-background border-border text-foreground hover:bg-gray-500/25 cursor-pointer"
       >
         <span className="flex-1 min-w-0 truncate">{current.label}</span>
         <span className="text-[10.5px] leading-none shrink-0">{open ? '▴' : '▾'}</span>
@@ -455,7 +455,7 @@ export const SortDropdown = ({ sort, onSort, dropdownId, activeDropdown, setActi
             <button
               key={o.value}
               onClick={() => { onSort(o.value); isControlled ? setActiveDropdown(null) : setLocalOpen(false); }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-500/25
+              className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-500/25 cursor-pointer
                 ${sort === o.value ? 'text-primary font-semibold bg-primary/5' : 'text-foreground'}`}
             >
               {o.label}
@@ -493,7 +493,7 @@ const HistoryTypeDropdown = ({ type, onChange, dropdownId, activeDropdown, setAc
         onClick={() => isControlled
           ? setActiveDropdown(p => p === dropdownId ? null : dropdownId)
           : setLocalOpen(p => !p)}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-semibold border border-border bg-background text-foreground hover:bg-muted/10 transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-semibold border border-border bg-background text-foreground hover:bg-muted/10 transition-colors cursor-pointer"
       >
         {current.label}
         <span className="text-[10.5px] leading-none">{open ? '▴' : '▾'}</span>
@@ -504,7 +504,7 @@ const HistoryTypeDropdown = ({ type, onChange, dropdownId, activeDropdown, setAc
             <button
               key={o.value}
               onClick={() => { onChange(o.value); isControlled ? setActiveDropdown(null) : setLocalOpen(false); }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-500/25
+              className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-500/25 cursor-pointer
                 ${type === o.value ? 'text-primary font-semibold bg-primary/5' : 'text-foreground'}`}
             >
               {o.label}

@@ -97,7 +97,7 @@ const NavBar = () => {
 
       {/* 1. 상단 프로필 구역 */}
       <div className="p-5 flex flex-col gap-4">
-        <Link to="/mypage" className="flex items-center gap-3 hover:bg-foreground/10 rounded-lg p-2 -m-2 transition-colors">
+        <Link to="/mypage" className="flex items-center gap-3 hover:bg-foreground/10 dark:hover:bg-foreground/20 rounded-lg p-2 -m-2 transition-colors cursor-pointer">
           {profilePicUrl ? (
             <img src={profilePicUrl} alt="프로필" className="w-9 h-9 rounded-2xl object-cover flex-shrink-0" />
           ) : (
@@ -120,7 +120,7 @@ const NavBar = () => {
           <button
             onClick={() => setIsPointShopOpen(true)}
             title="포인트 샵"
-            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm transition-all duration-150 hover:border-foreground/30 hover:bg-foreground/5 group"
+            className="flex-1 flex items-center gap-2.5 px-5 py-2 bg-background border-2 border-border rounded-xl shadow-sm transition-all duration-150 hover:border-foreground/30 hover:bg-foreground/5 group cursor-pointer"
           >
             <span className="transition-transform duration-150 group-hover:scale-110">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -139,7 +139,7 @@ const NavBar = () => {
           {/* 다크모드 토글 */}
           <button
             onClick={toggleTheme}
-            className="flex items-center justify-center px-3 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors"
+            className="flex items-center justify-center px-3 py-2 bg-background border-2 border-border rounded-xl shadow-sm hover:bg-muted/5 transition-colors cursor-pointer"
             title={isDarkMode ? '라이트 모드' : '다크 모드'}
           >
             {isDarkMode ? <FiSun className="w-5 h-5 text-foreground" /> : <FiMoon className="w-5 h-5 text-foreground" />}
@@ -169,7 +169,7 @@ const NavBar = () => {
         <div className="pt-4 px-4">
           <button
             onClick={() => setSubscribedOpen(!subscribedOpen)}
-            className="w-full flex justify-between items-center font-semibold text-foreground hover:text-foreground transition-colors"
+            className="w-full flex justify-between items-center font-semibold text-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             구독한 채널
             <span className={`text-lg leading-none transition-transform duration-200 ${subscribedOpen ? 'rotate-180' : ''}`}>▾</span>
@@ -182,7 +182,7 @@ const NavBar = () => {
               ) : (
                 subscribedChannels.map((ch) => (
                   <Link key={ch.channelId} to={`/channels/${ch.channelId}`}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/5 transition-colors">
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-foreground/10 active:bg-foreground/10 transition-colors cursor-pointer">
                     {ch.imageUrl ? (
                       <img src={ch.imageUrl} alt={ch.name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                     ) : (
@@ -202,7 +202,7 @@ const NavBar = () => {
         <div className="pt-2 px-4">
           <button
             onClick={() => setPopularOpen(!popularOpen)}
-            className="w-full flex justify-between items-center font-semibold text-foreground hover:text-foreground transition-colors"
+            className="w-full flex justify-between items-center font-semibold text-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             인기 채널
             <span className={`text-lg leading-none transition-transform duration-200 ${popularOpen ? 'rotate-180' : ''}`}>▾</span>
@@ -215,7 +215,7 @@ const NavBar = () => {
               ) : (
                 popularChannels.map((ch, idx) => (
                   <Link key={ch.channelId} to={`/channels/${ch.channelId}`}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/5 transition-colors">
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-foreground/10 active:bg-foreground/10 transition-colors cursor-pointer">
                     <span className="text-xs font-bold text-muted-foreground w-4 flex-shrink-0">{idx + 1}</span>
                     {ch.imageUrl ? (
                       <img src={ch.imageUrl} alt={ch.name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
@@ -239,7 +239,7 @@ const NavBar = () => {
         <div className="px-4 pt-6">
           <button
             onClick={() => setIsCreateChannelOpen(true)}
-            className="btn-primary w-full py-3 text-sm font-black flex items-center justify-center gap-2"
+            className="btn-primary w-full py-3 text-sm font-black flex items-center justify-center gap-2 cursor-pointer"
           >
             채널 만들기
           </button>
@@ -263,7 +263,7 @@ const NavBar = () => {
       <div className="mt-auto p-4 border-t border-border">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-foreground/10 transition-all text-sm font-medium"
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl text-foreground hover:bg-foreground/10 transition-all text-sm font-medium cursor-pointer"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/>

@@ -12,7 +12,10 @@ const MyPageLayout = () => {
 
   // 활성화된 탭 스타일을 지정하는 함수
   const getNavLinkClass = ({ isActive }) =>
-    `pb-3 px-2 text-xs sm:text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+
+
+    `pb-3 px-2 text-sm font-medium transition-colors border-b-2 cursor-pointer ${
+
       isActive
         ? 'border-primary text-primary'
         : 'border-transparent text-muted-foreground hover:text-foreground'

@@ -104,14 +104,14 @@ const PasswordEditForm = ({ isOpen = true, onSubmit, onCancel }) => {
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-colors shadow-sm text-sm"
+            className="px-6 py-2 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-colors shadow-sm text-sm cursor-pointer"
           >
             취소
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 rounded-xl bg-blue-500 text-white font-bold hover:bg-blue-600 transition-colors shadow-sm text-sm"
+            className="px-6 py-2 rounded-xl bg-blue-500 text-white font-bold hover:bg-blue-600 transition-colors shadow-sm text-sm cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? '변경 중...' : '변경'}
           </button>

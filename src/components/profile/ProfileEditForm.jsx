@@ -97,7 +97,7 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
           <button
             type="button"
             onClick={() => setIsTechStackModalOpen(true)}
-            className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
+            className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors cursor-pointer"
           >
             {techStacks.length > 0 ? (
               <>
@@ -125,7 +125,7 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
               <button
                 type="button"
                 onClick={onPasswordChange}
-                className="w-full flex items-center border border-border rounded-xl px-3 py-2 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary hover:bg-blue-50 transition-colors"
+                className="w-full flex items-center border border-border rounded-xl px-3 py-2 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary hover:bg-blue-50 transition-colors cursor-pointer"
               >
                 <svg className="w-5 h-5 mr-2 text-blue-500 group-hover:text-blue-700 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm6-10V7a4 4 0 10-8 0v4" /></svg>
                 <span className="flex-1 text-left text-gray-700 group-hover:text-blue-700">비밀번호 변경</span>
@@ -141,14 +141,14 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-2 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-colors shadow-sm text-sm"
+          className="px-6 py-2 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-colors shadow-sm text-sm cursor-pointer"
         >
           취소
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 rounded-xl bg-black text-white font-bold hover:bg-gray-900 transition-colors shadow-sm text-sm"
+          className="px-6 py-2 rounded-xl bg-black text-white font-bold hover:bg-gray-900 transition-colors shadow-sm text-sm cursor-pointer disabled:cursor-not-allowed"
         >
           {loading ? '저장 중...' : '저장'}
         </button>

@@ -281,7 +281,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="제목을 입력하세요 (최대 250자)"
-          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none hover:border-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none hover:bg-muted/30 hover:border-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           maxLength={250}
         />
       </div>
@@ -371,7 +371,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
               onFocus={() => setIsUrlFocused(true)}
               onBlur={() => setIsUrlFocused(false)}
               placeholder="https://example.com"
-              className="w-full pl-11 pr-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:border-primary transition-all"
+              className="w-full pl-11 pr-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none hover:bg-muted/30 hover:border-foreground/50 focus:border-primary transition-all"
             />
           </div>
         )}

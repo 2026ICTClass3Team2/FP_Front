@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCpu, FiCode, FiMessageCircle, FiArrowLeft, FiSend, FiPlay } from 'react-icons/fi';
-import { jwtAxios } from '../../util/jwtAxios';
+import { reviewCode } from '../../api/chatbot';
 
 const ChatBotTab = () => {
   const [mode, setMode] = useState(null); // 'faq' or 'code'
@@ -35,11 +35,9 @@ const ChatBotTab = () => {
     setLoading(true);
     setCodeReview('');
     try {
-      // Direct call to Python backend
-      const res = await jwtAxios.post('chatbot/review', {
-        code: codeInput
-      });
-      setCodeReview(res.data.review);
+      // Use the dedicated chatbot API service
+      const data = await reviewCode(codeInput);
+      setCodeReview(data.review);
     } catch (err) {
       console.error(err);
       setCodeReview("분석 중 오류가 발생했습니다. AI 서버 연결을 확인해주세요.");

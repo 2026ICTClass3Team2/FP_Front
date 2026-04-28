@@ -242,7 +242,8 @@ const Header = () => {
           </div>
 
           {/* 검색 결과 드롭다운 */}
-          {isSearchOpen && (searchResults.posts.length > 0 || searchResults.users.length > 0 || searchResults.channels.length > 0) && (
+          {isSearchOpen && (
+
             <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2">
               <div className="max-h-[480px] overflow-y-auto">
                 {/* 포스트 결과 */}
@@ -253,10 +254,17 @@ const Header = () => {
                       <div 
                         key={post.id} 
                         onClick={() => { navigate(`/?postId=${post.id}`); setIsSearchOpen(false); }}
-                        className="flex flex-col p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
+                        className="flex items-center gap-3 p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
                       >
-                        <span className="text-sm font-semibold text-foreground line-clamp-1">{post.title}</span>
-                        <span className="text-[11px] text-muted-foreground line-clamp-1">{post.body}</span>
+                        {post.thumbnailUrl && (
+                          <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0 bg-muted">
+                            <img src={post.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-semibold text-foreground line-clamp-1">{post.title}</span>
+                          <span className="text-[11px] text-muted-foreground line-clamp-1">{post.body}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -297,8 +305,12 @@ const Header = () => {
                           onClick={() => { navigate(`/user/${user.id}`); setIsSearchOpen(false); }}
                           className="flex items-center gap-2 p-2 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
                         >
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
-                            {user.nickname.charAt(0)}
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 overflow-hidden">
+                            {user.profilePicUrl ? (
+                              <img src={user.profilePicUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              user.nickname.charAt(0)
+                            )}
                           </div>
                           <div className="flex flex-col truncate">
                             <span className="text-sm font-semibold text-foreground truncate">{user.nickname}</span>
@@ -311,9 +323,18 @@ const Header = () => {
                     </div>
                   </div>
                 )}
+
+                {/* 결과 없음 */}
+                {searchResults.posts.length === 0 && searchResults.users.length === 0 && searchResults.channels.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <p className="text-sm">검색 결과가 없습니다</p>
+                    <p className="text-[11px] mt-1 opacity-70">다른 검색어를 입력해 보세요</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
+
         </div>
       </div>
 

@@ -3,6 +3,10 @@ import jwtAxios from '../../api/jwtAxios';
 import MyPostCard from './MyPostCard';
 import CommunityPostDetail from '../feed/CommunityPostDetail';
 import QnADetailModal from '../question/QnADetailModal';
+import Modal from '../common/Modal';
+import FeedCard from '../feed/FeedCard';
+import QuestionCard from '../question/QuestionCard';
+import ConfirmationModal from '../common/ConfirmationModal';
 
 const MyBookmarkList = () => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -16,6 +20,12 @@ const MyBookmarkList = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
+  const [editingFeedPost, setEditingFeedPost] = useState<any | null>(null);
+  const [isFeedEditOpen, setIsFeedEditOpen] = useState(false);
+  const [editingQnaPost, setEditingQnaPost] = useState<any | null>(null);
+  const [isQnaEditOpen, setIsQnaEditOpen] = useState(false);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<{ id: number; type: 'feed' | 'qna' } | null>(null);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -60,9 +70,52 @@ const MyBookmarkList = () => {
     const formattedPost = {
       ...post,
       postId: post.contentType === 'feed' ? post.id : undefined,
-      qnaId: post.contentType === 'qna' ? post.id : undefined
+      qnaId: post.contentType === 'qna' ? post.qnaId : undefined,
+      isBookmarked: true,
+      bookmarked: true,
     };
     setSelectedPost(formattedPost);
+  };
+
+  // 피드 수정
+  const handleFeedEdit = (post: any) => {
+    setEditingFeedPost(post);
+    setIsFeedEditOpen(true);
+  };
+
+  // 피드 삭제 요청 (확인 모달)
+  const handleFeedDelete = (postId: number) => {
+    setPostToDelete({ id: postId, type: 'feed' });
+    setIsConfirmDeleteOpen(true);
+  };
+
+  // QnA 수정
+  const handleQnaEdit = (post: any) => {
+    setEditingQnaPost(post);
+    setIsQnaEditOpen(true);
+  };
+
+  // QnA 삭제 요청 (확인 모달)
+  const handleQnaDelete = (qnaId: number) => {
+    setPostToDelete({ id: qnaId, type: 'qna' });
+    setIsConfirmDeleteOpen(true);
+  };
+
+  // 삭제 확인 실행
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
+    try {
+      if (postToDelete.type === 'feed') {
+        await jwtAxios.delete(`posts/${postToDelete.id}`);
+      } else {
+        await jwtAxios.delete(`qna/${postToDelete.id}`);
+      }
+      fetchPosts();
+    } catch (err: any) {
+      alert(err.response?.data?.message || '삭제 중 오류가 발생했습니다.');
+    } finally {
+      setPostToDelete(null);
+    }
   };
 
   // 4. 모달이 닫힐 때 호출될 함수. 모달에서 변경된 데이터(조회수, 좋아요 등)를 리스트에 직접 반영합니다.
@@ -160,11 +213,48 @@ const MyBookmarkList = () => {
 
       {/* 3. 상세 모달창 */}
       {selectedPost && selectedPost.contentType === 'feed' && (
-        <CommunityPostDetail post={selectedPost} onClose={handleModalClose} />
+        <CommunityPostDetail
+          post={selectedPost}
+          onClose={handleModalClose}
+          onEditClick={handleFeedEdit}
+          onDeleteClick={handleFeedDelete}
+        />
       )}
       {selectedPost && selectedPost.contentType === 'qna' && (
-        <QnADetailModal post={selectedPost} onClose={handleModalClose} />
+        <QnADetailModal
+          post={selectedPost}
+          onClose={handleModalClose}
+          onEditClick={handleQnaEdit}
+          onDeleteClick={handleQnaDelete}
+        />
       )}
+
+      {/* 피드 수정 모달 */}
+      <Modal title="게시글 수정" isOpen={isFeedEditOpen} onClose={() => setIsFeedEditOpen(false)}>
+        <FeedCard
+          postToEdit={editingFeedPost}
+          onClose={() => setIsFeedEditOpen(false)}
+          onPostCreated={() => { setIsFeedEditOpen(false); fetchPosts(); }}
+        />
+      </Modal>
+
+      {/* QnA 수정 모달 */}
+      <Modal title="질문 수정" isOpen={isQnaEditOpen} onClose={() => setIsQnaEditOpen(false)}>
+        <QuestionCard
+          postToEdit={editingQnaPost}
+          onClose={() => setIsQnaEditOpen(false)}
+          onPostCreated={() => { setIsQnaEditOpen(false); fetchPosts(); }}
+        />
+      </Modal>
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmationModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        title="게시글 삭제"
+        message="게시글을 삭제하면 복구할 수 없습니다. 정말 삭제하시겠습니까?"
+      />
     </div>
   );
 };

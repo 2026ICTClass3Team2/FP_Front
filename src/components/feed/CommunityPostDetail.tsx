@@ -537,7 +537,7 @@ const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare, onComment
           <FiShare2 size={18} />
           <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">공유</span>
         </button>
-        <button onClick={onBookmark} className={`${iconOnlyClass} ${isBookmarked ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : ''}`}>
+        <button onClick={onBookmark} className={`relative group flex items-center justify-center w-10 h-10 bg-background border rounded-full hover:bg-secondary transition-colors shrink-0 ${isBookmarked ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : 'text-muted-foreground border-border'}`}>
           <FiBookmark size={18} className={isBookmarked ? 'fill-current' : ''} />
           <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">북마크</span>
         </button>

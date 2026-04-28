@@ -284,6 +284,27 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
   }, [onImageUpload]);
 
+  // 한글 IME 조합 중 ql-blank가 유지되어 placeholder가 사라지지 않는 문제 수정
+  useEffect(() => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    const root = quill.root;
+
+    const onCompositionStart = () => root.classList.remove('ql-blank');
+    const onCompositionEnd = () => {
+      if (quill.getText().replace(/\n$/, '').length === 0) {
+        root.classList.add('ql-blank');
+      }
+    };
+
+    root.addEventListener('compositionstart', onCompositionStart);
+    root.addEventListener('compositionend', onCompositionEnd);
+    return () => {
+      root.removeEventListener('compositionstart', onCompositionStart);
+      root.removeEventListener('compositionend', onCompositionEnd);
+    };
+  }, []);
+
   // Empty area click: escape code block
   useEffect(() => {
     const quill = quillRef.current?.getEditor();

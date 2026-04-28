@@ -23,15 +23,20 @@ const ChannelDetail = () => {
   const [unblockLoading, setUnblockLoading] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState(null);
 
+  // 탭
+  const [activeTab, setActiveTab] = useState('LATEST'); // 'LATEST' | 'POPULAR'
+
   // 게시글 무한 스크롤
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
   const lastPostIdRef = useRef(null);
+  const pageRef = useRef(0); // POPULAR 탭 offset용
   const isLoadingRef = useRef(false);
   const hasNextPageRef = useRef(true); // stale closure 없이 Observer에서 참조
   const observerTarget = useRef(null);
   const fetchMoreRef = useRef(null);
+  const activeTabRef = useRef('LATEST');
 
   const [myEmail, setMyEmail] = useState(null);
   const setWriteChannel = useWriteChannelStore((s) => s.setChannel);
@@ -94,16 +99,18 @@ const ChannelDetail = () => {
     setLoading(true);
     setError('');
     lastPostIdRef.current = null;
+    pageRef.current = 0;
     isLoadingRef.current = false;
+    setActiveTab('LATEST');
+    activeTabRef.current = 'LATEST';
 
     let cancelled = false;
 
-    // 채널 상세 정보 + 첫 페이지 동시 로드
     const fetchAll = async () => {
       try {
         const [channelRes, postsRes] = await Promise.all([
           jwtAxios.get(`channels/${channelId}`),
-          jwtAxios.get(`channels/${channelId}/posts?size=10`),
+          jwtAxios.get(`channels/${channelId}/posts?size=10&sort=LATEST`),
         ]);
         if (cancelled) return;
 
@@ -132,20 +139,69 @@ const ChannelDetail = () => {
 
   // 추가 페이지 로드 (IntersectionObserver에서 호출)
   const fetchMorePosts = useCallback(async () => {
-    if (isLoadingRef.current || !hasNextPageRef.current || !lastPostIdRef.current) return;
+    if (isLoadingRef.current || !hasNextPageRef.current) return;
+    const tab = activeTabRef.current;
+    if (tab === 'LATEST' && !lastPostIdRef.current) return;
     isLoadingRef.current = true;
     setPostsLoading(true);
     try {
-      const res = await jwtAxios.get(`channels/${channelId}/posts?size=10&lastPostId=${lastPostIdRef.current}`);
+      let url;
+      if (tab === 'POPULAR') {
+        url = `channels/${channelId}/posts?size=10&sort=POPULAR&page=${pageRef.current}`;
+      } else {
+        url = `channels/${channelId}/posts?size=10&sort=LATEST&lastPostId=${lastPostIdRef.current}`;
+      }
+      const res = await jwtAxios.get(url);
       const data = res.data;
       if (data.content?.length > 0) {
         setPosts((prev) => [...prev, ...data.content]);
-        lastPostIdRef.current = String(data.content[data.content.length - 1].postId);
+        if (tab === 'POPULAR') {
+          pageRef.current += 1;
+        } else {
+          lastPostIdRef.current = String(data.content[data.content.length - 1].postId);
+        }
       }
       hasNextPageRef.current = !data.last;
       setHasNextPage(!data.last);
     } catch (err) {
       if (err.response?.status !== 404) console.error('채널 게시글 로드 실패', err);
+      hasNextPageRef.current = false;
+      setHasNextPage(false);
+    } finally {
+      setPostsLoading(false);
+      isLoadingRef.current = false;
+    }
+  }, [channelId]);
+
+  // 탭 전환
+  const handleTabChange = useCallback(async (tab) => {
+    if (tab === activeTabRef.current) return;
+    setActiveTab(tab);
+    activeTabRef.current = tab;
+    setPosts([]);
+    setHasNextPage(true);
+    hasNextPageRef.current = true;
+    lastPostIdRef.current = null;
+    pageRef.current = 0;
+    isLoadingRef.current = true;
+    setPostsLoading(true);
+    try {
+      const url = tab === 'POPULAR'
+        ? `channels/${channelId}/posts?size=10&sort=POPULAR&page=0`
+        : `channels/${channelId}/posts?size=10&sort=LATEST`;
+      const res = await jwtAxios.get(url);
+      const data = res.data;
+      if (data.content?.length > 0) {
+        setPosts(data.content);
+        if (tab === 'POPULAR') {
+          pageRef.current = 1;
+        } else {
+          lastPostIdRef.current = String(data.content[data.content.length - 1].postId);
+        }
+      }
+      hasNextPageRef.current = !data.last;
+      setHasNextPage(!data.last);
+    } catch (err) {
       hasNextPageRef.current = false;
       setHasNextPage(false);
     } finally {
@@ -183,21 +239,29 @@ const ChannelDetail = () => {
     return () => observer.disconnect();
   }, [loading]);
 
-  // 차단 등으로 인한 포스트 목록 전체 새로고침
+  // 차단 등으로 인한 포스트 목록 전체 새로고침 (현재 탭 기준)
   const refreshPosts = () => {
+    const tab = activeTabRef.current;
     setPosts([]);
     setHasNextPage(true);
     hasNextPageRef.current = true;
     lastPostIdRef.current = null;
+    pageRef.current = 0;
     isLoadingRef.current = false;
-    // fetchMoreRef는 channelId가 동일하므로 fetchAll을 직접 재실행
     setPostsLoading(true);
-    jwtAxios.get(`channels/${channelId}/posts?size=10`)
+    const url = tab === 'POPULAR'
+      ? `channels/${channelId}/posts?size=10&sort=POPULAR&page=0`
+      : `channels/${channelId}/posts?size=10&sort=LATEST`;
+    jwtAxios.get(url)
       .then((res) => {
         const data = res.data;
         if (data.content?.length > 0) {
           setPosts(data.content);
-          lastPostIdRef.current = String(data.content[data.content.length - 1].postId);
+          if (tab === 'POPULAR') {
+            pageRef.current = 1;
+          } else {
+            lastPostIdRef.current = String(data.content[data.content.length - 1].postId);
+          }
         }
         hasNextPageRef.current = !data.last;
         setHasNextPage(!data.last);
@@ -419,7 +483,22 @@ const ChannelDetail = () => {
         </div>
       ) : (
       <>
-      <h2 className="text-lg font-bold text-foreground mb-4">채널 게시글</h2>
+      {/* 탭 */}
+      <div className="flex gap-1 mb-4 border-b border-border">
+        {[{ key: 'LATEST', label: '최신' }, { key: 'POPULAR', label: '인기' }].map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => handleTabChange(key)}
+            className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+              activeTab === key
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {/* 초기 로드 중 스피너 */}
       {postsLoading && posts.length === 0 && (

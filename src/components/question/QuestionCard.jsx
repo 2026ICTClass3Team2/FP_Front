@@ -110,7 +110,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
         <button
           type="button"
           onClick={() => setIsTechStackModalOpen(true)}
-          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
+          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 hover:border-foreground/50 transition-all"
         >
           {selectedTechStacks.length > 0 ? (
             <>

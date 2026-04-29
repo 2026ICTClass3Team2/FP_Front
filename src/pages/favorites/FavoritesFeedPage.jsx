@@ -86,12 +86,12 @@ const FavoritesFeedPage = () => {
   return (
     <div className="w-full bg-background min-h-screen">
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-foreground mb-6">즐겨찾기 피드</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">팔로우 피드</h1>
 
         {posts.length === 0 && !isLoading && (
           <div className="text-center py-20 text-muted-foreground">
-            <p className="text-lg mb-2">즐겨찾기한 유저가 없거나 게시글이 없습니다.</p>
-            <p className="text-sm">유저 프로필에서 별표를 눌러 즐겨찾기를 추가해보세요.</p>
+            <p className="text-lg mb-2">팔로우한 유저가 없거나 게시글이 없습니다.</p>
+            <p className="text-sm">유저 프로필에서 팔로우 버튼을 눌러 팔로우를 추가해보세요.</p>
           </div>
         )}
 

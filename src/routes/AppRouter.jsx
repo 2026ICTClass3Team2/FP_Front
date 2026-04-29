@@ -65,7 +65,7 @@ const AppRouter = () => {
               <Route index element={<UserProfilePage />} />
             </Route>
 
-            {/* 즐겨찾기 피드 */}
+            {/* 팔로우 피드 */}
             <Route path="favorites" element={<FavoritesFeedPage />} />
 
             {/* 채널 상세 페이지 */}

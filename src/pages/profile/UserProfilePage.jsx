@@ -113,13 +113,13 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* 즐겨찾기 + 메뉴 버튼 (타인 프로필일 때만) */}
+          {/* 팔로우 + 메뉴 버튼 (타인 프로필일 때만) */}
           {!isMyProfile && (
             <div className="flex items-center gap-2">
               <button
                 onClick={handleFavoriteToggle}
                 disabled={favoriteLoading}
-                title={isFavorited ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                title={isFavorited ? '팔로우 해제' : '팔로우 추가'}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
                   isFavorited
                     ? 'bg-yellow-400/20 border-yellow-400 text-yellow-500 hover:bg-yellow-400/30'
@@ -127,7 +127,7 @@ const UserProfilePage = () => {
                 }`}
               >
                 <FiStar size={16} className={isFavorited ? 'fill-yellow-400 text-yellow-400' : ''} />
-                {isFavorited ? '즐겨찾기 중' : '즐겨찾기'}
+                {isFavorited ? '팔로우 중' : '팔로우'}
               </button>
             <div className="relative" ref={menuRef}>
               <button

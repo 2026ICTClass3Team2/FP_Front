@@ -180,10 +180,10 @@ const NavBar = ({ collapsed = false }) => {
           <span>학습</span>
         </Link>
 
-        {/* 즐겨찾기 */}
+        {/* 팔로우 */}
         <Link to="/favorites" className={getNavClass('/favorites')}>
           <FiStar className="w-5 h-5" />
-          <span>즐겨찾기</span>
+          <span>팔로우</span>
         </Link>
 
         <div className="pt-2 px-4">
@@ -191,14 +191,14 @@ const NavBar = ({ collapsed = false }) => {
             onClick={() => setFavoritesOpen(!favoritesOpen)}
             className="w-full flex justify-between items-center font-semibold text-foreground hover:text-foreground transition-colors cursor-pointer"
           >
-            즐겨찾는 유저
+            팔로우한 유저
             <span className={`text-lg leading-none transition-transform duration-200 ${favoritesOpen ? 'rotate-180' : ''}`}>▾</span>
           </button>
 
           {favoritesOpen && (
             <div className="mt-2 flex flex-col gap-0.5 max-h-48 overflow-y-auto scrollbar-hide pr-1">
               {favoriteUsers.length === 0 ? (
-                <p className="text-xs text-muted-foreground pl-2 py-1">즐겨찾기한 유저가 없습니다.</p>
+                <p className="text-xs text-muted-foreground pl-2 py-1">팔로우한 유저가 없습니다.</p>
               ) : (
                 favoriteUsers.map((u) => (
                   <Link key={u.userId} to={`/user/${u.userId}`}

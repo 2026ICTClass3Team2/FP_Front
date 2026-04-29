@@ -110,7 +110,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
         <button
           type="button"
           onClick={() => setIsTechStackModalOpen(true)}
-          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
+          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 hover:border-foreground/50 transition-all"
         >
           {selectedTechStacks.length > 0 ? (
             <>
@@ -120,7 +120,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
               <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
             </>
           ) : (
-            <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+            <span className="text-sm text-muted-foreground/60">관련된 기술 스택을 선택해 주세요.</span>
           )}
         </button>
         <TechStackModal
@@ -133,15 +133,22 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">채택 포인트 (선택)</label>
-        <input 
-          type="number" 
-          min="0" 
-          value={rewardPoints} 
-          onChange={(e) => setRewardPoints(e.target.value)} 
-          placeholder="답변자에게 걸 포인트를 입력하세요." 
-          className="px-4 py-2 border border-border rounded-xl bg-background 
-          text-foreground focus:outline-none focus:border-primary transition-colors"
-        />
+        <div className="inline-flex items-center gap-3 px-4 py-2.5 border border-amber-500/30 bg-amber-500/5 rounded-xl w-fit">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+            fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/><path d="M15 6h1v4"/>
+            <path d="m6.134 14.768.866-.5 2 3.464"/><circle cx="16" cy="8" r="6"/>
+          </svg>
+          <input
+            type="number"
+            min="0"
+            value={rewardPoints}
+            onChange={(e) => setRewardPoints(e.target.value)}
+            placeholder="0"
+            className="w-24 bg-transparent text-foreground text-sm font-bold focus:outline-none placeholder:text-muted-foreground"
+          />
+          <span className="text-sm font-semibold text-amber-600 dark:text-amber-400 shrink-0">P</span>
+        </div>
         <span className="text-xs text-muted-foreground">
           포인트를 걸면 더 빠르고 양질의 답변을 받을 확률이 높아집니다!
         </span>

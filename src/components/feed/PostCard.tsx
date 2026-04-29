@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark, FiAlertTriangle, FiLink } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
@@ -57,6 +59,7 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onNotInterested, onDetailClick, onReportSuccess }) => {
   const navigate = useNavigate();
+  const { openChatWith } = useChatStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localPost, setLocalPost] = useState<Post>(post);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -215,7 +218,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
   };
 
   return (
-    <article onClick={onDetailClick} className="bg-surface border border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col gap-4 cursor-pointer">
+    <>
+    <article onClick={onDetailClick} className="bg-surface border border-border rounded-2xl p-5 shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all flex flex-col gap-4 cursor-pointer">
       {/* 메인 컨텐츠 영역 */}
       <div className="flex flex-col gap-4">
         {/* 상단: 프로필 및 정보 영역 */}
@@ -223,16 +227,18 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
           <div className="flex items-center gap-3">
             {/* 원형 프로필 이미지 */}
             <div
-              className="w-10 h-10 rounded-full bg-muted overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+              className="w-11 h-11 p-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform"
               onClick={(e) => { e.stopPropagation(); if (post.authorUserId) setProfileModalUserId(post.authorUserId); }}
             >
-              {post.authorProfileImageUrl ? (
-                <img src={post.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                  {authorNickname.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <div className="w-full h-full rounded-full border-2 border-surface overflow-hidden bg-muted">
+                {post.authorProfileImageUrl ? (
+                  <img src={post.authorProfileImageUrl} alt="profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {authorNickname.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
@@ -268,7 +274,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
               <FiMoreVertical size={20} />
             </button>
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-28 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
+              <div className="absolute right-0 mt-1 w-28 bg-surface border border-border shadow-xl rounded-xl overflow-hidden z-10">
                 {isMyPost ? (<>
                   <button onClick={(e) => { e.stopPropagation(); onEdit?.(post); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors">수정</button>
                   <button onClick={(e) => { e.stopPropagation(); onDelete?.(post.postId); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">삭제</button>
@@ -310,7 +316,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
 
         {/* 썸네일 이미지 */}
         {localPost.thumbnailUrl && (
-          <div className="w-full rounded-xl overflow-hidden border border-border">
+          <div className="w-full rounded-xl overflow-hidden border border-border shadow-sm">
             <img src={localPost.thumbnailUrl} alt="썸네일" className="w-full max-h-60 object-cover" />
           </div>
         )}
@@ -361,22 +367,29 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
         </div>
       </div>
 
-      <ReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        targetType="post"
-        targetId={localPost.postId}
-        onSuccess={(reportData: any) => {
-          onReportSuccess?.(reportData);
-        }}
-      />
-
-      <UserProfileModal
-        isOpen={profileModalUserId !== null}
-        onClose={() => setProfileModalUserId(null)}
-        userId={profileModalUserId}
-      />
     </article>
+
+    {ReactDOM.createPortal(
+      <>
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          targetType="post"
+          targetId={localPost.postId}
+          onSuccess={(reportData: any) => {
+            onReportSuccess?.(reportData);
+          }}
+        />
+        <UserProfileModal
+          isOpen={profileModalUserId !== null}
+          onClose={() => setProfileModalUserId(null)}
+          userId={profileModalUserId}
+          onStartChat={(partner: any) => openChatWith(partner)}
+        />
+      </>,
+      document.body
+    )}
+  </>
   );
 };
 

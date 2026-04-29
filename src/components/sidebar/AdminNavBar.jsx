@@ -6,7 +6,7 @@ import { FiHome, FiMessageCircle, FiBookOpen, FiPlus, FiLogOut, FiMoon, FiSun } 
 import CreateChannelModal from '../channel/CreateChannelModal';
 import PointShopAdminModal from '../../pages/shop/PointShopAdminModal';
 
-const AdminNavBar = () => {
+const AdminNavBar = ({ collapsed = false }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +31,7 @@ const AdminNavBar = () => {
   };
 
   return (
-    <aside className="w-64 border-r border-border flex flex-col h-full bg-background shrink-0 select-none">
+    <aside className={`border-r border-border flex flex-col h-full bg-background shrink-0 select-none overflow-hidden transition-all duration-300 ease-in-out ${collapsed ? 'w-0 border-r-0' : 'w-64'}`}>
       {/* 1. 상단 프로필 구역 (어드민) */}
       <div className="p-5 flex flex-col gap-4">
         <Link to="/mypage" className="flex items-center gap-3 hover:bg-foreground/10 dark:hover:bg-foreground/20 rounded-lg p-2 -m-2 transition-colors cursor-pointer">

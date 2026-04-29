@@ -22,6 +22,7 @@ import NotificationTab from '../components/profile/NotificationTab';
 import BlockList from '../components/profile/BlockList';
 import ChannelDetail from '../pages/channel/ChannelDetail';
 import UserProfilePage from '../pages/profile/UserProfilePage';
+import FavoritesFeedPage from '../pages/favorites/FavoritesFeedPage';
 import SuspensionModal from '../components/common/SuspensionModal';
 
 const AppRouter = () => {
@@ -63,6 +64,9 @@ const AppRouter = () => {
             <Route path="user/:userId" element={<MyPageLayout />}>
               <Route index element={<UserProfilePage />} />
             </Route>
+
+            {/* 팔로우 피드 */}
+            <Route path="favorites" element={<FavoritesFeedPage />} />
 
             {/* 채널 상세 페이지 */}
             <Route path="channels/:channelId" element={<ChannelDetail />} />

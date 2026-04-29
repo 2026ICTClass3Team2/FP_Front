@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
@@ -17,6 +18,7 @@ interface CommunityPostDetailProps {
 }
 
 const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose, autoScrollToComment = false, onEditClick, onDeleteClick }) => {
+  const { openChatWith } = useChatStore();
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
   const [localPost, setLocalPost] = useState<Post>(post);
@@ -75,16 +77,8 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         try {
           // 이 API를 호출하면 백엔드에서 조회수가 1 증가합니다.
           const response = await jwtAxios.get(`posts/${post.postId}`);
-          // interaction 상태(isLiked, isDisliked, isBookmarked)는 낙관적 업데이트가 선행했을 수 있으므로 현재 localPost 값 유지
-          setLocalPost(prev => ({
-            ...response.data,
-            isLiked: prev.isLiked,
-            isDisliked: prev.isDisliked,
-            isBookmarked: prev.isBookmarked,
-            bookmarked: prev.bookmarked,
-            liked: prev.liked,
-            disliked: prev.disliked,
-          }));
+          // API 응답의 interaction 상태(isLiked 등)를 신뢰: 로딩 중 스피너로 인해 사용자 상호작용이 불가능하므로 race condition 없음
+          setLocalPost(response.data);
         } catch (error: any) {
           console.error("게시글 상세 정보 로딩 실패:", error);
           const status = error?.response?.status;
@@ -408,6 +402,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           isOpen={profileModalUserId !== null}
           onClose={() => setProfileModalUserId(null)}
           userId={profileModalUserId}
+          onStartChat={(partner: any) => openChatWith(partner)}
         />
       </div>
     </div>
@@ -537,7 +532,7 @@ const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare, onComment
           <FiShare2 size={18} />
           <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">공유</span>
         </button>
-        <button onClick={onBookmark} className={`${iconOnlyClass} ${isBookmarked ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : ''}`}>
+        <button onClick={onBookmark} className={`relative group flex items-center justify-center w-10 h-10 bg-background border rounded-full hover:bg-secondary transition-colors shrink-0 ${isBookmarked ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : 'text-muted-foreground border-border'}`}>
           <FiBookmark size={18} className={isBookmarked ? 'fill-current' : ''} />
           <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">북마크</span>
         </button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
@@ -17,6 +18,7 @@ interface CommunityPostDetailProps {
 }
 
 const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose, autoScrollToComment = false, onEditClick, onDeleteClick }) => {
+  const { openChatWith } = useChatStore();
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
   const [localPost, setLocalPost] = useState<Post>(post);
@@ -400,6 +402,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           isOpen={profileModalUserId !== null}
           onClose={() => setProfileModalUserId(null)}
           userId={profileModalUserId}
+          onStartChat={(partner: any) => openChatWith(partner)}
         />
       </div>
     </div>

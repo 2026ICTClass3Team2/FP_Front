@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useChatStore } from '../../stores/chatStore';
 import { FiThumbsUp, FiThumbsDown, FiCornerDownRight, FiMoreVertical } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { CommentResponse } from './types';
@@ -46,6 +47,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onCommentCountChange,
   onReportRequest,
 }) => {
+  const { openChatWith } = useChatStore();
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -374,6 +376,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         isOpen={profileModalUserId !== null}
         onClose={() => setProfileModalUserId(null)}
         userId={profileModalUserId}
+        onStartChat={(partner: any) => openChatWith(partner)}
       />
 
       {/* Render replies only if it's a root comment */}

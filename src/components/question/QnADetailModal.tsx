@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useChatStore } from '../../stores/chatStore';
 import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { QnAPost } from './QnAPostCard';
 import CommentList from '../feed/CommentList';
@@ -23,6 +24,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
   onEditClick,
   onDeleteClick,
 }) => {
+  const { openChatWith } = useChatStore();
   const [localPost, setLocalPost] = useState<QnAPost>(post);
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -475,6 +477,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
           isOpen={profileModalUserId !== null}
           onClose={() => setProfileModalUserId(null)}
           userId={profileModalUserId}
+          onStartChat={(partner: any) => openChatWith(partner)}
         />
       </div>
     </div>

@@ -253,7 +253,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           <button
             type="button"
             onClick={() => setShowChannelSearch(true)}
-            className="flex items-center gap-3 w-full min-h-[46px] px-4 py-2.5 border border-border rounded-xl bg-background hover:bg-muted/30 transition-colors text-left cursor-pointer"
+            className="flex items-center gap-3 w-full min-h-[46px] px-4 py-2.5 border border-border rounded-xl bg-background hover:bg-muted/30 hover:border-foreground/50 transition-all text-left cursor-pointer"
           >
             {selectedChannel ? (
               <>
@@ -302,12 +302,12 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <label className="text-sm font-semibold text-foreground">기술스택 (선택, 최대 5개)</label>
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">선택 안 하면 AI가 자동으로 태그를 달아줍니다</span>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">AI가 글을 분석하여 태그를 달아줍니다</span>
         </div>
         <button
           type="button"
           onClick={() => setIsTechStackModalOpen(true)}
-          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 transition-colors"
+          className="flex flex-wrap items-center gap-1.5 w-full min-h-[46px] px-3 py-2 border border-border rounded-xl bg-background text-left hover:bg-muted/30 hover:border-foreground/50 transition-all"
         >
           {selectedTechStacks.length > 0 ? (
             <>
@@ -317,7 +317,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
               <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
             </>
           ) : (
-            <span className="text-sm text-muted-foreground">직접 선택하거나, 비워두면 AI가 자동으로 추천합니다.</span>
+            <span className="text-sm text-muted-foreground">태그를 직접 입력해 보세요</span>
           )}
         </button>
         <TechStackModal

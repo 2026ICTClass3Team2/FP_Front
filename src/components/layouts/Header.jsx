@@ -8,6 +8,7 @@ import useNotificationSocket from '../../hooks/useNotificationSocket';
 import ChatDropdown from '../chat/ChatDropdown';
 import { globalSearch } from '../../api/search';
 import UserProfileModal from '../common/UserProfileModal';
+import { useChatStore } from '../../stores/chatStore';
 
 
 const Header = ({ onToggleSidebar, sidebarOpen }) => {
@@ -36,7 +37,6 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
   const chatNotifications = notifications.filter(n => n.targetType === 'chat' || n.targetType === 'bot');
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // 검색 관련 상태
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,6 +47,14 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
   // 유저 프로필 모달 상태
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+
+  const { isChatOpen, openChat, closeChat, openChatWith, notificationVersion } = useChatStore();
+
+  const handleStartChatFromModal = (partner) => {
+    openChatWith(partner);
+    setIsUserModalOpen(false);
+    setSelectedUserId(null);
+  };
 
   const dropdownRef = useRef(null);
   const chatRef = useRef(null);
@@ -64,10 +72,13 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
   };
 
   useEffect(() => {
-    // 마운트 시 알림을 한 번 보장합니다.
-    // 이후 업데이트는 useNotificationSocket 훅이 WebSocket 통해 연동합니다.
     fetchNotifications();
   }, []);
+
+  // 채팅 읽음 처리 시 헤더 알림 배지 즉시 갱신
+  useEffect(() => {
+    if (notificationVersion > 0) fetchNotifications();
+  }, [notificationVersion]);
 
   // WebSocket 훅 등록: 서버에서 알림 푸시 신호를 받으면 fetchNotifications를 호출합니다.
   // 이는 기존 setInterval(60초) 폴링을 완전히 대체합니다.
@@ -81,7 +92,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
       }
       // 채팅 드롭다운 외부 클릭 감지
       if (chatRef.current && !chatRef.current.contains(event.target)) {
-        setIsChatOpen(false);
+        closeChat();
       }
       // 검색 결과 외부 클릭 감지
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -388,7 +399,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           </div>
           <div className="relative" ref={chatRef}>
             <button
-              onClick={() => setIsChatOpen(!isChatOpen)}
+              onClick={() => isChatOpen ? closeChat() : openChat()}
               className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors cursor-pointer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
@@ -483,6 +494,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
         isOpen={isUserModalOpen}
         onClose={() => { setIsUserModalOpen(false); setSelectedUserId(null); }}
         userId={selectedUserId}
+        onStartChat={handleStartChatFromModal}
       />
     </>
   );

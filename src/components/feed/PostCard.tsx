@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import { FiMoreVertical, FiHeart, FiThumbsDown, FiMessageCircle, FiShare2, FiEye, FiBookmark, FiAlertTriangle, FiLink } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import { formatTimeAgo } from '../../utils/time';
@@ -58,6 +59,7 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, onBookmark, onEdit, onDelete, onNotInterested, onDetailClick, onReportSuccess }) => {
   const navigate = useNavigate();
+  const { openChatWith } = useChatStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localPost, setLocalPost] = useState<Post>(post);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -382,6 +384,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment, onShare, o
           isOpen={profileModalUserId !== null}
           onClose={() => setProfileModalUserId(null)}
           userId={profileModalUserId}
+          onStartChat={(partner: any) => openChatWith(partner)}
         />
       </>,
       document.body

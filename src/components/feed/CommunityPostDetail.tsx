@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiLink, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Post } from './PostCard';
 import CommentList from './CommentList';
@@ -17,6 +18,7 @@ interface CommunityPostDetailProps {
 }
 
 const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose, autoScrollToComment = false, onEditClick, onDeleteClick }) => {
+  const { openChatWith } = useChatStore();
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
   const [localPost, setLocalPost] = useState<Post>(post);
@@ -75,16 +77,8 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         try {
           // 이 API를 호출하면 백엔드에서 조회수가 1 증가합니다.
           const response = await jwtAxios.get(`posts/${post.postId}`);
-          // interaction 상태(isLiked, isDisliked, isBookmarked)는 낙관적 업데이트가 선행했을 수 있으므로 현재 localPost 값 유지
-          setLocalPost(prev => ({
-            ...response.data,
-            isLiked: prev.isLiked,
-            isDisliked: prev.isDisliked,
-            isBookmarked: prev.isBookmarked,
-            bookmarked: prev.bookmarked,
-            liked: prev.liked,
-            disliked: prev.disliked,
-          }));
+          // API 응답의 interaction 상태(isLiked 등)를 신뢰: 로딩 중 스피너로 인해 사용자 상호작용이 불가능하므로 race condition 없음
+          setLocalPost(response.data);
         } catch (error: any) {
           console.error("게시글 상세 정보 로딩 실패:", error);
           const status = error?.response?.status;
@@ -408,6 +402,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           isOpen={profileModalUserId !== null}
           onClose={() => setProfileModalUserId(null)}
           userId={profileModalUserId}
+          onStartChat={(partner: any) => openChatWith(partner)}
         />
       </div>
     </div>

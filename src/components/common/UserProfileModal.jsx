@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiCalendar, FiUser, FiMessageCircle, FiAlertTriangle, FiSlash, FiStar } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import ReportModal from './ReportModal';
 
-const UserProfileModal = ({ isOpen, onClose, userId }) => {
+const UserProfileModal = ({ isOpen, onClose, userId, onStartChat }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -42,6 +43,12 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
     if (e.target === backdropRef.current) onClose();
   };
 
+  const handleStartChat = () => {
+    if (!profile || !onStartChat) return;
+    onStartChat({ id: profile.userId, nickname: profile.nickname, profilePicUrl: profile.profilePicUrl });
+    onClose();
+  };
+
   const handleBlockToggle = async () => {
     if (blockLoading) return;
     setBlockLoading(true);
@@ -77,12 +84,13 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
     if (additionalAction) setIsBlocked(true);
   };
 
-  return (
+  return createPortal(
     <>
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={handleBackdropClick}
+      onMouseDown={(e) => e.stopPropagation()}
     >
       <div className="bg-background rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
         {/* 헤더 */}
@@ -146,17 +154,20 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
               {/* 액션 버튼들 (자기 자신이 아닐 때만) */}
               {!profile.isMine && (
                 <div className="flex flex-col gap-2">
-                  {/* 1:1 채팅 (기능 미구현) */}
+                  {/* 1:1 채팅 */}
                   <button
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-semibold hover:bg-secondary transition-colors opacity-60 cursor-not-allowed"
-                    disabled
-                    title="준비 중인 기능입니다."
+                    onClick={handleStartChat}
+                    disabled={!onStartChat}
+                    className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-semibold transition-colors ${
+                      onStartChat ? 'hover:bg-secondary cursor-pointer' : 'opacity-60 cursor-not-allowed'
+                    }`}
+                    title={onStartChat ? '1:1 채팅 시작' : '준비 중인 기능입니다.'}
                   >
                     <FiMessageCircle size={16} />
-                    1:1 채팅 (준비 중)
+                    1:1 채팅
                   </button>
 
-                  {/* 즐겨찾기 */}
+                  {/* 팔로우 */}
                   <button
                     onClick={handleFavoriteToggle}
                     disabled={favoriteLoading}
@@ -167,7 +178,7 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
                     }`}
                   >
                     <FiStar size={16} className={isFavorited ? 'fill-yellow-400' : ''} />
-                    {favoriteLoading ? '처리 중...' : isFavorited ? '즐겨찾기 중' : '즐겨찾기'}
+                    {favoriteLoading ? '처리 중...' : isFavorited ? '팔로우 중' : '팔로우'}
                   </button>
 
                   {/* 차단 / 차단 해제 */}
@@ -211,7 +222,8 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
           onSuccess={handleReportSuccess}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 };
 

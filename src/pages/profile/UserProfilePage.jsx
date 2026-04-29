@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import jwtAxios from '../../api/jwtAxios';
-import { FiMoreVertical, FiMail, FiCalendar, FiUser, FiAlertTriangle, FiSlash } from 'react-icons/fi';
+import { FiMoreVertical, FiCalendar, FiUser, FiAlertTriangle, FiSlash, FiStar } from 'react-icons/fi';
 import ReportModal from '../../components/common/ReportModal';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 
@@ -10,19 +10,14 @@ const UserProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [myEmail, setMyEmail] = useState(null);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const menuRef = useRef(null);
-
-  useEffect(() => {
-    jwtAxios.get('/mypage/profile')
-      .then(res => setMyEmail(res.data.email))
-      .catch(() => setMyEmail(null));
-  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -31,6 +26,8 @@ const UserProfilePage = () => {
       try {
         const res = await jwtAxios.get(`/mypage/users/${userId}`);
         setProfile(res.data);
+        setIsBlocked(res.data.isBlocked ?? false);
+        setIsFavorited(res.data.isFavorited ?? false);
       } catch (err) {
         setError(err.response?.data?.message || '프로필 정보를 불러오지 못했습니다.');
       } finally {
@@ -49,6 +46,19 @@ const UserProfilePage = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleFavoriteToggle = async () => {
+    if (favoriteLoading) return;
+    setFavoriteLoading(true);
+    try {
+      const res = await jwtAxios.post(`/favorites/users/${userId}`);
+      setIsFavorited(res.data.favorited);
+    } catch (err) {
+      alert(err.response?.data?.message || '오류가 발생했습니다.');
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   const handleBlock = async () => {
     try {
@@ -72,7 +82,7 @@ const UserProfilePage = () => {
   if (error) return <div className="text-red-500 text-center py-10">{error}</div>;
   if (!profile) return null;
 
-  const isMyProfile = myEmail && profile.email === myEmail;
+  const isMyProfile = profile.isMine === true;
 
   return (
     <div className="flex items-start bg-surface rounded-2xl shadow p-12 border border-border min-h-[220px] w-full max-w-[1200px] min-w-[900px] mx-auto">
@@ -103,8 +113,22 @@ const UserProfilePage = () => {
             </div>
           </div>
 
-          {/* 메뉴 버튼 (타인 프로필일 때만) */}
+          {/* 즐겨찾기 + 메뉴 버튼 (타인 프로필일 때만) */}
           {!isMyProfile && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleFavoriteToggle}
+                disabled={favoriteLoading}
+                title={isFavorited ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
+                  isFavorited
+                    ? 'bg-yellow-400/20 border-yellow-400 text-yellow-500 hover:bg-yellow-400/30'
+                    : 'bg-background border-border text-muted-foreground hover:border-yellow-400 hover:text-yellow-500'
+                }`}
+              >
+                <FiStar size={16} className={isFavorited ? 'fill-yellow-400 text-yellow-400' : ''} />
+                {isFavorited ? '즐겨찾기 중' : '즐겨찾기'}
+              </button>
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -130,6 +154,7 @@ const UserProfilePage = () => {
                   )}
                 </div>
               )}
+            </div>
             </div>
           )}
         </div>

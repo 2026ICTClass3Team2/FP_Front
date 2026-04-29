@@ -53,10 +53,10 @@ const MyProfile = () => {
   if (loading) return <div className="flex justify-center items-center h-96">로딩 중...</div>;
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-4">
+    <div className="w-full">
       {/* 글로벌 메시지 */}
-      {error && <div className="mb-4 text-red-500 text-center font-semibold">{error}</div>}
-      {success && <div className="mb-4 text-green-600 text-center font-semibold">{success}</div>}
+      {error && <div className="mb-4 text-red-500 font-semibold">{error}</div>}
+      {success && <div className="mb-4 text-green-600 font-semibold">{success}</div>}
       <ProfileCard profile={profile} onEdit={() => setShowEditModal(true)} onPassword={() => setShowPasswordModal(true)} onPointShop={() => setShowPointShop(true)} />
       <PointShopModal isOpen={showPointShop} onClose={() => setShowPointShop(false)} currentUser={profile} />
       {/* 프로필 수정 모달 */}

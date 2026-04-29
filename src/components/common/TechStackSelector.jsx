@@ -193,11 +193,11 @@ const TechStackSelector = ({ selectedTags = [], onChange, maxCount = 5 }) => {
                 </span>
               ))}
               {selectedTags.length < maxCount && (
-                <span className="text-xs text-muted-foreground ml-1">+ 추가</span>
+                <span className="text-xs text-muted-foreground/50 ml-1">+ 추가</span>
               )}
             </>
           ) : (
-            <span className="text-sm text-muted-foreground">관련된 기술 스택을 선택해 주세요.</span>
+            <span className="text-sm text-muted-foreground/50">관련된 기술 스택을 선택해 주세요.</span>
           )}
         </div>
       )}

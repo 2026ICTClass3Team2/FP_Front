@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import { useAuth } from '../../components/sidebar/AuthContext';
-import { FiUsers, FiAlertTriangle, FiMessageSquare, FiMonitor, FiFileText, FiHelpCircle } from 'react-icons/fi';
+import { FiUsers, FiAlertTriangle, FiMessageSquare, FiMonitor, FiFileText, FiHelpCircle, FiTag } from 'react-icons/fi';
 import UserManagementTab from './UserManagementTab';
 import ReportManagementTab from './ReportManagementTab';
 import SuggestionManagementTab from './SuggestionManagementTab';
 import ChannelManagementTab from './ChannelManagementTab';
+import TagManagementTab from './TagManagementTab';
 
 const AdminDashboard = () => {
   const { currentUser, token } = useAuth();
@@ -99,6 +100,12 @@ const AdminDashboard = () => {
           >
             채널 관리
           </button>
+          <button
+            className={`flex-1 py-4 font-semibold text-center transition-colors ${activeTab === 'tags' ? 'text-primary border-b-2 border-primary bg-primary/5' : 'text-muted-foreground hover:bg-muted/5'}`}
+            onClick={() => setActiveTab('tags')}
+          >
+            태그 관리
+          </button>
         </div>
 
         <div className="p-6">
@@ -106,6 +113,7 @@ const AdminDashboard = () => {
           {activeTab === 'reports' && <ReportManagementTab fetchStats={fetchStats} />}
           {activeTab === 'suggestions' && <SuggestionManagementTab fetchStats={fetchStats} />}
           {activeTab === 'channels' && <ChannelManagementTab fetchStats={fetchStats} />}
+          {activeTab === 'tags' && <TagManagementTab />}
         </div>
       </div>
     </div>

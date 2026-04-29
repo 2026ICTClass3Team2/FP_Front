@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { FiMessageSquare, FiSearch, FiUser, FiSend, FiArrowLeft, FiMoreVertical } from 'react-icons/fi';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { FiMessageSquare, FiSearch, FiUser, FiSend, FiArrowLeft, FiMoreVertical, FiLogOut } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import jwtAxios from '../../api/jwtAxios';
 import useChatSocket from '../../hooks/useChatSocket';
-import { getChatHistory, getChatConversations, markChatRead } from '../../api/chat';
+import { getChatHistory, getChatConversations, markChatRead, leaveConversation } from '../../api/chat';
 import UserProfileModal from '../common/UserProfileModal';
+import { useChatStore } from '../../stores/chatStore';
 
 const DirectChatTab = () => {
   // ─── State ───
@@ -18,8 +20,13 @@ const DirectChatTab = () => {
   const [inputText, setInputText] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null); // 프로필 모달용
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // 채팅방 더보기 메뉴
+  const menuRef = useRef(null);
+  const [contextMenu, setContextMenu] = useState(null); // { x, y, conv }
 
   const scrollRef = useRef(null);
+
+  const { pendingPartner, clearPendingPartner, bumpNotificationVersion } = useChatStore();
   const me = JSON.parse(localStorage.getItem('user')); // 내 정보
   const myId = me?.userId || me?.id; // AuthContext 규격(userId) 대응
 
@@ -33,9 +40,10 @@ const DirectChatTab = () => {
 
       if (activePartner && (isFromPartner || isFromMe)) {
         setMessages((prev) => [...prev, msg]);
-        // 내가 받은 메시지라면 읽음 처리 전송
         if (isFromPartner) {
-          markChatRead(activePartner.id).catch(console.error);
+          markChatRead(activePartner.id)
+            .then(() => bumpNotificationVersion())
+            .catch(console.error);
         }
       }
       
@@ -53,7 +61,10 @@ const DirectChatTab = () => {
   useEffect(() => {
     if (activePartner) {
       loadHistory(activePartner.id);
-      markChatRead(activePartner.id).then(() => refreshConversations());
+      markChatRead(activePartner.id).then(() => {
+        refreshConversations();
+        bumpNotificationVersion(); // 헤더 채팅 알림 배지 즉시 갱신
+      });
     } else {
       setMessages([]);
     }
@@ -90,6 +101,26 @@ const DirectChatTab = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // ─── 헤더 UserProfileModal에서 1:1 채팅 클릭 시 파트너 수신 ───
+  useEffect(() => {
+    if (pendingPartner) {
+      handleUserSelect(pendingPartner);
+      clearPendingPartner();
+    }
+  }, [pendingPartner]);
+
+  // ─── 메뉴 외부 클릭 시 닫기 ───
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+
   // ─── Action Handlers ───
   const refreshConversations = async () => {
     try {
@@ -121,7 +152,6 @@ const DirectChatTab = () => {
   };
 
   const handleUserSelect = (user) => {
-    // 유저 객체 규격 맞추기 (검색 결과 vs 대화 목록)
     const partner = {
       id: user.id || user.partnerId,
       nickname: user.nickname || user.partnerNickname,
@@ -130,6 +160,31 @@ const DirectChatTab = () => {
     setActivePartner(partner);
     setSearchQuery('');
     setIsSearching(false);
+  };
+
+  const handleLeaveChat = async (partnerId) => {
+    const targetId = partnerId ?? activePartner?.id;
+    if (!targetId) return;
+    try {
+      await leaveConversation(targetId);
+      setConversations(prev => prev.filter(c => c.partnerId !== targetId));
+      if (activePartner?.id === targetId) setActivePartner(null);
+      setIsMenuOpen(false);
+      setContextMenu(null);
+    } catch (err) {
+      console.error('Failed to leave conversation:', err);
+    }
+  };
+
+  const handleConversationContextMenu = (e, conv) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, conv });
+  };
+
+  const handleStartChatFromModal = (partner) => {
+    handleUserSelect(partner);
+    setSelectedUserId(null);
   };
 
   // ─── Render Helpers ───
@@ -175,6 +230,7 @@ const DirectChatTab = () => {
               <button
                 key={conv.conversationId}
                 onClick={() => handleUserSelect(conv)}
+                onContextMenu={(e) => handleConversationContextMenu(e, conv)}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group ${activePartner?.id === conv.partnerId ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
               >
                 <div className="relative flex-shrink-0">
@@ -233,7 +289,25 @@ const DirectChatTab = () => {
             <span className="w-1.5 h-1.5 bg-success rounded-full" /> 실시간 연결됨
           </p>
         </div>
-        <button className="p-2 text-muted-foreground hover:text-foreground"><FiMoreVertical /></button>
+        <div ref={menuRef} className="relative">
+          <button
+            onClick={() => setIsMenuOpen(prev => !prev)}
+            className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
+          >
+            <FiMoreVertical />
+          </button>
+          {isMenuOpen && (
+            <div className="absolute right-0 top-10 w-36 bg-surface border border-border rounded-xl shadow-lg z-10 overflow-hidden">
+              <button
+                onClick={() => handleLeaveChat()}
+                className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <FiLogOut size={14} />
+                나가기
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -316,11 +390,39 @@ const DirectChatTab = () => {
         {activePartner ? renderChatWindow() : renderConversationList()}
       </div>
 
+      {/* 우클릭 컨텍스트 메뉴 — backdrop 클릭으로 닫기, 버튼 클릭은 독립 처리 */}
+      {contextMenu && createPortal(
+        <>
+          {/* 전체 화면 backdrop: mousedown/click 모두 차단해 Header의 closeChat 방지 */}
+          <div
+            className="fixed inset-0 z-[9998]"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); setContextMenu(null); }}
+          />
+          <div
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            className="fixed z-[9999] bg-surface border border-border rounded-xl shadow-lg overflow-hidden w-32"
+          >
+            <button
+              onClick={() => handleLeaveChat(contextMenu.conv.partnerId)}
+              className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-destructive bg-transparent hover:bg-muted/50 cursor-pointer transition-colors"
+            >
+              <FiLogOut size={14} />
+              나가기
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
+
       {/* User Profile Modal */}
-      <UserProfileModal 
+      <UserProfileModal
         isOpen={!!selectedUserId}
         userId={selectedUserId}
         onClose={() => setSelectedUserId(null)}
+        onStartChat={handleStartChatFromModal}
       />
     </>
   );

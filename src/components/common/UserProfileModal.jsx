@@ -156,7 +156,7 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
                     1:1 채팅 (준비 중)
                   </button>
 
-                  {/* 즐겨찾기 */}
+                  {/* 팔로우 */}
                   <button
                     onClick={handleFavoriteToggle}
                     disabled={favoriteLoading}
@@ -167,7 +167,7 @@ const UserProfileModal = ({ isOpen, onClose, userId }) => {
                     }`}
                   >
                     <FiStar size={16} className={isFavorited ? 'fill-yellow-400' : ''} />
-                    {favoriteLoading ? '처리 중...' : isFavorited ? '즐겨찾기 중' : '즐겨찾기'}
+                    {favoriteLoading ? '처리 중...' : isFavorited ? '팔로우 중' : '팔로우'}
                   </button>
 
                   {/* 차단 / 차단 해제 */}

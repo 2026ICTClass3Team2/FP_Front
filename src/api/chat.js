@@ -30,3 +30,13 @@ export const markChatRead = async (partnerId) => {
     });
     return res.data;
 };
+
+/**
+ * 특정 대화방을 목록에서 숨깁니다 (나가기).
+ * 이후 새 메시지가 오면 자동으로 다시 표시됩니다.
+ * @param {number} partnerId 상대방 userId
+ */
+export const leaveConversation = async (partnerId) => {
+    const res = await jwtAxios.delete(`chat/conversations/${partnerId}`);
+    return res.data;
+};

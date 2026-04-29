@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import { FiAlertTriangle, FiUsers, FiEdit2 } from 'react-icons/fi';
 import jwtAxios from '../../api/jwtAxios';
 import PostCard from '../../components/feed/PostCard';
@@ -15,6 +16,7 @@ import useWriteChannelStore from '../../../useWriteChannelStore';
 const ChannelDetail = () => {
   const { channelId } = useParams();
   const navigate = useNavigate();
+  const { openChatWith } = useChatStore();
 
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -664,6 +666,7 @@ const ChannelDetail = () => {
         isOpen={profileModalUserId !== null}
         onClose={() => setProfileModalUserId(null)}
         userId={profileModalUserId}
+        onStartChat={(partner) => openChatWith(partner)}
       />
     </div>
   );

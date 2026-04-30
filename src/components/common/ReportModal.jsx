@@ -126,7 +126,7 @@ const ReportModal = ({ isOpen, onClose, targetType, targetId, onSuccess }) => {
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
       <div className="bg-background rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">

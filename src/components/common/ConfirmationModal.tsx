@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { FiAlertTriangle } from 'react-icons/fi';
+import { FiAlertTriangle, FiCheckCircle, FiInfo } from 'react-icons/fi';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface ConfirmationModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  variant?: 'danger' | 'success' | 'info';
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -19,6 +20,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   message,
   confirmText = '삭제',
   cancelText = '취소',
+  variant = 'danger',
 }) => {
   // 클릭 시작 지점을 추적하기 위한 ref
   const mouseDownTarget = useRef<EventTarget | null>(null);
@@ -48,6 +50,24 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     }
   };
 
+  const iconMap = {
+    danger: <FiAlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />,
+    success: <FiCheckCircle className="h-6 w-6 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />,
+    info: <FiInfo className="h-6 w-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+  };
+
+  const bgMap = {
+    danger: 'bg-red-100 dark:bg-red-900/30',
+    success: 'bg-emerald-100 dark:bg-emerald-900/30',
+    info: 'bg-blue-100 dark:bg-blue-900/30'
+  };
+
+  const btnMap = {
+    danger: 'bg-red-600 hover:bg-red-700 text-white',
+    success: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+    info: 'bg-blue-600 hover:bg-blue-700 text-white'
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all"
@@ -59,8 +79,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         onMouseDown={(e) => e.stopPropagation()}
         onMouseUp={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mb-3">
-          <FiAlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
+        <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full mb-3 ${bgMap[variant]}`}>
+          {iconMap[variant]}
         </div>
         <div className="mb-2">
           <h2 className="text-xl font-bold text-foreground">{title}</h2>
@@ -78,7 +98,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           </button>
           <button
             type="button"
-            className="px-6 py-2.5 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-md"
+            className={`px-6 py-2.5 text-sm font-bold rounded-xl transition-colors shadow-md ${btnMap[variant]}`}
             onClick={() => {
               onConfirm();
               onClose();

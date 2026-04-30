@@ -277,6 +277,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     onSubmit={handleEditSubmit}
                     onCancel={() => setIsEditing(false)}
                     isReply
+                    isEdit
                   />
                 ) : (
                   isReported && !showReportedContent ? (
@@ -370,6 +371,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
         onConfirm={handleAcceptAnswer}
         title="답변 채택"
         message="이 댓글을 채택하시겠습니까? 채택하면 질문이 해결 상태로 변경되고 포인트가 지급됩니다."
+        variant="success"
+        confirmText="채택"
       />
 
       <UserProfileModal

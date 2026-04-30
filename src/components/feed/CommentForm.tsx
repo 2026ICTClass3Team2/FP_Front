@@ -7,6 +7,7 @@ interface CommentFormProps {
   onCancel?: () => void;
   placeholder?: string;
   isReply?: boolean;
+  isEdit?: boolean;
 }
 
 const CommentForm: React.FC<CommentFormProps> = ({
@@ -15,6 +16,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
   onCancel,
   placeholder = '댓글을 남겨보세요.',
   isReply = false,
+  isEdit = false,
 }) => {
   const [content, setContent] = useState(initialValue);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +96,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
           disabled={isLoading || (content.replace(/<(.|\n)*?>/g, '').trim().length === 0 && !content.includes('<img'))}
           className="px-4 py-2 text-sm font-bold text-primary-foreground bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-md"
         >
-          {isLoading ? '저장 중...' : (initialValue ? '수정 완료' : '댓글 작성')}
+          {isLoading ? '저장 중...' : (isEdit ? '수정 완료' : '댓글 작성')}
         </button>
       </div>
     </form>

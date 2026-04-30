@@ -8,6 +8,7 @@ import useNotificationSocket from '../../hooks/useNotificationSocket';
 import ChatDropdown from '../chat/ChatDropdown';
 import { globalSearch } from '../../api/search';
 import UserProfileModal from '../common/UserProfileModal';
+import PointShopModal from '../../pages/shop/PointShopModal';
 import { useChatStore } from '../../stores/chatStore';
 
 
@@ -37,6 +38,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
   const chatNotifications = notifications.filter(n => n.targetType === 'chat' || n.targetType === 'bot');
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isPointShopOpen, setIsPointShopOpen] = useState(false);
 
   // 검색 관련 상태
   const [searchQuery, setSearchQuery] = useState('');
@@ -182,9 +184,9 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
         }
         break;
       case 'user':
-        // If it's a profile-related notification (like a follow), go to profile
-        // Otherwise (like admin warnings), go to mypage
-        if (n.message.includes('팔로우')) {
+        if (n.message.includes('게시글을 올렸습니다')) {
+          navigate(`/?postId=${n.targetId}`);
+        } else if (n.message.includes('팔로우')) {
           window.location.href = `/profile/${n.targetId}`;
         } else {
           window.location.href = '/mypage';
@@ -192,11 +194,15 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
         break;
       case 'system':
         if (n.message.includes('point') || n.message.includes('포인트')) {
-          window.location.href = '/mypage/points';
+          setIsPointShopOpen(true);
         }
         break;
       case 'channel':
-        window.location.href = `/channel/${n.targetId}`;
+        if (n.message.includes('게시글이 올라왔습니다')) {
+          navigate(`/?postId=${n.targetId}`);
+        } else {
+          window.location.href = `/channel/${n.targetId}`;
+        }
         break;
       default:
         fetchNotifications();
@@ -496,6 +502,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
         userId={selectedUserId}
         onStartChat={handleStartChatFromModal}
       />
+      <PointShopModal isOpen={isPointShopOpen} onClose={() => setIsPointShopOpen(false)} />
     </>
   );
 };

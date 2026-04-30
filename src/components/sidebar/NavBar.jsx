@@ -6,6 +6,8 @@ import CreateChannelModal from '../channel/CreateChannelModal';
 import PointShopModal from '../../pages/shop/PointShopModal';
 import jwtAxios from '../../api/jwtAxios';
 import Modal from '../common/Modal';
+import UserProfileModal from '../common/UserProfileModal';
+import { useChatStore } from '../../stores/chatStore';
 import { FiBookOpen, FiHome, FiMessageCircle, FiMoon, FiSun, FiStar } from 'react-icons/fi';
 
 const NavBar = ({ collapsed = false }) => {
@@ -19,8 +21,10 @@ const NavBar = ({ collapsed = false }) => {
   const [favoriteUsers, setFavoriteUsers]             = useState([]);
   const [currentPoint, setCurrentPoint] = useState(null);
   const [profilePicUrl, setProfilePicUrl] = useState(null);
+  const [profileModalUserId, setProfileModalUserId] = useState(null);
 
   const { currentUser, logout } = useAuth();
+  const { openChatWith } = useChatStore();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const location = useLocation();
 
@@ -201,8 +205,8 @@ const NavBar = ({ collapsed = false }) => {
                 <p className="text-xs text-muted-foreground pl-2 py-1">팔로우한 유저가 없습니다.</p>
               ) : (
                 favoriteUsers.map((u) => (
-                  <Link key={u.userId} to={`/user/${u.userId}`}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-foreground/10 transition-colors cursor-pointer">
+                  <button key={u.userId} onClick={() => setProfileModalUserId(u.userId)}
+                    className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-foreground/10 transition-colors cursor-pointer">
                     {u.profilePicUrl ? (
                       <img src={u.profilePicUrl} alt={u.nickname} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                     ) : (
@@ -211,7 +215,7 @@ const NavBar = ({ collapsed = false }) => {
                       </div>
                     )}
                     <span className="text-sm text-foreground truncate">{u.nickname}</span>
-                  </Link>
+                  </button>
                 ))
               )}
             </div>
@@ -310,6 +314,16 @@ const NavBar = ({ collapsed = false }) => {
         isOpen={isPointShopOpen}
         onClose={handleShopClose}
         currentUser={currentUser}
+      />
+
+      <UserProfileModal
+        isOpen={profileModalUserId !== null}
+        onClose={() => setProfileModalUserId(null)}
+        userId={profileModalUserId}
+        onStartChat={(partner) => {
+          openChatWith(partner);
+          setProfileModalUserId(null);
+        }}
       />
 
       {/* 하단 로그아웃 */}

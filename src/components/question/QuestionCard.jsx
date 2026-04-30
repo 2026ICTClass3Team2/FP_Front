@@ -94,7 +94,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-foreground">본문</label>
+        <label className="text-sm font-semibold text-foreground">내용</label>
         <RichTextEditor
           value={body}
           onChange={setBody}

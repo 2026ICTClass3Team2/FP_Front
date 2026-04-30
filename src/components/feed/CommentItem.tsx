@@ -277,6 +277,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     onSubmit={handleEditSubmit}
                     onCancel={() => setIsEditing(false)}
                     isReply
+                    isEdit
                   />
                 ) : (
                   isReported && !showReportedContent ? (

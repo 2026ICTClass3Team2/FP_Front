@@ -9,7 +9,7 @@ const ChatBotTab = () => {
   
   // FAQ State
   const [faqHistory, setFaqHistory] = useState([
-    { role: 'bot', text: '안녕하세요! AI 챗봇 비서입니다. 궁금한 점을 입력해주세요.' }
+    { role: 'bot', text: '안녕하세요! AI 챗봇 비서입니다. 궁금한 점을 입력하시거나 아래의 자주 묻는 질문을 선택해주세요.' }
   ]);
   const [faqInput, setFaqInput] = useState('');
   const [faqLoading, setFaqLoading] = useState(false);
@@ -19,6 +19,20 @@ const ChatBotTab = () => {
   const [codeReview, setCodeReview] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
+
+  const predefinedFaqs = [
+    { q: "DeadBug의 주요 기능은 무엇인가요?", a: "DeadBug는 개발자들을 위한 Q&A 및 커뮤니티 플랫폼입니다. 질문과 답변을 통한 지식 공유, 코드 리뷰, 채널 구독 기능 등을 제공합니다." },
+    { q: "포인트는 어떻게 얻나요?", a: "질문에 좋은 답변을 달아 채택을 받거나, 활동 보상 등을 통해 포인트를 획득할 수 있습니다. 획득한 포인트는 포인트 상점에서 이용 가능합니다." },
+    { q: "신고 기능은 어떻게 작동하나요?", a: "부적절한 게시물이나 댓글의 우측 메뉴에서 '신고'를 누르면 관리자에게 전달되며, 검토 후 적절한 조치가 이루어집니다." }
+  ];
+
+  const handleFixedQuestionClick = (faq) => {
+    setFaqHistory(prev => [
+      ...prev,
+      { role: 'user', text: faq.q },
+      { role: 'bot', text: faq.a }
+    ]);
+  };
 
   const handleFaqSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -132,6 +146,21 @@ const ChatBotTab = () => {
               </div>
             </div>
           ))}
+          
+          {faqHistory.length === 1 && (
+            <div className="flex flex-col gap-2 mt-4 ml-10">
+              {predefinedFaqs.map((faq, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleFixedQuestionClick(faq)}
+                  className="text-left text-[13px] px-4 py-2.5 rounded-xl border border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5 hover:bg-blue-500/10 transition-colors"
+                >
+                  {faq.q}
+                </button>
+              ))}
+            </div>
+          )}
+
           {faqLoading && (
             <div className="flex justify-start items-end gap-2">
               <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0"><FiCpu size={16}/></div>

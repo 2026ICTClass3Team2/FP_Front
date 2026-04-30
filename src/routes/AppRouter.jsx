@@ -21,7 +21,6 @@ import MyBookmarkList from '../components/layouts/MyBookmarkList';
 import NotificationTab from '../components/profile/NotificationTab';
 import BlockList from '../components/profile/BlockList';
 import ChannelDetail from '../pages/channel/ChannelDetail';
-import UserProfilePage from '../pages/profile/UserProfilePage';
 import FavoritesFeedPage from '../pages/favorites/FavoritesFeedPage';
 import SuspensionModal from '../components/common/SuspensionModal';
 
@@ -60,9 +59,6 @@ const AppRouter = () => {
               <Route path="bookmarks" element={<MyBookmarkList />} />
               <Route path="notifications" element={<NotificationTab />} />
               <Route path='blocks' element={<BlockList />} />
-            </Route>
-            <Route path="user/:userId" element={<MyPageLayout />}>
-              <Route index element={<UserProfilePage />} />
             </Route>
 
             {/* 팔로우 피드 */}

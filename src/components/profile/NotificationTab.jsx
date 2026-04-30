@@ -2,12 +2,14 @@ import React, { useState, useEffect, use } from 'react';
 import { getAllNotifications, markAllAsRead, markAsRead, getNotificationSettings, updateNotificationSettings } from '../../api/notification';
 import { FiSettings, FiCheckCircle, FiBell } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import PointShopModal from '../../pages/shop/PointShopModal';
 
 const NotificationTab = () => {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all');
   const [settings, setSettings] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPointShopOpen, setIsPointShopOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -99,9 +101,9 @@ const NotificationTab = () => {
         }
         break;
       case 'user': 
-        // If it's a profile-related notification (like a follow), go to profile
-        // Otherwise (like admin warnings), go to mypage
-        if (n.message.includes('팔로우')) {
+        if (n.message.includes('게시글을 올렸습니다')) {
+          navigate(`/?postId=${n.targetId}`);
+        } else if (n.message.includes('팔로우')) {
           window.location.href = `/profile/${n.targetId}`;
         } else {
           window.location.href = '/mypage';
@@ -109,11 +111,15 @@ const NotificationTab = () => {
         break;
       case 'system':
         if (n.message.includes('point') || n.message.includes('포인트')) {
-          window.location.href = '/mypage/points';
+          setIsPointShopOpen(true);
         }
         break;
       case 'channel':
-        window.location.href = `/channel/${n.targetId}`;
+        if (n.message.includes('게시글이 올라왔습니다')) {
+          navigate(`/?postId=${n.targetId}`);
+        } else {
+          window.location.href = `/channel/${n.targetId}`;
+        }
         break;
       default:
         fetchNotifications();
@@ -251,8 +257,7 @@ const NotificationTab = () => {
                 { key: 'commentReply', label: '내 댓글의 새 답글', desc: '내 댓글에 새로운 답글이 달리면 알림을 받습니다.' },
                 { key: 'qnaAnswer', label: 'QnA 답변 채택', desc: '내 댓글이 QnA 답변으로 채택되면 알림을 받습니다.' },
                 { key: 'pointTransaction', label: '포인트 변동', desc: '포인트 획득 및 사용 시 알림을 받습니다.' },
-                { key: 'mention', label: '멘션', desc: '다른 유저가 나를 @멘션하면 알림을 받습니다.'},
-                { key: 'chat', label: '채팅 (준비 중)', desc: '새로운 채팅 메시지가 오면 알림을 받습니다.', disabled: true },
+                { key: 'mention', label: '멘션', desc: '다른 유저가 나를 @멘션하면 알림을 받습니다.'}
               ].map((opt) => (
                 <div key={opt.key} className={`flex items-center justify-between p-4 rounded-3xl transition-all ${opt.disabled ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:bg-muted/30 group'}`}>
                   <div className="flex-1 pr-6">
@@ -293,6 +298,7 @@ const NotificationTab = () => {
           </div>
         </div>
       )}
+      <PointShopModal isOpen={isPointShopOpen} onClose={() => setIsPointShopOpen(false)} />
     </div>
   );
 };

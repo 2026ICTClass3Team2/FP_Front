@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCpu, FiCode, FiMessageCircle, FiArrowLeft, FiSend, FiPlay } from 'react-icons/fi';
+import { reviewCode, chatWithBot } from '../../api/chatbot';
 import jwtAxios from '../../api/jwtAxios';
-import { reviewCode } from '../../api/chatbot';
 import { markTypeAsRead } from '../../api/notification';
 
 const ChatBotTab = () => {
@@ -9,8 +9,10 @@ const ChatBotTab = () => {
   
   // FAQ State
   const [faqHistory, setFaqHistory] = useState([
-    { role: 'bot', text: '안녕하세요! AI 챗봇 비서입니다. 궁금한 점을 선택해주세요.' }
+    { role: 'bot', text: '안녕하세요! AI 챗봇 비서입니다. 궁금한 점을 입력하시거나 아래의 자주 묻는 질문을 선택해주세요.' }
   ]);
+  const [faqInput, setFaqInput] = useState('');
+  const [faqLoading, setFaqLoading] = useState(false);
   
   // Code Analysis State
   const [codeInput, setCodeInput] = useState('');
@@ -18,18 +20,50 @@ const ChatBotTab = () => {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
 
-  const faqs = [
-    { q: "DeadBug는 어떤 사이트인가요?", a: "DeadBug는 개발자들을 위한 커뮤니티로, 지식 공유(Feed), 질문답변(QnA), 그룹 스터디(Channel) 등을 지원합니다." },
-    { q: "포인트는 어떻게 얻나요?", a: "QnA에 답변을 달아 채택되거나, 활동을 통해 얻을 수 있습니다. 상점에서 이모티콘 구매에 사용 가능합니다." },
-    { q: "채널이 무엇인가요?", a: "채널은 소규모 그룹 스터디나 소모임을 위한 공간입니다. 누구나 채널을 만들 수 있습니다." }
+  const predefinedFaqs = [
+    { q: "DeadBug의 주요 기능은 무엇인가요?", a: "DeadBug는 개발자들을 위한 Q&A 및 커뮤니티 플랫폼입니다. 질문과 답변을 통한 지식 공유, 코드 리뷰, 채널 구독 기능 등을 제공합니다." },
+    { q: "포인트는 어떻게 얻나요?", a: "질문에 좋은 답변을 달아 채택을 받거나, 활동 보상 등을 통해 포인트를 획득할 수 있습니다. 획득한 포인트는 포인트 상점에서 이용 가능합니다." },
+    { q: "신고 기능은 어떻게 작동하나요?", a: "부적절한 게시물이나 댓글의 우측 메뉴에서 '신고'를 누르면 관리자에게 전달되며, 검토 후 적절한 조치가 이루어집니다." }
   ];
 
-  const handleFaqClick = (faq) => {
+  const handleFixedQuestionClick = (faq) => {
     setFaqHistory(prev => [
       ...prev,
       { role: 'user', text: faq.q },
       { role: 'bot', text: faq.a }
     ]);
+  };
+
+  const handleFaqSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!faqInput.trim()) return;
+
+    const userMessage = faqInput.trim();
+    setFaqInput('');
+    
+    // Add user message to UI
+    const updatedHistory = [...faqHistory, { role: 'user', text: userMessage }];
+    setFaqHistory(updatedHistory);
+    setFaqLoading(true);
+
+    try {
+      // Extract text from history to pass to API
+      const historyStrings = updatedHistory.map(h => `${h.role}: ${h.text}`);
+      const data = await chatWithBot(userMessage, historyStrings);
+      
+      setFaqHistory(prev => [
+        ...prev,
+        { role: 'bot', text: data.response }
+      ]);
+    } catch (err) {
+      console.error(err);
+      setFaqHistory(prev => [
+        ...prev,
+        { role: 'bot', text: '오류가 발생했습니다. AI 서버 연결을 확인해주세요.' }
+      ]);
+    } finally {
+      setFaqLoading(false);
+    }
   };
 
   const handleCodeSubmit = async () => {
@@ -112,15 +146,51 @@ const ChatBotTab = () => {
               </div>
             </div>
           ))}
-          <div className="pt-4 flex flex-col gap-2">
-            <p className="text-xs font-bold text-muted-foreground ml-1">질문 선택:</p>
-            {faqs.map((faq, i) => (
-              <button key={i} onClick={() => handleFaqClick(faq)} className="text-left p-3 text-[13px] border border-blue-500/30 bg-blue-500/5 text-blue-600 hover:bg-blue-500/10 rounded-xl transition-colors">
-                {faq.q}
-              </button>
-            ))}
-          </div>
+          
+          {faqHistory.length === 1 && (
+            <div className="flex flex-col gap-2 mt-4 ml-10">
+              {predefinedFaqs.map((faq, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleFixedQuestionClick(faq)}
+                  className="text-left text-[13px] px-4 py-2.5 rounded-xl border border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5 hover:bg-blue-500/10 transition-colors"
+                >
+                  {faq.q}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {faqLoading && (
+            <div className="flex justify-start items-end gap-2">
+              <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0"><FiCpu size={16}/></div>
+              <div className="px-4 py-3 rounded-2xl text-[13px] shadow-sm bg-surface border border-border rounded-tl-none text-muted-foreground flex gap-1 items-center">
+                <div className="w-1.5 h-1.5 bg-blue-500/50 rounded-full animate-bounce"></div>
+                <div className="w-1.5 h-1.5 bg-blue-500/50 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                <div className="w-1.5 h-1.5 bg-blue-500/50 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* FAQ Input Form */}
+        <form onSubmit={handleFaqSubmit} className="p-3 bg-surface border-t border-border flex gap-2">
+          <input 
+            type="text"
+            value={faqInput}
+            onChange={(e) => setFaqInput(e.target.value)}
+            placeholder="AI에게 질문해보세요..."
+            disabled={faqLoading}
+            className="flex-1 bg-muted/40 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+          />
+          <button 
+            type="submit"
+            disabled={!faqInput.trim() || faqLoading}
+            className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50 transition-all shadow-sm"
+          >
+            <FiSend size={18} />
+          </button>
+        </form>
       </div>
     );
   }

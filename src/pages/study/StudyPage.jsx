@@ -51,6 +51,17 @@ const StudyPage = () => {
     const langRefs = useRef({});
     const chapterRefs = useRef({});
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key !== 'Escape') return;
+            if (editTarget) { setEditTarget(null); return; }
+            if (isDeletedListOpen) { setIsDeletedListOpen(false); return; }
+            if (isModalOpen) { setIsModalOpen(false); setSelectedFile(null); setNewLangName(""); }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [editTarget, isDeletedListOpen, isModalOpen]);
+
     const checkAdminAccess = (callback) => {
         if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
         callback();
@@ -529,13 +540,13 @@ const StudyPage = () => {
                     <div className="mb-6 flex justify-end gap-3">
                         <button
                             onClick={openDeletedList}
-                            className="px-6 py-3 bg-secondary text-foreground rounded-2xl transition hover:bg-secondary/80 hover:scale-105 active:scale-95"
+                            className="px-6 py-3 bg-secondary text-foreground rounded-2xl transition hover:bg-secondary/80 hover:scale-105 active:scale-95 cursor-pointer"
                         >
                             삭제한 목록
                         </button>
                         <button
                             onClick={() => checkAdminAccess(() => setIsModalOpen(true))}
-                            className="px-6 py-3 bg-primary text-primary-foreground rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95"
+                            className="px-6 py-3 bg-primary text-primary-foreground rounded-2xl transition hover:bg-primary/80 hover:scale-105 active:scale-95 cursor-pointer"
                         >
                             언어 추가
                         </button>
@@ -754,14 +765,14 @@ const StudyPage = () => {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setEditTarget(null)}
-                                className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors"
+                                className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
                             >
                                 취소
                             </button>
                             <button
                                 onClick={handleSaveEdit}
                                 disabled={editLoading}
-                                className="flex-1 p-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                className="flex-1 p-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                             >
                                 {editLoading ? '저장 중...' : '저장'}
                             </button>

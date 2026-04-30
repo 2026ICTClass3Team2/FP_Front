@@ -9,7 +9,8 @@
       "Bash(npm list *)",
       "Bash(npm run *)",
       "Bash(xargs grep *)",
-      "Bash(npx --no-install eslint src/pages/shop/PointShopModal.jsx src/pages/shop/PointShopAdminModal.jsx)"
+      "Bash(npx --no-install eslint src/pages/shop/PointShopModal.jsx src/pages/shop/PointShopAdminModal.jsx)",
+      "Bash(grep -E \"\\\\.\\(jsx?|tsx?\\)$\")"
     ]
   }
 }

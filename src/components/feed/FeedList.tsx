@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import PostCard, { Post } from './PostCard';
 import jwtAxios from '../../api/jwtAxios';
+import { useAuth } from '../sidebar/AuthContext';
 import ConfirmationModal from '../common/ConfirmationModal';
 import CommunityPostDetail from './CommunityPostDetail';
 
@@ -25,6 +26,9 @@ const TABS: { key: FeedTab; label: string }[] = [
 ];
 
 const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
+  const { currentUser } = useAuth() as any;
+  const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
@@ -162,6 +166,16 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
     resetAndFetch(activeTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  // 계정 전환 시 피드 리셋 (차단 필터가 새 계정 기준으로 재적용되도록)
+  const prevUserIdRef = useRef(currentUserId);
+  useEffect(() => {
+    if (prevUserIdRef.current !== currentUserId) {
+      prevUserIdRef.current = currentUserId;
+      resetAndFetch(activeTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUserId]);
 
   // ─── 무한 스크롤 ─────────────────────────────────────────────────────────────
 

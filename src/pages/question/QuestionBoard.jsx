@@ -6,6 +6,7 @@ import QnAPostCard from '../../components/question/QnAPostCard';
 import QnADetailModal from '../../components/question/QnADetailModal';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import jwtAxios from '../../api/jwtAxios';
+import { useAuth } from '../../components/sidebar/AuthContext';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: '전체' },
@@ -21,6 +22,9 @@ const SORT_OPTIONS_QNA = [
 
 // Q&A 게시판 메인 페이지
 const QuestionBoard = () => {
+  const { currentUser } = useAuth();
+  const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
+
   // 검색 및 필터 상태
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('latest');
@@ -99,6 +103,16 @@ const QuestionBoard = () => {
 
     return () => clearTimeout(searchTimer);
   }, [query, sort, statusFilter, fetchQnaList]);
+
+  // 계정 전환 시 목록 리셋 (차단 필터가 새 계정 기준으로 재적용되도록)
+  const prevUserIdRef = useRef(currentUserId);
+  useEffect(() => {
+    if (prevUserIdRef.current !== currentUserId) {
+      prevUserIdRef.current = currentUserId;
+      setPage(0);
+      fetchQnaList(0);
+    }
+  }, [currentUserId, fetchQnaList]);
 
   // 드롭다운 외부 클릭 감지
   useEffect(() => {

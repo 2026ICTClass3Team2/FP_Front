@@ -21,7 +21,6 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
       setTitle(postToEdit.title || '');
       setBody(postToEdit.body || '');
       setSelectedTechStacks(postToEdit.techStacks || postToEdit.tags || []);
-      setRewardPoints(postToEdit.points || 0);
     }
   }, [postToEdit]);
 
@@ -45,7 +44,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
       body,
       contentType: 'qna',
       tags: tagArray,
-      rewardPoints: parseInt(rewardPoints, 10) || 0
+      rewardPoints: postToEdit ? 0 : (parseInt(rewardPoints, 10) || 0),
     };
 
     try {
@@ -131,28 +130,30 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-foreground">채택 포인트 (선택)</label>
-        <div className="inline-flex items-center gap-3 px-4 py-2.5 border border-amber-500/30 bg-amber-500/5 rounded-xl w-fit">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-            fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-            <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/><path d="M15 6h1v4"/>
-            <path d="m6.134 14.768.866-.5 2 3.464"/><circle cx="16" cy="8" r="6"/>
-          </svg>
-          <input
-            type="number"
-            min="0"
-            value={rewardPoints}
-            onChange={(e) => setRewardPoints(e.target.value)}
-            placeholder="0"
-            className="w-24 bg-transparent text-foreground text-sm font-bold focus:outline-none placeholder:text-muted-foreground"
-          />
-          <span className="text-sm font-semibold text-amber-600 dark:text-amber-400 shrink-0">P</span>
+      {!postToEdit && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-semibold text-foreground">채택 포인트 (선택)</label>
+          <div className="inline-flex items-center gap-3 px-4 py-2.5 border border-amber-500/30 bg-amber-500/5 rounded-xl w-fit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/><path d="M15 6h1v4"/>
+              <path d="m6.134 14.768.866-.5 2 3.464"/><circle cx="16" cy="8" r="6"/>
+            </svg>
+            <input
+              type="number"
+              min="0"
+              value={rewardPoints}
+              onChange={(e) => setRewardPoints(e.target.value)}
+              placeholder="0"
+              className="w-24 bg-transparent text-foreground text-sm font-bold focus:outline-none placeholder:text-muted-foreground"
+            />
+            <span className="text-sm font-semibold text-amber-600 dark:text-amber-400 shrink-0">P</span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            총 채택 포인트 = 직접 설정한 포인트 + AI 난이도 점수(1~10P)
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground">
-          포인트를 걸면 더 빠르고 양질의 답변을 받을 확률이 높아집니다!
-        </span>
-      </div>
+      )}
 
       <div className="flex justify-end gap-2 mt-4">
         <button 
@@ -170,7 +171,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
           rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 
           transition-colors shadow-md hover:shadow-lg"
         >
-          {loading ? '등록 중...' : '질문 등록'}
+          {loading ? (postToEdit ? '수정 중...' : '등록 중...') : (postToEdit ? '질문 수정' : '질문 등록')}
         </button>
       </div>
     </form>

@@ -12,6 +12,23 @@ const SquarePenIcon = () => (
     </svg>
 );
 
+const TranslateIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>
+        <path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
+    </svg>
+);
+
+const TRANS_LANGUAGES = [
+    { code: 'ko', label: '한국어 (Korean)' },
+    { code: 'en', label: '영어 (English)' },
+    { code: 'ja', label: '일본어 (日本語)' },
+    { code: 'zh', label: '중국어 (中文)' },
+    { code: 'es', label: '스페인어 (Español)' },
+    { code: 'fr', label: '프랑스어 (Français)' },
+    { code: 'de', label: '독일어 (Deutsch)' },
+];
+
 const StudyPage = () => {
     const { currentUser } = useAuth();
     const isAdmin = currentUser?.role === 'admin';
@@ -46,6 +63,20 @@ const StudyPage = () => {
     const [editTarget, setEditTarget] = useState(null);
     const [editForm, setEditForm]     = useState({});
     const [editLoading, setEditLoading] = useState(false);
+    const [editError, setEditError]   = useState("");
+
+    // ── 커스텀 확인 다이얼로그 (window.confirm 대체)
+    const [confirmDialog, setConfirmDialog] = useState(null);
+
+    // ── 번역 관련 상태
+    const [rawTranslations, setRawTranslations]               = useState([]);          // transRaw 전체
+    const [translatedLangsByResource, setTranslatedLangsByResource] = useState({});   // { resource_id: ['en','ja',...] }
+    const [adminTransModal, setAdminTransModal]               = useState(null);        // { lang, resourceId } | null
+    const [adminTransTarget, setAdminTransTarget]             = useState('');          // 선택된 언어코드 or 'original'
+    const [adminTransLoading, setAdminTransLoading]           = useState(false);
+    const [adminTransError, setAdminTransError]               = useState('');
+    const [userTransDropdown, setUserTransDropdown]           = useState(null);        // lang string | null
+    const [userTransLang, setUserTransLang]                   = useState({});          // { [lang]: code | 'ko' }
 
     const addButtonRef = useRef(null);
     const langRefs = useRef({});
@@ -54,13 +85,16 @@ const StudyPage = () => {
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key !== 'Escape') return;
-            if (editTarget) { setEditTarget(null); return; }
+            if (confirmDialog) { setConfirmDialog(null); return; }
+            if (adminTransModal) { setAdminTransModal(null); setAdminTransTarget(''); setAdminTransError(''); return; }
+            if (userTransDropdown) { setUserTransDropdown(null); return; }
+            if (editTarget) { setEditTarget(null); setEditError(""); return; }
             if (isDeletedListOpen) { setIsDeletedListOpen(false); return; }
             if (isModalOpen) { setIsModalOpen(false); setSelectedFile(null); setNewLangName(""); }
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [editTarget, isDeletedListOpen, isModalOpen]);
+    }, [confirmDialog, adminTransModal, userTransDropdown, editTarget, isDeletedListOpen, isModalOpen]);
 
     const checkAdminAccess = (callback) => {
         if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
@@ -118,6 +152,7 @@ const StudyPage = () => {
                     title: trans ? trans.title : ori.title,
                     content: trans ? trans.content : ori.content,
                     rawContent: ori.content,
+                    rawTitle: ori.title,
                     resourceName: resourceMap[ori.resource_id] || "미분류",
                     order: ori.index_order,
                     status: ori.is_translated ? "번역됨" : "원문",
@@ -133,6 +168,19 @@ const StudyPage = () => {
             setLanguageIdMap(idMap);
             setIncomingLanguages(resRaw.map(r => r.name).filter(Boolean));
             setIncomingChapters(chapters);
+
+            setRawTranslations(transRaw);
+
+            // resource_id별 번역 완료 언어 목록 (ko 제외)
+            const byResource = {};
+            transRaw.forEach(t => {
+                if (!t.resource_id || !t.language) return;
+                if (!byResource[t.resource_id]) byResource[t.resource_id] = new Set();
+                byResource[t.resource_id].add(t.language);
+            });
+            const byResourceArr = {};
+            Object.entries(byResource).forEach(([rid, set]) => { byResourceArr[rid] = [...set]; });
+            setTranslatedLangsByResource(byResourceArr);
 
         } catch (err) {
             console.error("데이터 로드 실패:", err);
@@ -289,35 +337,42 @@ const StudyPage = () => {
         }
     };
 
-    const handleDeleteLanguage = async (e, lang) => {
+    const handleDeleteLanguage = (e, lang) => {
         e.stopPropagation();
-        if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
-        if (!window.confirm(`정말 '${lang}' 언어를 삭제하시겠습니까?\n(DB 데이터는 유지됩니다)`)) return;
-        try {
-            const resourceId = languageIdMap[lang];
-            await jwtAxios.post('study/hidden-languages', { resourceId });
-            await fetchHiddenLanguages();
-            if (selectedLanguage === lang) {
-                setSelectedLanguage("");
-                setSelectedChapter(null);
-            }
-        } catch (err) {
-            console.error("언어 삭제 실패:", err?.response?.status, err?.response?.data, err);
-            alert("삭제 중 오류가 발생했습니다.");
-        }
+        if (!isAdmin) return;
+        setConfirmDialog({
+            message: `정말 '${lang}' 언어를 삭제하시겠습니까?\n(DB 데이터는 유지됩니다)`,
+            onConfirm: async () => {
+                try {
+                    const resourceId = languageIdMap[lang];
+                    await jwtAxios.post('study/hidden-languages', { resourceId });
+                    await fetchHiddenLanguages();
+                    if (selectedLanguage === lang) {
+                        setSelectedLanguage("");
+                        setSelectedChapter(null);
+                    }
+                } catch (err) {
+                    console.error("언어 삭제 실패:", err?.response?.status, err?.response?.data, err);
+                }
+            },
+        });
     };
 
-    const handleDeleteChapter = async (e, chapter) => {
+    const handleDeleteChapter = (e, chapter) => {
         e.stopPropagation();
-        if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
-        if (!window.confirm(`정말 '${chapter.title}' 챕터를 삭제하시겠습니까?\n(DB 데이터는 유지됩니다)`)) return;
-        try {
-            await jwtAxios.post('study/hidden-chapters', { originalId: chapter.id });
-            await fetchHiddenChapters();
-            if (selectedChapter?.id === chapter.id) setSelectedChapter(null);
-        } catch {
-            alert("삭제 중 오류가 발생했습니다.");
-        }
+        if (!isAdmin) return;
+        setConfirmDialog({
+            message: `정말 '${chapter.title}' 챕터를 삭제하시겠습니까?\n(DB 데이터는 유지됩니다)`,
+            onConfirm: async () => {
+                try {
+                    await jwtAxios.post('study/hidden-chapters', { originalId: chapter.id });
+                    await fetchHiddenChapters();
+                    if (selectedChapter?.id === chapter.id) setSelectedChapter(null);
+                } catch {
+                    console.error("챕터 삭제 실패");
+                }
+            },
+        });
     };
 
     const openDeletedList = async () => {
@@ -374,6 +429,7 @@ const StudyPage = () => {
     const handleSaveEdit = async () => {
         if (!editTarget) return;
         setEditLoading(true);
+        setEditError("");
         try {
             if (editTarget.type === 'language') {
                 await jwtAxios.patch(`study/resource/${editTarget.id}`, { name: editForm.name });
@@ -383,9 +439,45 @@ const StudyPage = () => {
             await fetchDBData();
             setEditTarget(null);
         } catch {
-            alert("수정 중 오류가 발생했습니다.");
+            setEditError("수정 중 오류가 발생했습니다.");
         } finally {
             setEditLoading(false);
+        }
+    };
+
+    // 선택된 번역 언어에 따라 챕터 내용을 반환
+    const getDisplayedChapter = useCallback((chapter) => {
+        if (!chapter) return chapter;
+        const activeLangCode = userTransLang[chapter.language];
+        if (!activeLangCode || activeLangCode === 'original') {
+            return { ...chapter, title: chapter.rawTitle || chapter.title, content: chapter.rawContent || chapter.content };
+        }
+        const trans = rawTranslations.find(
+            t => t.original_id === chapter.id && t.language === activeLangCode
+        );
+        if (!trans) return chapter;
+        return { ...chapter, title: trans.title || chapter.title, content: trans.content || chapter.content };
+    }, [userTransLang, rawTranslations]);
+
+    const handleAdminTranslate = async () => {
+        if (!adminTransTarget || adminTransTarget === 'original') return;
+        const resourceId = adminTransModal?.resourceId;
+        if (!resourceId) return;
+        setAdminTransLoading(true);
+        setAdminTransError('');
+        try {
+            await fetch("https://n8n.deadbug.site/webhook/translate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ resource_id: resourceId, target_language: adminTransTarget }),
+            });
+            await fetchDBData();
+            setAdminTransModal(null);
+            setAdminTransTarget('');
+        } catch {
+            setAdminTransError('번역 중 오류가 발생했습니다.');
+        } finally {
+            setAdminTransLoading(false);
         }
     };
 
@@ -468,8 +560,20 @@ const StudyPage = () => {
                                             }`}
                                     >
                                         <span>{lang}</span>
-                                        {isAdmin && (
+                                        {isAdmin ? (
                                             <div className="hidden group-hover:flex items-center gap-1">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setAdminTransModal({ lang, resourceId: languageIdMap[lang] });
+                                                        setAdminTransTarget('');
+                                                        setAdminTransError('');
+                                                    }}
+                                                    className="text-muted-foreground hover:text-blue-500 transition-colors p-1 rounded cursor-pointer"
+                                                    title="번역 관리"
+                                                >
+                                                    <TranslateIcon />
+                                                </button>
                                                 <button
                                                     onClick={(e) => handleOpenEdit(e, 'language', lang)}
                                                     className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded cursor-pointer"
@@ -485,6 +589,52 @@ const StudyPage = () => {
                                                     ✕
                                                 </button>
                                             </div>
+                                        ) : (
+                                            (() => {
+                                                const resourceId = languageIdMap[lang];
+                                                const availLangs = translatedLangsByResource[resourceId] || [];
+                                                if (availLangs.length === 0) return null;
+                                                const activeLang = userTransLang[lang] || 'original';
+                                                return (
+                                                    <div className="relative flex items-center">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setUserTransDropdown(prev => prev === lang ? null : lang);
+                                                            }}
+                                                            className={`p-1 rounded transition-colors cursor-pointer ${activeLang !== 'original' ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'}`}
+                                                            title="번역 선택"
+                                                        >
+                                                            <TranslateIcon />
+                                                        </button>
+                                                        {userTransDropdown === lang && (
+                                                            <div
+                                                                className="absolute right-0 top-full mt-1 bg-surface border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[150px]"
+                                                                onClick={e => e.stopPropagation()}
+                                                            >
+                                                                <button
+                                                                    onClick={() => { setUserTransLang(prev => ({ ...prev, [lang]: 'original' })); setUserTransDropdown(null); }}
+                                                                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${activeLang === 'original' ? 'text-primary font-semibold bg-primary/5' : 'text-foreground hover:bg-secondary'}`}
+                                                                >
+                                                                    원문
+                                                                </button>
+                                                                {availLangs.map(code => {
+                                                                    const found = TRANS_LANGUAGES.find(t => t.code === code);
+                                                                    return (
+                                                                        <button
+                                                                            key={code}
+                                                                            onClick={() => { setUserTransLang(prev => ({ ...prev, [lang]: code })); setUserTransDropdown(null); }}
+                                                                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${activeLang === code ? 'text-primary font-semibold bg-primary/5' : 'text-foreground hover:bg-secondary'}`}
+                                                                        >
+                                                                            {found ? found.label : code}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()
                                         )}
                                     </div>
                                 ))}
@@ -507,7 +657,7 @@ const StudyPage = () => {
                                                 ? "border-primary bg-primary/5"
                                                 : "border-transparent hover:bg-secondary"}`}
                                     >
-                                        <span className="flex-1 min-w-0 break-words">{chapter.title}</span>
+                                        <span className="flex-1 min-w-0 break-words">{getDisplayedChapter(chapter)?.title}</span>
                                         {isAdmin && (
                                             <div className="hidden group-hover:flex shrink-0 items-center gap-1">
                                                 <button
@@ -535,7 +685,7 @@ const StudyPage = () => {
             </aside>
 
             {/* 메인 콘텐츠 */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background transform-gpu" onClick={() => setIsSearching(false)}>
+            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background transform-gpu" onClick={() => { setIsSearching(false); setUserTransDropdown(null); }}>
                 {isAdmin && (
                     <div className="mb-6 flex justify-end gap-3">
                         <button
@@ -557,12 +707,12 @@ const StudyPage = () => {
                     {selectedChapter ? (
                         <article className="space-y-12 md:space-y-24">
                             <header>
-                                <h1 className="text-2xl md:text-4xl font-black break-words text-foreground">{selectedChapter.title}</h1>
+                                <h1 className="text-2xl md:text-4xl font-black break-words text-foreground">{getDisplayedChapter(selectedChapter)?.title}</h1>
                             </header>
                             <div className="min-h-[30rem] md:min-h-[40rem] w-full bg-surface border-2 border-border rounded-[2rem] md:rounded-[4rem] p-6 md:p-12 lg:p-20 shadow-sm overflow-hidden">
                                 <div className="text-base md:text-xl leading-relaxed prose prose-slate dark:prose-invert max-w-none break-words [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_table]:block [&_table]:overflow-x-auto [&_img]:max-w-full">
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {selectedChapter.content}
+                                        {getDisplayedChapter(selectedChapter)?.content}
                                     </ReactMarkdown>
                                 </div>
                             </div>
@@ -574,6 +724,97 @@ const StudyPage = () => {
                     )}
                 </div>
             </main>
+
+            {/* ── 관리자 번역 관리 모달 ── */}
+            {adminTransModal && isAdmin && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
+                    <div className="bg-surface p-8 rounded-2xl w-full max-w-sm border border-border">
+                        <h2 className="text-lg font-bold mb-5 text-foreground">번역</h2>
+
+                        {/* 드롭다운 */}
+                        <div className="mb-5">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">번역 언어 선택</label>
+                            <select
+                                value={adminTransTarget}
+                                onChange={e => setAdminTransTarget(e.target.value)}
+                                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                            >
+                                <option value="">-- 선택 --</option>
+                                <option value="original">원문</option>
+                                {TRANS_LANGUAGES.map(t => {
+                                    const resourceId = adminTransModal.resourceId;
+                                    const done = (translatedLangsByResource[resourceId] || []).includes(t.code);
+                                    return (
+                                        <option key={t.code} value={t.code}>
+                                            {t.label}{done ? ' ✓' : ''}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                        </div>
+
+                        {/* 원문 미리보기 */}
+                        {adminTransTarget === 'original' && (
+                            <div className="mb-4 p-3 bg-background border border-border rounded-xl max-h-40 overflow-y-auto">
+                                <p className="text-xs text-muted-foreground mb-1 font-semibold">원문 ({adminTransModal.lang})</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap">
+                                    {(() => {
+                                        const resourceId = adminTransModal.resourceId;
+                                        const firstChap = incomingChapters.find(c => languageIdMap[c.language] === resourceId);
+                                        return firstChap?.rawContent?.slice(0, 300) || '(내용 없음)';
+                                    })()}
+                                    ...
+                                </p>
+                            </div>
+                        )}
+
+                        {adminTransError && <p className="text-red-500 text-xs mb-3">{adminTransError}</p>}
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setAdminTransModal(null); setAdminTransTarget(''); setAdminTransError(''); }}
+                                className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleAdminTranslate}
+                                disabled={!adminTransTarget || adminTransTarget === 'original' || adminTransLoading}
+                                className="flex-1 p-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                            >
+                                {adminTransLoading ? '번역 중...' : '등록'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── 커스텀 확인 다이얼로그 ── */}
+            {confirmDialog && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
+                    <div className="bg-surface p-8 rounded-2xl w-full max-w-sm border border-border">
+                        <p className="text-foreground mb-6 whitespace-pre-line text-center leading-relaxed">{confirmDialog.message}</p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmDialog(null)}
+                                className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const fn = confirmDialog.onConfirm;
+                                    setConfirmDialog(null);
+                                    await fn();
+                                }}
+                                className="flex-1 p-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors cursor-pointer"
+                            >
+                                삭제
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── 언어 추가 모달 ── */}
             {isModalOpen && isAdmin && (
@@ -695,7 +936,9 @@ const StudyPage = () => {
                                     <div className="divide-y divide-border">
                                         {[...deletedChapsDetail]
                                             .sort((a, b) => new Date(b.hiddenAt) - new Date(a.hiddenAt))
-                                            .map(chap => (
+                                            .map(chap => {
+                                                const isLangDeleted = deletedLangsDetail.some(l => l.name === chap.languageName);
+                                                return (
                                                 <div key={chap.originalId} className="py-3 flex items-center justify-between gap-3">
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm font-semibold text-foreground">{chap.languageName} / {chap.title}</p>
@@ -703,15 +946,24 @@ const StudyPage = () => {
                                                         <p className="text-xs text-muted-foreground mt-0.5">
                                                             {chap.hiddenAt ? new Date(chap.hiddenAt).toLocaleDateString('ko-KR') : ''}
                                                         </p>
+                                                        {isLangDeleted && (
+                                                            <p className="text-xs text-red-400 mt-0.5">언어가 삭제된 상태입니다</p>
+                                                        )}
                                                     </div>
                                                     <button
-                                                        onClick={() => handleRestoreChapter(chap.originalId)}
-                                                        className="shrink-0 px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+                                                        onClick={() => !isLangDeleted && handleRestoreChapter(chap.originalId)}
+                                                        disabled={isLangDeleted}
+                                                        className={`shrink-0 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                                                            isLangDeleted
+                                                                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                                                                : 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
+                                                        }`}
                                                     >
                                                         복구
                                                     </button>
                                                 </div>
-                                            ))
+                                                );
+                                            })
                                         }
                                     </div>
                                 )
@@ -762,9 +1014,10 @@ const StudyPage = () => {
                                 />
                             </>
                         )}
+                        {editError && <p className="text-sm text-red-500 mb-3">{editError}</p>}
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setEditTarget(null)}
+                                onClick={() => { setEditTarget(null); setEditError(""); }}
                                 className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
                             >
                                 취소

@@ -147,7 +147,7 @@ const CommentList = forwardRef<any, CommentListProps>(({
       {currentUser.username ? ( <CommentForm onSubmit={handleMainCommentSubmit} /> ) : ( <div className="p-4 mb-6 text-center bg-surface border border-border rounded-xl"> <p className="text-sm text-muted-foreground"> 댓글을 작성하려면 <a href="/login" className="font-semibold text-primary hover:underline">로그인</a>이 필요합니다. </p> </div> )}
 
       <h3 className="text-lg font-bold text-foreground mt-8 mb-6 flex items-center gap-1.5">
-        댓글 <span className="text-primary">{comments.length > 0 ? comments.length : commentCount}</span>
+        댓글 <span className="text-primary">{isLoading ? commentCount : comments.length}</span>
       </h3>
 
       {error && <div className="text-red-500 text-sm mb-4 p-4 bg-red-500/10 rounded-xl">{error}</div>}

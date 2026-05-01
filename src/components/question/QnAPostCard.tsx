@@ -257,9 +257,9 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
           <div className="flex items-center gap-2">
             {localPost.resolved !== undefined && (
               <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                localPost.resolved 
-                  ? 'bg-secondary text-foreground' 
-                  : 'bg-background text-muted-foreground border border-border'
+                localPost.resolved
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
               }`}>
                 {localPost.resolved ? '해결됨' : '미해결'}
               </span>

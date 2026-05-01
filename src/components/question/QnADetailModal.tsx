@@ -352,8 +352,8 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
           <div className="mb-6 mt-1">
             <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${
               localPost.resolved
-                ? 'bg-secondary text-foreground'
-                : 'bg-background text-muted-foreground border border-border'
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
             }`}>
               {localPost.resolved ? '해결됨' : '미해결'}
             </span>

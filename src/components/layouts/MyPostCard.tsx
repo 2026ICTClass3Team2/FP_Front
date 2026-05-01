@@ -24,6 +24,15 @@ const MyPostCard: React.FC<MyPostCardProps> = ({ post, onClick }) => {
           }`}>
             {post.contentType === 'qna' ? '질문' : '피드'}
           </span>
+          {post.contentType === 'qna' && post.resolved !== undefined && post.resolved !== null && (
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+              post.resolved
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
+            }`}>
+              {post.resolved ? '해결됨' : '미해결'}
+            </span>
+          )}
           {post.channelName && post.channelId && (
             <span
               className="flex items-center gap-1 text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-md cursor-pointer hover:bg-primary/20 transition-colors"

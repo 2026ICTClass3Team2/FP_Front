@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import jwtAxios from '../../api/jwtAxios';
 import { CommentResponse } from './types';
 import CommentItem from './CommentItem';
@@ -14,6 +14,10 @@ interface CommentListProps {
   onAcceptAnswer?: (commentId: number) => Promise<void>;
   onReportRequest?: (type: 'post' | 'comment' | 'user', id: number, authorUserId?: number | null) => void;
   onBlockUser?: (blockedUserId: number) => void;
+  // Bug 4: 본인 댓글 외 타인 댓글 존재 여부 알림
+  onHasNonAuthorCommentsChange?: (has: boolean) => void;
+  // Bug 5: 채택된 답변 존재 여부로 resolved 상태 동기화
+  onResolvedChanged?: (isResolved: boolean) => void;
 }
 
 const CommentList = forwardRef<any, CommentListProps>(({
@@ -26,6 +30,8 @@ const CommentList = forwardRef<any, CommentListProps>(({
   onAcceptAnswer,
   onReportRequest,
   onBlockUser,
+  onHasNonAuthorCommentsChange,
+  onResolvedChanged,
 }, ref) => {
   const [comments, setComments] = useState<CommentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,26 +45,45 @@ const CommentList = forwardRef<any, CommentListProps>(({
 
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
+  // 콜백을 ref로 관리 — fetchComments useCallback 의존성에서 제외해 무한 루프 방지
+  const onHasNonAuthorCommentsChangeRef = useRef(onHasNonAuthorCommentsChange);
+  const onResolvedChangedRef = useRef(onResolvedChanged);
+  useEffect(() => { onHasNonAuthorCommentsChangeRef.current = onHasNonAuthorCommentsChange; }, [onHasNonAuthorCommentsChange]);
+  useEffect(() => { onResolvedChangedRef.current = onResolvedChanged; }, [onResolvedChanged]);
+
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await jwtAxios.get(`${resourcePath}/${postId}/comments`);
-      
+
       // Sort so the accepted answer is always pinned to the top
       const sortedComments = response.data.sort((a: CommentResponse, b: CommentResponse) => {
         if (a.isAnswer && !b.isAnswer) return -1;
         if (!a.isAnswer && b.isAnswer) return 1;
         return 0;
       });
-      
+
       setComments(sortedComments);
+
+      // Bug 4: 타인 댓글 존재 여부 → 수정/삭제 가능 여부 동기화
+      if (onHasNonAuthorCommentsChangeRef.current) {
+        const hasOthers = postAuthorUserId != null
+          ? sortedComments.some((c: CommentResponse) => c.status !== 'deleted' && c.authorUserId !== postAuthorUserId)
+          : sortedComments.some((c: CommentResponse) => c.status !== 'deleted');
+        onHasNonAuthorCommentsChangeRef.current(hasOthers);
+      }
+
+      // Bug 5: 채택된 답변 존재 여부로 resolved 상태 동기화
+      if (onResolvedChangedRef.current) {
+        onResolvedChangedRef.current(sortedComments.some((c: CommentResponse) => c.isAnswer));
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || '댓글을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
-  }, [postId, resourcePath]);
+  }, [postId, resourcePath, postAuthorUserId]);
 
   useEffect(() => {
     fetchComments();
@@ -72,19 +97,14 @@ const CommentList = forwardRef<any, CommentListProps>(({
 
   // 댓글 삭제 시 낙관적 업데이트를 위한 핸들러
   const handleOptimisticDelete = (commentId: number) => {
-    const updateRecursively = (list: CommentResponse[]): CommentResponse[] => {
-      return list.map(c => {
-        if (c.id === commentId) {
-          // status를 'deleted'로 변경하여 UI에 즉시 반영
-          return { ...c, status: 'deleted' };
-        }
-        if (c.children && c.children.length > 0) {
-          return { ...c, children: updateRecursively(c.children) };
-        }
-        return c;
-      });
-    };
-    setComments(prev => updateRecursively(prev));
+    onCommentCountChange?.(-1);
+
+    const removeRecursively = (list: CommentResponse[]): CommentResponse[] =>
+      list
+        .filter(c => c.id !== commentId)
+        .map(c => ({ ...c, children: removeRecursively(c.children || []) }));
+
+    setComments(prev => removeRecursively(prev));
   };
 
   // 작성자 차단 처리
@@ -119,11 +139,12 @@ const CommentList = forwardRef<any, CommentListProps>(({
 
   useImperativeHandle(ref, () => ({ handleBlockUser, handleReportComment }));
 
-  // 댓글 렌더링을 위한 계산 로직
-  const totalComments = comments.length;
+  // 댓글 렌더링을 위한 계산 로직 (백엔드가 deleted 상태로 반환하는 경우 필터링)
+  const activeComments = comments.filter(c => c.status !== 'deleted');
+  const totalComments = activeComments.length;
   const commentsToRender = isExpanded
-    ? comments.slice(0, visibleCommentsCount)
-    : comments.slice(0, initialBriefCount);
+    ? activeComments.slice(0, visibleCommentsCount)
+    : activeComments.slice(0, initialBriefCount);
 
   const canExpand = !isExpanded && totalComments > initialBriefCount;
   const canLoadMore = isExpanded && visibleCommentsCount < totalComments;
@@ -147,7 +168,7 @@ const CommentList = forwardRef<any, CommentListProps>(({
       {currentUser.username ? ( <CommentForm onSubmit={handleMainCommentSubmit} /> ) : ( <div className="p-4 mb-6 text-center bg-surface border border-border rounded-xl"> <p className="text-sm text-muted-foreground"> 댓글을 작성하려면 <a href="/login" className="font-semibold text-primary hover:underline">로그인</a>이 필요합니다. </p> </div> )}
 
       <h3 className="text-lg font-bold text-foreground mt-8 mb-6 flex items-center gap-1.5">
-        댓글 <span className="text-primary">{comments.length > 0 ? comments.length : commentCount}</span>
+        댓글 <span className="text-primary">{commentCount}</span>
       </h3>
 
       {error && <div className="text-red-500 text-sm mb-4 p-4 bg-red-500/10 rounded-xl">{error}</div>}

@@ -6,17 +6,13 @@ const useThemeStore = create((set) => ({
   isDarkMode: 
     localStorage.getItem('theme') === 'dark' || 
     (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
-
   toggleTheme: () => set((state) => {
     const newIsDarkMode = !state.isDarkMode;
-    
     // 변경된 테마를 localStorage에 저장
     localStorage.setItem('theme', newIsDarkMode ? 'dark' : 'light');
-    
     // DOM에 반영
     const html = document.documentElement;
     newIsDarkMode ? html.classList.add('dark') : html.classList.remove('dark');
-    
     return { isDarkMode: newIsDarkMode };
   }),
 }));

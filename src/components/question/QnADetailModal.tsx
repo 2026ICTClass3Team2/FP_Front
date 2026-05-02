@@ -27,6 +27,9 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
   const { openChatWith } = useChatStore();
   const [localPost, setLocalPost] = useState<QnAPost>(post);
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
+  // Bug 4: 작성자 외 타인 댓글 존재 여부 (true면 수정/삭제 비활성화)
+  // 댓글 목록이 로드되기 전까지 false로 초기화 (수정/삭제 가능 상태 유지)
+  const [hasNonAuthorComments, setHasNonAuthorComments] = useState<boolean>(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -289,21 +292,29 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
                 <FiMoreVertical size={20} />
               </button>
               {isMenuOpen && (
-                <div className="absolute right-0 top-10 w-32 bg-background border border-border rounded-xl shadow-lg z-10 overflow-hidden">
-                  <button
-                    onClick={handleEdit}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
-                  >
-                    <FiEdit2 size={14} />
-                    수정
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                  >
-                    <FiTrash2 size={14} />
-                    삭제
-                  </button>
+                <div className="absolute right-0 top-10 w-40 bg-background border border-border rounded-xl shadow-lg z-10 overflow-hidden">
+                  {hasNonAuthorComments ? (
+                    <div className="px-4 py-2.5 text-xs text-muted-foreground">
+                      답변이 달린 질문은<br/>수정·삭제할 수 없습니다.
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleEdit}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
+                      >
+                        <FiEdit2 size={14} />
+                        수정
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                      >
+                        <FiTrash2 size={14} />
+                        삭제
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -352,8 +363,8 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
           <div className="mb-6 mt-1">
             <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${
               localPost.resolved
-                ? 'bg-secondary text-foreground'
-                : 'bg-background text-muted-foreground border border-border'
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
             }`}>
               {localPost.resolved ? '해결됨' : '미해결'}
             </span>
@@ -457,6 +468,8 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
               commentCount: Math.max(0, (prev.commentCount ?? 0) + delta),
               commentsCount: Math.max(0, (prev.commentsCount ?? 0) + delta)
             }))}
+            onHasNonAuthorCommentsChange={setHasNonAuthorComments}
+            onResolvedChanged={(isResolved) => setLocalPost(prev => ({ ...prev, resolved: isResolved }))}
           />
         </div>
 

@@ -293,14 +293,14 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
                   <div className="flex gap-1">
                     <button
                       onClick={cancelEdit}
-                      className="px-3 py-2 border border-border text-foreground rounded-lg text-sm hover:bg-muted/10 transition-colors whitespace-nowrap"
+                      className="px-3 py-2 border border-border text-foreground rounded-lg text-sm hover:bg-muted/10 transition-colors whitespace-nowrap cursor-pointer"
                     >
                       취소
                     </button>
                     <button
                       onClick={handleUpdate}
                       disabled={uploadLoading}
-                      className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 whitespace-nowrap"
+                      className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer disabled:cursor-not-allowed"
                     >
                       {uploadLoading ? '수정 중...' : '수정'}
                     </button>
@@ -309,7 +309,7 @@ const PointShopAdminModal = ({ isOpen, onClose }) => {
                   <button
                     onClick={handleUpload}
                     disabled={uploadLoading}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 whitespace-nowrap"
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer disabled:cursor-not-allowed"
                   >
                     {uploadLoading ? '등록 중...' : '등록'}
                   </button>

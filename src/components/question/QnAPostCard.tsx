@@ -44,6 +44,7 @@ export interface QnAPost {
   
   resolved?: boolean;
   points?: number;
+  manualRewardPoints?: number;
 }
 
 interface QnAPostCardProps {
@@ -257,9 +258,9 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
           <div className="flex items-center gap-2">
             {localPost.resolved !== undefined && (
               <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                localPost.resolved 
-                  ? 'bg-secondary text-foreground' 
-                  : 'bg-background text-muted-foreground border border-border'
+                localPost.resolved
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
               }`}>
                 {localPost.resolved ? '해결됨' : '미해결'}
               </span>
@@ -284,19 +285,27 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
 
                 {/* Dropdown menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-1 w-28 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
-                    <button
-                      onClick={handleEditClick}
-                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={handleDeleteClick}
-                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                    >
-                      삭제
-                    </button>
+                  <div className="absolute right-0 mt-1 w-36 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
+                    {commentCount > 0 ? (
+                      <div className="px-4 py-2.5 text-xs text-muted-foreground">
+                        답변이 달린 질문은<br/>수정·삭제할 수 없습니다.
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleEditClick}
+                          className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={handleDeleteClick}
+                          className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                        >
+                          삭제
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

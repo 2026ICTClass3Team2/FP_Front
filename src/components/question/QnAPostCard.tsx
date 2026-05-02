@@ -44,6 +44,7 @@ export interface QnAPost {
   
   resolved?: boolean;
   points?: number;
+  manualRewardPoints?: number;
 }
 
 interface QnAPostCardProps {
@@ -284,19 +285,27 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
 
                 {/* Dropdown menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-1 w-28 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
-                    <button
-                      onClick={handleEditClick}
-                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={handleDeleteClick}
-                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                    >
-                      삭제
-                    </button>
+                  <div className="absolute right-0 mt-1 w-36 bg-surface border border-border shadow-lg rounded-xl overflow-hidden z-10">
+                    {commentCount > 0 ? (
+                      <div className="px-4 py-2.5 text-xs text-muted-foreground">
+                        답변이 달린 질문은<br/>수정·삭제할 수 없습니다.
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleEditClick}
+                          className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={handleDeleteClick}
+                          className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                        >
+                          삭제
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

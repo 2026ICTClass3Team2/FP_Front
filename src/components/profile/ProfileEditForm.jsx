@@ -43,20 +43,20 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto bg-white rounded-2xl shadow-lg font-sans">
+    <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto bg-surface rounded-2xl shadow-lg font-sans">
       {/* 헤더 */}
       <div className="px-8 py-6 space-y-6">
         {/* 프로필 이미지 업로드 */}
         <div>
-          <label className="block text-sm font-semibold mb-2">프로필 이미지(선택)</label>
+          <label className="block text-sm font-semibold mb-2 text-foreground">프로필 이미지(선택)</label>
           <div
-            className="w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition"
+            className="w-full h-32 flex items-center justify-center border-2 border-dashed border-border rounded-xl cursor-pointer bg-muted/30 hover:bg-muted/50 transition"
             onClick={() => fileInputRef.current?.click()}
           >
             {imagePreview ? (
               <img src={imagePreview} alt="미리보기" className="h-full object-contain" />
             ) : (
-              <span className="text-gray-400 text-sm">클릭하여 이미지 업로드 (JPG, PNG 최대 10MB)</span>
+              <span className="text-muted-foreground text-sm">클릭하여 이미지 업로드 (JPG, PNG 최대 10MB)</span>
             )}
             <input
               type="file"
@@ -69,12 +69,12 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
         </div>
         {/* 닉네임 */}
         <div>
-          <label className="block text-sm font-semibold mb-2">닉네임</label>
+          <label className="block text-sm font-semibold mb-2 text-foreground">닉네임</label>
           <input
             type="text"
             value={nickname}
             onChange={e => setNickname(e.target.value)}
-            className="w-full border border-border rounded-xl px-3 py-2 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="닉네임을 입력하세요."
             required
           />
@@ -86,7 +86,7 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="w-full border border-border rounded-xl px-3 py-2 bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="이메일을 입력하세요."
             required
           />
@@ -141,14 +141,14 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-2 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-colors shadow-sm text-sm cursor-pointer"
+          className="px-6 py-2 rounded-xl bg-muted text-foreground font-semibold hover:bg-muted/60 transition-colors shadow-sm text-sm cursor-pointer"
         >
           취소
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 rounded-xl bg-black text-white font-bold hover:bg-gray-900 transition-colors shadow-sm text-sm cursor-pointer disabled:cursor-not-allowed"
+          className="px-6 py-2 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/80 transition-colors shadow-sm text-sm cursor-pointer disabled:cursor-not-allowed"
         >
           {loading ? '저장 중...' : '저장'}
         </button>

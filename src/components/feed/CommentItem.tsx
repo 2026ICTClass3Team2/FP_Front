@@ -82,6 +82,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   // 대댓글(depth=1 이상)은 채택 대상이 될 수 없습니다.
   // isRootComment가 없으면 대댓글 ID가 백엔드에 전송되어
   // 잘못된 알림이 발생하거나 채택이 실패할 수 있습니다.
+  const isSelfAccept = isPostOwner && isAuthor;
   const canAcceptAnswer = isQnaContext && isRootComment && isPostOwner && !postResolved && !isDeleted && !comment.isAnswer;
 
   // 외부 클릭 및 ESC 키 감지를 위한 useEffect
@@ -370,7 +371,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
         }}
         onConfirm={handleAcceptAnswer}
         title="답변 채택"
-        message="이 댓글을 채택하시겠습니까? 채택하면 질문이 해결 상태로 변경되고 포인트가 지급됩니다."
+        message={
+          isSelfAccept
+            ? "본인의 답변을 채택하면 포인트는 얻으실 수 없습니다.\n답변을 채택하시겠습니까?"
+            : "이 댓글을 채택하시겠습니까? 채택하면 질문이 해결 상태로 변경되고 포인트가 지급됩니다."
+        }
         variant="success"
         confirmText="채택"
       />

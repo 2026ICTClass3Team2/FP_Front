@@ -14,6 +14,7 @@ interface CommentListProps {
   onAcceptAnswer?: (commentId: number) => Promise<void>;
   onReportRequest?: (type: 'post' | 'comment' | 'user', id: number, authorUserId?: number | null) => void;
   onBlockUser?: (blockedUserId: number) => void;
+  onStartChat?: (partner: { id: number; nickname: string; profilePicUrl?: string | null }) => void;
   // Bug 4: 본인 댓글 외 타인 댓글 존재 여부 알림
   onHasNonAuthorCommentsChange?: (has: boolean) => void;
   // Bug 5: 채택된 답변 존재 여부로 resolved 상태 동기화
@@ -30,6 +31,7 @@ const CommentList = forwardRef<any, CommentListProps>(({
   onAcceptAnswer,
   onReportRequest,
   onBlockUser,
+  onStartChat,
   onHasNonAuthorCommentsChange,
   onResolvedChanged,
 }, ref) => {
@@ -193,6 +195,7 @@ const CommentList = forwardRef<any, CommentListProps>(({
               onOptimisticDelete={handleOptimisticDelete}
               onCommentCountChange={onCommentCountChange}
               onReportRequest={onReportRequest}
+              onStartChat={onStartChat}
             />
           ))}
 

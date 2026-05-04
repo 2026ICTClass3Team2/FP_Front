@@ -26,6 +26,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   const [channelSuspendedError, setChannelSuspendedError] = useState<string | null>(null);
   const viewCountIncrementedRef = useRef<Set<number>>(new Set());
   const commentSectionRef = useRef<HTMLDivElement>(null);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
   const backdropClickRef = useRef(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ type: 'post' | 'comment' | 'user', id: number } | null>(null);
@@ -109,11 +110,13 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
   // 데이터 로딩 완료 후 댓글 영역으로 자동 스크롤
   useEffect(() => {
-    if (!isLoadingDetails && autoScrollToComment && commentSectionRef.current) {
-      // 하위 컴포넌트 렌더링 시간을 보장하기 위해 짧은 지연(setTimeout) 부여
+    if (!isLoadingDetails && autoScrollToComment && commentSectionRef.current && modalScrollRef.current) {
+      // fixed 컨테이너 내부 overflow-y-auto에서 scrollIntoView가 불안정하므로 직접 scrollTo 사용
       setTimeout(() => {
-        commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100); 
+        if (commentSectionRef.current && modalScrollRef.current) {
+          modalScrollRef.current.scrollTo({ top: commentSectionRef.current.offsetTop, behavior: 'smooth' });
+        }
+      }, 150);
     }
   }, [isLoadingDetails, autoScrollToComment]);
 
@@ -264,7 +267,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
   // 공유 (클립보드 복사)
   const handleShare = async () => {
-    const url = `${window.location.origin}${window.location.pathname}?postId=${localPost.postId}`;
+    const url = `${window.location.origin}/?postId=${localPost.postId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('클립보드에 복사되었습니다.');
@@ -327,8 +330,9 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         backdropClickRef.current = false; // 상태 초기화
       }}
     >
-      <div 
-        className="relative w-full max-w-2xl bg-background rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto overflow-x-auto scrollbar-hide" 
+      <div
+        ref={modalScrollRef}
+        className="relative w-full max-w-2xl bg-background rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto overflow-x-auto scrollbar-hide"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -384,13 +388,17 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
         {/* 분리된 하위 컴포넌트 렌더링 */}
         <AuthorHeader post={localPost} onProfileClick={(uid) => setProfileModalUserId(uid)} />
         <PostContent post={localPost} onClose={handleClose} />
-        <ActionButtons 
-          post={localPost} 
+        <ActionButtons
+          post={localPost}
           onLike={handleLike}
           onDislike={handleDislike}
           onBookmark={handleBookmark}
           onShare={handleShare}
-          onCommentClick={() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onCommentClick={() => {
+            if (commentSectionRef.current && modalScrollRef.current) {
+              modalScrollRef.current.scrollTo({ top: commentSectionRef.current.offsetTop, behavior: 'smooth' });
+            }
+          }}
         />
         
         {/* 댓글 리스트 컴포넌트 (여기로 스크롤 이동) */}

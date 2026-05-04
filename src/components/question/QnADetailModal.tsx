@@ -89,12 +89,19 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
           const response = await jwtAxios.get(`qna/${post.qnaId}`);
           if (!isCancelled) {
             const detailData = response.data || {};
+            const resolvedLiked = detailData.isLiked ?? detailData.liked ?? false;
+            const resolvedDisliked = detailData.isDisliked ?? detailData.disliked ?? false;
             setLocalPost({
               ...post,
               ...detailData,
               authorUserId: detailData.authorUserId ?? detailData.authorId ?? detailData.author_id ?? detailData.userId ?? detailData.user_id ?? post.authorUserId ?? post.authorId ?? post.author_id ?? post.userId ?? post.user_id ?? null,
               techStacks: detailData.techStacks ?? detailData.tags ?? post.techStacks ?? post.tags ?? [],
               tags: detailData.tags ?? detailData.techStacks ?? post.tags ?? post.techStacks ?? [],
+              // post(부모 state)의 isLiked/isDisliked 잔류값이 서버 응답과 충돌하지 않도록 명시적으로 덮어씀
+              isLiked: resolvedLiked,
+              liked: resolvedLiked,
+              isDisliked: resolvedDisliked,
+              disliked: resolvedDisliked,
             });
           }
         } catch (error) {
@@ -155,16 +162,21 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
   const handleLike = async () => {
     const originalState = { ...localPost };
     setLocalPost(prev => {
+      const wasLiked = prev.isLiked === true || prev.liked === true;
+      const wasDisliked = prev.isDisliked === true || prev.disliked === true;
       const newState = { ...prev };
-      if (newState.isLiked === true) {
+      if (wasLiked) {
         newState.likeCount = (newState.likeCount ?? 0) - 1;
         newState.isLiked = false;
+        newState.liked = false;
       } else {
         newState.likeCount = (newState.likeCount ?? 0) + 1;
         newState.isLiked = true;
-        if (newState.isDisliked === true) {
+        newState.liked = true;
+        if (wasDisliked) {
           newState.dislikeCount = (newState.dislikeCount ?? 0) - 1;
           newState.isDisliked = false;
+          newState.disliked = false;
         }
       }
       return newState;
@@ -182,16 +194,21 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
   const handleDislike = async () => {
     const originalState = { ...localPost };
     setLocalPost(prev => {
+      const wasDisliked = prev.isDisliked === true || prev.disliked === true;
+      const wasLiked = prev.isLiked === true || prev.liked === true;
       const newState = { ...prev };
-      if (newState.isDisliked === true) {
+      if (wasDisliked) {
         newState.dislikeCount = (newState.dislikeCount ?? 0) - 1;
         newState.isDisliked = false;
+        newState.disliked = false;
       } else {
         newState.dislikeCount = (newState.dislikeCount ?? 0) + 1;
         newState.isDisliked = true;
-        if (newState.isLiked === true) {
+        newState.disliked = true;
+        if (wasLiked) {
           newState.likeCount = (newState.likeCount ?? 0) - 1;
           newState.isLiked = false;
+          newState.liked = false;
         }
       }
       return newState;
@@ -434,7 +451,10 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
               <span className="text-sm font-semibold">{dislikeCount}</span>
             </button>
 
-            <button className="relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0">
+            <button
+              onClick={() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0"
+            >
               <FiMessageCircle size={18} />
               <span className="text-sm font-semibold">{commentCount}</span>
             </button>

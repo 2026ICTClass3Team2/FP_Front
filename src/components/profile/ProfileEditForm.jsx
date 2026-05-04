@@ -1,9 +1,26 @@
 import React, { useState, useRef } from 'react';
 import TechStackModal from '../auth/TechStackModal';
 
-const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChange }) => {
+const EMAIL_DOMAINS = ['직접 입력', 'naver.com', 'gmail.com', 'kakao.com', 'daum.net', 'hanmail.net', 'nate.com', 'outlook.com', 'icloud.com'];
+
+const splitEmail = (email) => {
+  const idx = email.indexOf('@');
+  if (idx === -1) return { local: email, domain: '' };
+  return { local: email.slice(0, idx), domain: email.slice(idx + 1) };
+};
+
+const ProfileEditForm = ({ initial, isLocal = false, onSubmit, onCancel, onDelete, onPasswordChange }) => {
   const [nickname, setNickname] = useState(initial.nickname);
-  const [email, setEmail] = useState(initial.email);
+
+  // 이메일을 로컬파트 + 도메인으로 분리 관리
+  const initEmail = splitEmail(initial.email || '');
+  const [emailLocal, setEmailLocal] = useState(initEmail.local);
+  const [emailDomain, setEmailDomain] = useState(initEmail.domain);
+  const [emailDomainSelect, setEmailDomainSelect] = useState(
+    EMAIL_DOMAINS.includes(initEmail.domain) ? initEmail.domain : '직접 입력'
+  );
+  const email = emailLocal && emailDomain ? `${emailLocal}@${emailDomain}` : '';
+
   const [profilePicUrl, setProfilePicUrl] = useState(initial.profilePicUrl || '');
   const [techStacks, setTechStacks] = useState(initial.techStacks || []);
   const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
@@ -79,18 +96,51 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
             required
           />
         </div>
-        {/* 이메일 */}
-        <div>
-          <label className="block text-sm font-semibold mb-2">이메일</label>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="이메일을 입력하세요."
-            required
-          />
-        </div>
+        {/* 이메일 — 로컬 계정만 표시 */}
+        {isLocal && (
+          <div>
+            <label className="block text-sm font-semibold mb-2 text-foreground">이메일</label>
+            <div className="flex items-center gap-1.5">
+              {/* 로컬파트 */}
+              <input
+                type="text"
+                value={emailLocal}
+                onChange={e => setEmailLocal(e.target.value.replace(/\s/g, ''))}
+                className="flex-1 min-w-0 border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="이메일 아이디"
+                required
+              />
+              <span className="text-foreground font-semibold shrink-0">@</span>
+              {/* 도메인 직접입력 */}
+              <input
+                type="text"
+                value={emailDomain}
+                onChange={e => {
+                  setEmailDomain(e.target.value.replace(/\s/g, ''));
+                  setEmailDomainSelect('직접 입력');
+                }}
+                className="flex-1 min-w-0 border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="도메인 직접 입력"
+                required
+              />
+              {/* 도메인 드롭다운 */}
+              <select
+                value={emailDomainSelect}
+                onChange={e => {
+                  const val = e.target.value;
+                  setEmailDomainSelect(val);
+                  if (val !== '직접 입력') setEmailDomain(val);
+                  else setEmailDomain('');
+                }}
+                className="shrink-0 border border-border rounded-xl px-2 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm cursor-pointer"
+              >
+                {EMAIL_DOMAINS.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
         {/* 기술 스택 선택 */}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-semibold">기술스택 (최대 5개)</label>
@@ -102,7 +152,10 @@ const ProfileEditForm = ({ initial, onSubmit, onCancel, onDelete, onPasswordChan
             {techStacks.length > 0 ? (
               <>
                 {techStacks.map(tag => (
-                  <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+                  <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">
+                    {tag}
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setTechStacks(prev => prev.filter(t => t !== tag)); }} className="flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-primary/30 transition-colors shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg></button>
+                  </span>
                 ))}
                 <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
               </>

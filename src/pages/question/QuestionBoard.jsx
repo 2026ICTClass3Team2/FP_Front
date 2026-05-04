@@ -131,6 +131,7 @@ const QuestionBoard = () => {
   useEffect(() => {
     const writeMode = searchParams.get('write');
     if (writeMode === 'qna') {
+      setSelectedPost(null); // 상세 모달이 열려 있으면 먼저 닫기
       setEditingPost(null);
       setIsWriteModalOpen(true);
       searchParams.delete('write');

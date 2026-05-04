@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react'; // useCallback은 uploadToS3에서 사용
 import axios from 'axios';
 import jwtAxios from '../../api/jwtAxios';
 import TechStackModal from '../auth/TechStackModal';
 import RichTextEditor from '../editor/RichTextEditor';
+import DraftListModal from '../common/DraftListModal';
+import SaveToast from '../common/SaveToast';
 
 // 질문 작성/수정 폼 컴포넌트
 const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
@@ -15,6 +17,13 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
   const [myPoint, setMyPoint] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 임시저장 — ref로 관리해서 stale closure 방지
+  const currentDraftIdRef = useRef(null);
+  const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+  const [saveToastVisible, setSaveToastVisible] = useState(false);
+  const toastTimerRef = useRef(null);
+  const draftTimerRef = useRef(null);
 
   // 보유 포인트 조회
   useEffect(() => {
@@ -32,6 +41,67 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
       setRewardPoints(postToEdit.manualRewardPoints ?? 0);
     }
   }, [postToEdit]);
+
+  // 최신 상태를 ref로 유지해서 타이머 콜백에서 안전하게 참조
+  const latestValuesRef = useRef({ title, body, selectedTechStacks });
+  useEffect(() => {
+    latestValuesRef.current = { title, body, selectedTechStacks };
+  });
+
+  // 자동 임시저장 — currentDraftIdRef로 항상 최신값 참조
+  const autoSaveDraft = async (t, b, stacks) => {
+    if (postToEdit) return;
+    const isBlank = !t.trim() && b.replace(/<(.|\n)*?>/g, '').trim().length === 0;
+    if (isBlank) return;
+    try {
+      const payload = { title: t, body: b, targetType: 'qna', tags: stacks };
+      if (currentDraftIdRef.current) {
+        await jwtAxios.put(`drafts/${currentDraftIdRef.current}`, payload);
+      } else {
+        const res = await jwtAxios.post('drafts', payload);
+        currentDraftIdRef.current = res.data.draftId;
+      }
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      setSaveToastVisible(true);
+      toastTimerRef.current = setTimeout(() => setSaveToastVisible(false), 2000);
+    } catch {
+      // 자동저장 실패는 무시
+    }
+  };
+
+  // 3초 디바운스 자동저장
+  useEffect(() => {
+    if (postToEdit) return;
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    draftTimerRef.current = setTimeout(() => {
+      const { title: t, body: b, selectedTechStacks: s } = latestValuesRef.current;
+      autoSaveDraft(t, b, s);
+    }, 10000);
+    return () => { if (draftTimerRef.current) clearTimeout(draftTimerRef.current); };
+  }, [title, body, selectedTechStacks]);
+
+  // Ctrl+S 즉시 저장
+  useEffect(() => {
+    if (postToEdit) return;
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+        const { title: t, body: b, selectedTechStacks: s } = latestValuesRef.current;
+        autoSaveDraft(t, b, s);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [postToEdit]);
+
+  // 임시저장 불러오기
+  const handleLoadDraft = (draft) => {
+    setTitle(draft.title || '');
+    setBody(draft.body || '');
+    setSelectedTechStacks(draft.tags || []);
+    currentDraftIdRef.current = draft.draftId;
+  };
 
   // 폼 제출 핸들러
   const handleSubmit = async (e) => {
@@ -58,14 +128,14 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
 
     try {
       if (postToEdit) {
-        // 수정 모드
         await jwtAxios.put(`qna/${postToEdit.qnaId}`, questionData);
         window.dispatchEvent(new Event('point-updated'));
         alert('질문이 성공적으로 수정되었습니다.');
       } else {
-        // 새 작성 모드
-        console.log('백엔드로 전송하는 데이터:', questionData);
         await jwtAxios.post('qna', questionData);
+        if (currentDraftIdRef.current) {
+          jwtAxios.delete(`drafts/${currentDraftIdRef.current}`).catch(() => {});
+        }
         window.dispatchEvent(new Event('point-updated'));
         alert('질문이 성공적으로 등록되었습니다.');
       }
@@ -86,7 +156,34 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
   }, []);
 
   return (
+    <>
+    <DraftListModal
+      isOpen={isDraftModalOpen}
+      onClose={() => setIsDraftModalOpen(false)}
+      targetType="qna"
+      onLoad={handleLoadDraft}
+    />
+    <SaveToast visible={saveToastVisible} />
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {/* 임시저장 툴바 (새 글 작성 모드만) */}
+      {!postToEdit && (
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setIsDraftModalOpen(true)}
+            className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            임시저장 목록
+          </button>
+        </div>
+      )}
       {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
       
       <div className="flex flex-col gap-1.5">
@@ -179,26 +276,47 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
         );
       })()}
 
-      <div className="flex justify-end gap-2 mt-4">
-        <button 
-          type="button" 
-          onClick={onClose} 
-          className="px-4 py-2 bg-muted hover:bg-muted/80 
-          text-foreground rounded-xl text-sm font-medium transition-colors"
+      <div className="flex items-center justify-between mt-4">
+        {/* 좌측: 나가기 */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="cursor-pointer px-4 py-2 border border-border rounded-xl text-sm font-medium text-foreground
+            hover:bg-foreground/10 active:bg-foreground/15
+            transition-colors"
         >
-          취소
+          나가기
         </button>
-        <button 
-          type="submit" 
-          disabled={loading} 
-          className="px-4 py-2 bg-primary text-primary-foreground 
-          rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 
-          transition-colors shadow-md hover:shadow-lg"
-        >
-          {loading ? (postToEdit ? '수정 중...' : '등록 중...') : (postToEdit ? '질문 수정' : '질문 등록')}
-        </button>
+        {/* 우측: 임시저장 + 등록 */}
+        <div className="flex items-center gap-2">
+          {!postToEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+                const { title: t, body: b, selectedTechStacks: s } = latestValuesRef.current;
+                autoSaveDraft(t, b, s);
+              }}
+              className="cursor-pointer px-4 py-2 border border-border rounded-xl text-sm font-medium text-foreground
+                hover:border-primary hover:text-primary hover:bg-primary/5 active:bg-primary/10
+                transition-all duration-150"
+            >
+              임시저장
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="cursor-pointer px-4 py-2 bg-primary text-primary-foreground
+            rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50
+            transition-colors shadow-md hover:shadow-lg"
+          >
+            {loading ? (postToEdit ? '수정 중...' : '등록 중...') : (postToEdit ? '질문 수정' : '질문 등록')}
+          </button>
+        </div>
       </div>
     </form>
+    </>
   );
 };
 

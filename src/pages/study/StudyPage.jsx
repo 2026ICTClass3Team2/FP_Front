@@ -128,25 +128,12 @@ const StudyPage = () => {
     const fetchDBData = async () => {
         setIsLoading(true);
         try {
-            
-            const res = await fetch("https://n8n.deadbug.site/webhook/study-data", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Accept": "application/json" },
-                body: JSON.stringify({ user_id: 1 }),
-            });
+            const res = await jwtAxios.get('study/data');
+            const data = res.data;
 
-            const data = await res.json();
-
-            let result = {};
-            if (Array.isArray(data) && data.length > 0) {
-                result = data[0].json || data[0];
-            } else {
-                result = data.json || data;
-            }
-
-            const resRaw   = result?.languages  || [];
-            const oriRaw   = result?.chapters   || [];
-            const transRaw = result?.translated || [];
+            const resRaw   = data?.languages  || [];
+            const oriRaw   = data?.chapters   || [];
+            const transRaw = data?.translated || [];
 
             const resourceMap = {};
             resRaw.forEach(r => { if (r.resource_id && r.name) resourceMap[r.resource_id] = r.name; });
@@ -192,11 +179,19 @@ const StudyPage = () => {
                 chapCountByResource[ori.resource_id] = (chapCountByResource[ori.resource_id] || 0) + 1;
             });
 
+            // original_id → resource_id 역매핑 (translated 테이블에 resource_id 없으므로 파생)
+            const originalToResource = {};
+            oriRaw.forEach(ori => {
+                if (ori.original_id && ori.resource_id) originalToResource[ori.original_id] = ori.resource_id;
+            });
+
             // 언어별로 번역된 original_id 집합 계산
             const transSetByResourceLang = {};
             transRaw.forEach(t => {
-                if (!t.resource_id || !t.language || !t.original_id) return;
-                const key = `${t.resource_id}::${t.language}`;
+                if (!t.language || !t.original_id) return;
+                const rid = t.resource_id || originalToResource[t.original_id];
+                if (!rid) return;
+                const key = `${rid}::${t.language}`;
                 if (!transSetByResourceLang[key]) transSetByResourceLang[key] = new Set();
                 transSetByResourceLang[key].add(t.original_id);
             });

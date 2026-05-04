@@ -13,7 +13,9 @@
       "Bash(grep -E \"\\\\.\\(jsx?|tsx?\\)$\")",
       "Bash(]*\\\\`\" | sed \"s/\\\\`//g\" | sort -u)",
       "Bash(grep -oE \"jwtAxios\\\\.\\(get|post|put|delete\\)\\\\\\(\\\\`[^`]*\\\\`\" | sed \"s/\\\\`//g\" | sort -u)",
-      "Bash(grep -E \"\\\\.\\(tsx|jsx|ts|js\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|jsx|ts|js\\)$\")",
+      "Bash(xargs cat *)",
+      "Bash(./gradlew compileJava)"
     ]
   }
 }

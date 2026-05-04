@@ -242,7 +242,7 @@ const ChannelDetail = () => {
   }, [loading]);
 
   // 차단 등으로 인한 포스트 목록 전체 새로고침 (현재 탭 기준)
-  const refreshPosts = () => {
+  const refreshPosts = useCallback(() => {
     const tab = activeTabRef.current;
     setPosts([]);
     setHasNextPage(true);
@@ -270,17 +270,27 @@ const ChannelDetail = () => {
       })
       .catch(() => { hasNextPageRef.current = false; setHasNextPage(false); })
       .finally(() => setPostsLoading(false));
-  };
+  }, [channelId]);
 
-  const handleEditPost = (post) => {
+  const handleEditPost = useCallback((post) => {
     setEditingPost(post);
     setIsWriteModalOpen(true);
-  };
+  }, []);
 
-  const handleDeletePost = (postId) => {
+  const handleDeletePost = useCallback((postId) => {
     setPostToDeleteId(postId);
     setIsDeleteModalOpen(true);
-  };
+  }, []);
+
+  const handlePostDetailClose = useCallback((updatedPost) => {
+    if (updatedPost) {
+      setPosts((prev) => prev.map((p) => (p.postId === updatedPost.postId ? updatedPost : p)));
+    } else {
+      refreshPosts();
+    }
+    setSelectedPost(null);
+    setAutoScrollToComment(false);
+  }, [refreshPosts]);
 
   const confirmDeletePost = async () => {
     if (!postToDeleteId) return;
@@ -545,22 +555,9 @@ const ChannelDetail = () => {
         <CommunityPostDetail
           post={selectedPost}
           autoScrollToComment={autoScrollToComment}
-          onEditClick={(post) => {
-            handleEditPost(post);
-          }}
-          onDeleteClick={(postId) => {
-            handleDeletePost(postId);
-          }}
-          onClose={(updatedPost) => {
-            if (updatedPost) {
-              setPosts((prev) => prev.map((p) => (p.postId === updatedPost.postId ? updatedPost : p)));
-            } else {
-              // updatedPost 없이 닫힌 경우 = 차단/신고로 인한 닫힘 → 새로고침
-              refreshPosts();
-            }
-            setSelectedPost(null);
-            setAutoScrollToComment(false);
-          }}
+          onEditClick={handleEditPost}
+          onDeleteClick={handleDeletePost}
+          onClose={handlePostDetailClose}
         />
       )}
 

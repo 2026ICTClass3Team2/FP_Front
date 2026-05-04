@@ -15,6 +15,7 @@ const MainFeed = () => {
     // URL 파라미터로 모달 열기
     useEffect(() => {
         if (searchParams.get('write') === 'feed') {
+            feedListRef.current?.closeDetailModal(); // 상세 모달이 열려 있으면 먼저 닫기
             setEditingPost(null);
             setInitialChannel(location.state?.channel || null);
             setIsWriteModalOpen(true);

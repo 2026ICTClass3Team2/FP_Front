@@ -158,6 +158,7 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
 
   useImperativeHandle(ref, () => ({
     refresh: () => resetAndFetch(activeTab),
+    closeDetailModal: () => { setSelectedPost(null); setAutoScrollToComment(false); },
   }));
 
   // ─── 탭 변경에 따른 데이터 재조회 ──────────────────────────────────────────────────

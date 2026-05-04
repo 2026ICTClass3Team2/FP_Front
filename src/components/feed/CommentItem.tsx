@@ -134,19 +134,22 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
   // 댓글 삭제 처리
   const handleDelete = async () => {
-    // 낙관적 업데이트가 가능한 경우 UI를 먼저 변경
+    // 낙관적 업데이트 (카운트 감소는 handleOptimisticDelete에서 처리)
     if (onOptimisticDelete) {
       onOptimisticDelete(comment.id);
     }
 
     try {
       await jwtAxios.delete(`${resourcePath}/${postId}/comments/${comment.id}`);
-      if (onCommentCountChange) onCommentCountChange(-1); // 댓글 삭제 시 -1
-      // 성공 시 onRefresh를 호출하지 않아 UX 개선.
-      // 만약 삭제 후 다른 데이터도 갱신해야 한다면 onRefresh()를 다시 호출할 수 있습니다.
+      // Bug 5: 채택된 답변 삭제 시 resolved 상태를 갱신하기 위해 refresh
+      if (comment.isAnswer) {
+        onRefresh();
+      }
     } catch (error) {
       alert('댓글 삭제 중 오류가 발생했습니다.');
-      onRefresh(); // 실패 시에는 전체 데이터를 다시 불러와서 상태를 되돌립니다.
+      // 실패 시 카운트 rollback 후 전체 재조회
+      if (onCommentCountChange) onCommentCountChange(1);
+      onRefresh();
     }
   };
 
@@ -187,8 +190,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
-  // Get all replies only for root comments (depth 0)
-  const allReplies = isRootComment ? getAllReplies(comment) : [];
+  // Get all replies only for root comments (depth 0), excluding deleted ones
+  const allReplies = isRootComment ? getAllReplies(comment).filter(r => r.status !== 'deleted') : [];
   const totalReplies = allReplies.length;
 
   // Determine which replies to display based on expansion state
@@ -217,6 +220,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
   // 깊이에 따른 마진 설정 (최대 깊이를 넘어가더라도 시각적으로 구분되도록 여백 부여)
   const depthClass = depth > 0 ? 'ml-4 md:ml-8 lg:ml-12 border-l-2 border-border pl-4 mt-4' : 'mt-6';
+
+  // 삭제된 댓글은 완전히 숨김 (대댓글은 allReplies 필터에서 이미 제외됨)
+  if (isDeleted) return null;
 
   return (
     <>

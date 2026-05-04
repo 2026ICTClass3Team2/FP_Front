@@ -98,6 +98,11 @@ const NavBar = ({ collapsed = false }) => {
     fetchCurrentPoint();
   }, [currentUser]);
 
+  useEffect(() => {
+    window.addEventListener('point-updated', fetchCurrentPoint);
+    return () => window.removeEventListener('point-updated', fetchCurrentPoint);
+  }, []);
+
   const handleLogout = async () => {
     await logout?.();
     window.location.replace('/login');

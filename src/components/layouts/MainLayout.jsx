@@ -4,7 +4,6 @@ import { Outlet } from 'react-router-dom'
 import Footer from './Footer'
 import NavBar from '../sidebar/NavBar'
 import AdminNavBar from '../sidebar/AdminNavBar'
-import NoticeBar from '../sidebar/NoticeBar'
 import GlobalWriteButton from '../common/GlobalWriteButton'
 import { useAuth } from '../sidebar/AuthContext'
 import useThemeStore from '../../../useThemeStore'
@@ -35,8 +34,6 @@ function MainLayout() {
           <Outlet />
         </main>
       </div>
-
-      {/* <NoticeBar /> */}
       
       {/* Global write button with popup options */}
       <GlobalWriteButton />

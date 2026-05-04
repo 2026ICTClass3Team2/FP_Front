@@ -190,8 +190,18 @@ const QuestionBoard = () => {
   };
 
   // Edit handler
-  const handleEditClick = (post) => {
-    setEditingPost(post);
+  const handleEditClick = async (post) => {
+    if (post.manualRewardPoints === undefined) {
+      try {
+        const response = await jwtAxios.get(`qna/${post.qnaId}`);
+        setEditingPost({ ...post, ...response.data });
+      } catch (err) {
+        console.error('Failed to fetch post details for edit:', err);
+        setEditingPost(post);
+      }
+    } else {
+      setEditingPost(post);
+    }
     setIsWriteModalOpen(true);
   };
 
@@ -343,6 +353,7 @@ const QuestionBoard = () => {
                       author: item.author,
                       resolved: item.resolved,
                       points: item.points,
+                      manualRewardPoints: item.manualRewardPoints,
                     }}
                     onEdit={handleEditClick}
                     onDelete={handleDeletePost}
@@ -414,6 +425,8 @@ const QuestionBoard = () => {
         <QnADetailModal
           post={selectedPost}
           autoScrollToComment={autoScrollToComment}
+          onEditClick={handleEditClick}
+          onDeleteClick={handleDeletePost}
           onClose={(updatedPost) => {
             if (updatedPost) {
               setItems(prevItems =>

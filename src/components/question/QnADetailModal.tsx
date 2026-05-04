@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useChatStore } from '../../stores/chatStore';
 import { FiX, FiHeart, FiThumbsDown, FiMessageCircle, FiBookmark, FiShare2, FiEye, FiAlertTriangle, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { QnAPost } from './QnAPostCard';
@@ -38,6 +38,15 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
   const commentSectionRef = useRef<HTMLDivElement>(null);
   const backdropClickRef = useRef(false);
 
+  const handleClose = () => {
+    onClose(localPost);
+  };
+
+  const handleStartChat = useCallback((partner: any) => {
+    openChatWith(partner);
+    handleClose();
+  }, [localPost]);
+
   // ESC 키: 신고 모달이 열려 있으면 무시(ReportModal이 직접 처리), 입력란 focus 중이면 blur, 아니면 닫기
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -47,7 +56,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
         if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.tagName === 'SELECT')) {
           (active as HTMLElement).blur();
         } else {
-          onClose(localPost);
+          handleClose();
         }
       }
     };
@@ -132,7 +141,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
 
   const handleEdit = () => {
     setIsMenuOpen(false);
-    onClose(localPost);
+    handleClose();
     onEditClick?.(localPost);
   };
 
@@ -147,19 +156,17 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
     const originalState = { ...localPost };
     setLocalPost(prev => {
       const newState = { ...prev };
-      if (newState.isLiked || newState.liked) {
+      if (newState.isLiked === true) {
         newState.likeCount = (newState.likeCount ?? 0) - 1;
         newState.isLiked = false;
       } else {
         newState.likeCount = (newState.likeCount ?? 0) + 1;
         newState.isLiked = true;
-        if (newState.isDisliked || newState.disliked) {
+        if (newState.isDisliked === true) {
           newState.dislikeCount = (newState.dislikeCount ?? 0) - 1;
           newState.isDisliked = false;
         }
       }
-      newState.liked = newState.isLiked;
-      newState.disliked = newState.isDisliked;
       return newState;
     });
 
@@ -176,19 +183,17 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
     const originalState = { ...localPost };
     setLocalPost(prev => {
       const newState = { ...prev };
-      if (newState.isDisliked || newState.disliked) {
+      if (newState.isDisliked === true) {
         newState.dislikeCount = (newState.dislikeCount ?? 0) - 1;
         newState.isDisliked = false;
       } else {
         newState.dislikeCount = (newState.dislikeCount ?? 0) + 1;
         newState.isDisliked = true;
-        if (newState.isLiked || newState.liked) {
+        if (newState.isLiked === true) {
           newState.likeCount = (newState.likeCount ?? 0) - 1;
           newState.isLiked = false;
         }
       }
-      newState.liked = newState.isLiked;
-      newState.disliked = newState.isDisliked;
       return newState;
     });
 
@@ -272,7 +277,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
       }}
       onMouseUp={(e) => {
         if (e.target === e.currentTarget && backdropClickRef.current) {
-          onClose(localPost);
+          handleClose();
         }
         backdropClickRef.current = false;
       }}
@@ -328,7 +333,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
             </button>
           )}
           <button
-            onClick={() => onClose(localPost)}
+            onClick={handleClose}
             className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
             aria-label="닫기"
           >
@@ -470,6 +475,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
             }))}
             onHasNonAuthorCommentsChange={setHasNonAuthorComments}
             onResolvedChanged={(isResolved) => setLocalPost(prev => ({ ...prev, resolved: isResolved }))}
+            onStartChat={handleStartChat}
           />
         </div>
 
@@ -490,7 +496,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
           isOpen={profileModalUserId !== null}
           onClose={() => setProfileModalUserId(null)}
           userId={profileModalUserId}
-          onStartChat={(partner: any) => openChatWith(partner)}
+          onStartChat={handleStartChat}
         />
       </div>
     </div>

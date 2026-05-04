@@ -32,10 +32,18 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
   const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   const handleClose = () => {
     onClose(localPost);
   };
+
+  // 프로필 모달에서 1:1 채팅 시작 시 게시글 모달도 함께 닫기
+  const handleStartChat = useCallback((partner: { id: number; nickname: string; profilePicUrl?: string | null }) => {
+    openChatWith(partner);
+    handleClose();
+  }, [localPost]);
 
   // ESC 키: 신고 모달이 열려 있으면 무시(ReportModal이 직접 처리), 입력란 focus 중이면 blur, 아니면 닫기
   useEffect(() => {
@@ -70,14 +78,11 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
 
   // 모달이 열릴 때 게시글 상세 정보를 다시 불러와 조회수를 업데이트합니다.
   useEffect(() => {
-    // postId가 유효하고, 아직 API 호출을 하지 않았을 때만 실행
     if (post?.postId && !viewCountIncrementedRef.current.has(post.postId)) {
       const fetchDetailsAndUpdateViewCount = async () => {
-        setIsLoadingDetails(true); // 로딩 시작
+        setIsLoadingDetails(true);
         try {
-          // 이 API를 호출하면 백엔드에서 조회수가 1 증가합니다.
           const response = await jwtAxios.get(`posts/${post.postId}`);
-          // API 응답의 interaction 상태(isLiked 등)를 신뢰: 로딩 중 스피너로 인해 사용자 상호작용이 불가능하므로 race condition 없음
           setLocalPost(response.data);
         } catch (error: any) {
           console.error("게시글 상세 정보 로딩 실패:", error);
@@ -86,25 +91,21 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           if (status === 410 || message === '삭제된 채널입니다') {
             setChannelSuspendedError('삭제된 채널입니다');
           } else {
-            onClose(post); // Pass the original post on error
+            onCloseRef.current(post);
           }
         } finally {
-          setIsLoadingDetails(false); // 로딩 종료
-          // 해당 postId에 대한 조회수 증가 API 호출 완료를 기록
+          setIsLoadingDetails(false);
           viewCountIncrementedRef.current.add(post.postId);
         }
       };
       fetchDetailsAndUpdateViewCount();
     } else {
-      // 이미 조회수를 올렸거나, post.id가 없는 경우
-      // post 데이터가 이미 있다면 로딩을 바로 끝냅니다.
       setIsLoadingDetails(false);
     }
-    // 클린업 함수: 컴포넌트 언마운트 또는 postId 변경 시 해당 postId 기록 삭제
     return () => {
       if (post?.postId) viewCountIncrementedRef.current.delete(post.postId);
     };
-  }, [post?.postId, onClose]); // post.postId가 변경될 때만 실행, onClose도 의존성에 추가
+  }, [post?.postId]); // onClose는 ref로 관리 — 의존성에서 제외해 부모 리렌더 시 재실행 방지
 
   // 데이터 로딩 완료 후 댓글 영역으로 자동 스크롤
   useEffect(() => {
@@ -163,66 +164,80 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
     }
   };
 
-  // 낙관적 업데이트 - 좋아요
   const handleLike = async () => {
     const originalState = { ...localPost };
+    const isCurrentlyLiked = !!(localPost.isLiked || localPost.liked);
+    const isCurrentlyDisliked = !!(localPost.isDisliked || localPost.disliked);
+
+    // 낙관적 업데이트
     setLocalPost(prev => {
-      const newState = { ...prev };
-      if (newState.isLiked || newState.liked) {
-        // Currently liked, so unlike
-        newState.likeCount--;
-        newState.isLiked = false;
+      const next = { ...prev };
+      if (isCurrentlyLiked) {
+        next.likeCount = Math.max(0, (next.likeCount || 0) - 1);
+        next.isLiked = false; next.liked = false;
       } else {
-        // Currently not liked, so like
-        newState.likeCount++;
-        newState.isLiked = true;
-        if (newState.isDisliked || newState.disliked) {
-          // If it was disliked, undislike it
-          newState.dislikeCount--;
-          newState.isDisliked = false;
+        next.likeCount = (next.likeCount || 0) + 1;
+        next.isLiked = true; next.liked = true;
+        if (isCurrentlyDisliked) {
+          next.dislikeCount = Math.max(0, (next.dislikeCount || 0) - 1);
+          next.isDisliked = false; next.disliked = false;
         }
       }
-      // sync liked property
-      newState.liked = newState.isLiked;
-      newState.disliked = newState.isDisliked;
-      return newState;
+      return next;
     });
 
     try {
-      await jwtAxios.post(`posts/${localPost.postId}/like`);
+      const { data } = await jwtAxios.post(`posts/${localPost.postId}/like`);
+      // 서버 실제 상태로 동기화
+      setLocalPost(prev => ({
+        ...prev,
+        likeCount: data.likeCount,
+        dislikeCount: data.dislikeCount,
+        isLiked: data.isLiked,
+        liked: data.isLiked,
+        isDisliked: data.isDisliked,
+        disliked: data.isDisliked,
+      }));
     } catch (error) {
       setLocalPost(originalState);
       alert('요청에 실패했습니다.');
     }
   };
 
-  // 낙관적 업데이트 - 비추천
   const handleDislike = async () => {
     const originalState = { ...localPost };
+    const isCurrentlyLiked = !!(localPost.isLiked || localPost.liked);
+    const isCurrentlyDisliked = !!(localPost.isDisliked || localPost.disliked);
+
+    // 낙관적 업데이트
     setLocalPost(prev => {
-      const newState = { ...prev };
-      if (newState.isDisliked || newState.disliked) {
-        // Currently disliked, so undislike
-        newState.dislikeCount--;
-        newState.isDisliked = false;
+      const next = { ...prev };
+      if (isCurrentlyDisliked) {
+        next.dislikeCount = Math.max(0, (next.dislikeCount || 0) - 1);
+        next.isDisliked = false; next.disliked = false;
       } else {
-        // Currently not disliked, so dislike
-        newState.dislikeCount++;
-        newState.isDisliked = true;
-        if (newState.isLiked || newState.liked) {
-          // If it was liked, unlike it
-          newState.likeCount--;
-          newState.isLiked = false;
+        next.dislikeCount = (next.dislikeCount || 0) + 1;
+        next.isDisliked = true; next.disliked = true;
+        if (isCurrentlyLiked) {
+          next.likeCount = Math.max(0, (next.likeCount || 0) - 1);
+          next.isLiked = false; next.liked = false;
         }
       }
-      // sync liked property
-      newState.liked = newState.isLiked;
-      newState.disliked = newState.isDisliked;
-      return newState;
+      return next;
     });
 
     try {
-      await jwtAxios.post(`posts/${localPost.postId}/dislike`);
+      const { data } = await jwtAxios.post(`posts/${localPost.postId}/dislike`);
+      // 서버 실제 상태로 동기화
+      setLocalPost(prev => ({
+        ...prev,
+        likeCount: data.likeCount,
+        dislikeCount: data.dislikeCount,
+        isLiked: data.isLiked,
+        liked: data.isLiked,
+        isDisliked: data.isDisliked,
+        disliked: data.isDisliked,
+      }));
     } catch (error) {
       setLocalPost(originalState);
       alert('요청에 실패했습니다.');
@@ -385,6 +400,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
             }
             onReportRequest={openReportModal}
             onBlockUser={handleBlockUserFromComment}
+            onStartChat={handleStartChat}
           />
         </div>
         
@@ -402,7 +418,7 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
           isOpen={profileModalUserId !== null}
           onClose={() => setProfileModalUserId(null)}
           userId={profileModalUserId}
-          onStartChat={(partner: any) => openChatWith(partner)}
+          onStartChat={handleStartChat}
         />
       </div>
     </div>
@@ -499,9 +515,9 @@ const PostContent = ({ post, onClose }: { post: Post; onClose: () => void }) => 
 const ActionButtons = ({ post, onLike, onDislike, onBookmark, onShare, onCommentClick }: { post: Post, onLike: () => void, onDislike: () => void, onBookmark: () => void, onShare: () => void, onCommentClick?: () => void }) => {
   const buttonClass = "relative group flex items-center justify-center gap-1.5 px-3 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0";
   const iconOnlyClass = "relative group flex items-center justify-center w-10 h-10 bg-background border border-border rounded-full hover:bg-secondary text-muted-foreground transition-colors shrink-0";
-  const isLiked = post.isLiked || post.liked;
-  const isDisliked = post.isDisliked || post.disliked;
-  const isBookmarked = post.isBookmarked || post.bookmarked;
+  const isLiked = post.isLiked === true || post.liked === true;
+  const isDisliked = post.isDisliked === true || post.disliked === true;
+  const isBookmarked = post.isBookmarked === true || post.bookmarked === true;
 
   return (
     <div className="flex justify-between items-center mb-8 px-2">

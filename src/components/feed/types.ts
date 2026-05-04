@@ -11,5 +11,9 @@ export interface CommentResponse {
   authorProfilePicUrl: string | null;
   parentId: number | null;
   isReported?: boolean;
+  isLiked?: boolean;
+  liked?: boolean;
+  isDisliked?: boolean;
+  disliked?: boolean;
   children: CommentResponse[];
 }

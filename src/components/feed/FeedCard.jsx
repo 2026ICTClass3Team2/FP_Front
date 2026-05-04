@@ -4,6 +4,8 @@ import jwtAxios from '../../api/jwtAxios';
 import TechStackModal from '../auth/TechStackModal';
 import RichTextEditor from '../editor/RichTextEditor';
 import { FiImage, FiX } from 'react-icons/fi';
+import DraftListModal from '../common/DraftListModal';
+import SaveToast from '../common/SaveToast';
 
 const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const [title, setTitle] = useState('');
@@ -23,6 +25,14 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   const fileInputRef = useRef(null);
   const channelSectionRef = useRef(null);
   const contentSectionRef = useRef(null);
+
+  // 임시저장
+  const currentDraftIdRef = useRef(null);
+  const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+  const [saveToastVisible, setSaveToastVisible] = useState(false);
+  const toastTimerRef = useRef(null);
+  const draftTimerRef = useRef(null);
+  const latestDraftValuesRef = useRef({ title, content, selectedTechStacks, selectedChannel: null });
 
   // 채널 선택 상태
   const [selectedChannel, setSelectedChannel] = useState(null); // { channelId, name, imageUrl }
@@ -81,6 +91,72 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
       channelSearchInputRef.current?.focus();
     }
   }, [showChannelSearch]);
+
+  // latestDraftValuesRef를 매 렌더마다 갱신 (stale closure 방지)
+  useEffect(() => {
+    latestDraftValuesRef.current = { title, content, selectedTechStacks, selectedChannel };
+  });
+
+  // 자동 임시저장
+  const autoSaveDraft = async (t, b, stacks, ch) => {
+    if (postToEdit) return;
+    const isBlank = !t.trim() && b.replace(/<(.|\n)*?>/g, '').trim().length === 0;
+    if (isBlank) return;
+    try {
+      const payload = { title: t, body: b, targetType: 'feed', channelId: ch?.channelId ?? null, tags: stacks };
+      if (currentDraftIdRef.current) {
+        await jwtAxios.put(`drafts/${currentDraftIdRef.current}`, payload);
+      } else {
+        const res = await jwtAxios.post('drafts', payload);
+        currentDraftIdRef.current = res.data.draftId;
+      }
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      setSaveToastVisible(true);
+      toastTimerRef.current = setTimeout(() => setSaveToastVisible(false), 2000);
+    } catch {
+      // 자동저장 실패 무시
+    }
+  };
+
+  // 3초 디바운스 자동저장
+  useEffect(() => {
+    if (postToEdit) return;
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    draftTimerRef.current = setTimeout(() => {
+      const { title: t, content: b, selectedTechStacks: s, selectedChannel: ch } = latestDraftValuesRef.current;
+      autoSaveDraft(t, b, s, ch);
+    }, 10000);
+    return () => { if (draftTimerRef.current) clearTimeout(draftTimerRef.current); };
+  }, [title, content, selectedTechStacks, selectedChannel]);
+
+  // Ctrl+S 즉시 저장
+  useEffect(() => {
+    if (postToEdit) return;
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+        const { title: t, content: b, selectedTechStacks: s, selectedChannel: ch } = latestDraftValuesRef.current;
+        autoSaveDraft(t, b, s, ch);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [postToEdit]);
+
+  // 임시저장 불러오기
+  const handleLoadDraft = (draft) => {
+    setTitle(draft.title || '');
+    setContent(draft.body || '');
+    setSelectedTechStacks(draft.tags || []);
+    currentDraftIdRef.current = draft.draftId;
+    if (draft.channelId) {
+      setSelectedChannel({ channelId: draft.channelId, name: '로딩 중...', imageUrl: null });
+      jwtAxios.get(`channels/${draft.channelId}`).then(res => {
+        setSelectedChannel({ channelId: draft.channelId, name: res.data.channelName || res.data.name || '', imageUrl: res.data.imageUrl });
+      }).catch(() => setSelectedChannel(null));
+    }
+  };
 
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 
@@ -164,12 +240,13 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
 
     try {
       if (postToEdit) {
-        // 수정 모드: PUT 요청
         await jwtAxios.put(`/posts/${postToEdit.postId}`, postData);
         alert('게시글이 성공적으로 수정되었습니다.');
       } else {
-        // 작성 모드: POST 요청
         await jwtAxios.post('/posts', postData);
+        if (currentDraftIdRef.current) {
+          jwtAxios.delete(`drafts/${currentDraftIdRef.current}`).catch(() => {});
+        }
         alert('게시글이 성공적으로 작성되었습니다.');
       }
       onPostCreated(); // 작성/수정 성공 후 부모 컴포넌트에 알림 (피드 새로고침)
@@ -198,7 +275,34 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
   };
 
   return (
+    <>
+    <DraftListModal
+      isOpen={isDraftModalOpen}
+      onClose={() => setIsDraftModalOpen(false)}
+      targetType="feed"
+      onLoad={handleLoadDraft}
+    />
+    <SaveToast visible={saveToastVisible} />
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {/* 임시저장 툴바 — 새 글 작성 모드만 */}
+      {!postToEdit && (
+        <div className="flex items-center justify-between py-1">
+          <button
+            type="button"
+            onClick={() => setIsDraftModalOpen(true)}
+            className="cursor-pointer flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            임시저장 목록
+          </button>
+        </div>
+      )}
       {submitError && <div className="text-red-500 text-sm font-medium">{submitError}</div>}
 
       {/* 채널 선택 (필수) */}
@@ -312,7 +416,10 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           {selectedTechStacks.length > 0 ? (
             <>
               {selectedTechStacks.map(tag => (
-                <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+                <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">
+                  {tag}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedTechStacks(prev => prev.filter(t => t !== tag)); }} className="flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-primary/30 transition-colors shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg></button>
+                </span>
               ))}
               <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
             </>
@@ -414,13 +521,45 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
         )}
       </div>
 
-      <div className="flex justify-end gap-2 mt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-sm font-medium transition-colors cursor-pointer">취소</button>
-        <button type="submit" disabled={loading || isUploading} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-md hover:shadow-lg cursor-pointer">
-          {isUploading ? '이미지 업로드 중...' : loading ? (postToEdit ? '수정 중...' : '작성 중...') : (postToEdit ? '수정' : '작성')}
+      <div className="flex items-center justify-between mt-4">
+        {/* 좌측: 나가기 */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="cursor-pointer px-4 py-2 border border-border rounded-xl text-sm font-medium text-foreground
+            hover:bg-foreground/10 active:bg-foreground/15
+            transition-colors"
+        >
+          나가기
         </button>
+        {/* 우측: 임시저장 + 작성 */}
+        <div className="flex items-center gap-2">
+          {!postToEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+                const { title: t, content: b, selectedTechStacks: s, selectedChannel: ch } = latestDraftValuesRef.current;
+                autoSaveDraft(t, b, s, ch);
+              }}
+              className="cursor-pointer px-4 py-2 border border-border rounded-xl text-sm font-medium text-foreground
+                hover:border-primary hover:text-primary hover:bg-primary/5 active:bg-primary/10
+                transition-all duration-150"
+            >
+              임시저장
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={loading || isUploading}
+            className="cursor-pointer px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-md hover:shadow-lg"
+          >
+            {isUploading ? '이미지 업로드 중...' : loading ? (postToEdit ? '수정 중...' : '작성 중...') : (postToEdit ? '수정' : '작성')}
+          </button>
+        </div>
       </div>
     </form>
+    </>
   );
 };
 

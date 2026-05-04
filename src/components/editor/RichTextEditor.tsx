@@ -89,6 +89,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     visible: boolean; imgEl: HTMLImageElement | null; top: number; left: number;
   }>({ visible: false, imgEl: null, top: 0, left: 0 });
 
+  const MAX_IMAGES = 10;
+  const getImageCount = (quill: any) =>
+    (quill.getContents().ops as any[]).filter(
+      (op) => op.insert && typeof op.insert === 'object' && 'image' in op.insert
+    ).length;
+
   // Image upload: file picker (used by toolbar button + drag & drop)
   const handleImageUpload = useCallback(() => {
     const input = document.createElement('input');
@@ -99,6 +105,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       if (!file) return;
       const quill = quillRef.current?.getEditor();
       if (!quill) return;
+      if (getImageCount(quill) >= MAX_IMAGES) {
+        alert(`이미지는 최대 ${MAX_IMAGES}개까지 첨부할 수 있습니다.`);
+        return;
+      }
       try {
         let url: string;
         if (onImageUpload) {
@@ -194,6 +204,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const insertSticker = (url: string) => {
     const quill = quillRef.current?.getEditor();
     if (!quill) return;
+    if (getImageCount(quill) >= MAX_IMAGES) {
+      alert(`이미지는 최대 ${MAX_IMAGES}개까지 첨부할 수 있습니다.`);
+      return;
+    }
     const range = quill.getSelection(true);
     const pos = range ? range.index : quill.getLength();
     const Delta = Quill.import('delta') as any;
@@ -256,9 +270,19 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const images = Array.from(e.dataTransfer?.files ?? []).filter(f => f.type.startsWith('image/'));
       if (!images.length) return;
       e.preventDefault(); e.stopPropagation();
+      const currentCount = getImageCount(quill);
+      const remaining = MAX_IMAGES - currentCount;
+      if (remaining <= 0) {
+        alert(`이미지는 최대 ${MAX_IMAGES}개까지 첨부할 수 있습니다.`);
+        return;
+      }
+      const filesToInsert = images.slice(0, remaining);
+      if (images.length > remaining) {
+        alert(`이미지는 최대 ${MAX_IMAGES}개까지 첨부할 수 있습니다. ${remaining}개만 삽입됩니다.`);
+      }
       const range = quill.getSelection(true);
       let pos = range ? range.index : quill.getLength();
-      for (const file of images) {
+      for (const file of filesToInsert) {
         try {
           let url: string;
           if (onImageUpload) {

@@ -69,14 +69,20 @@ const StudyPage = () => {
     const [confirmDialog, setConfirmDialog] = useState(null);
 
     // ── 번역 관련 상태
-    const [rawTranslations, setRawTranslations]               = useState([]);          // transRaw 전체
-    const [translatedLangsByResource, setTranslatedLangsByResource] = useState({});   // { resource_id: ['en','ja',...] }
-    const [adminTransModal, setAdminTransModal]               = useState(null);        // { lang, resourceId } | null
-    const [adminTransTarget, setAdminTransTarget]             = useState('');          // 선택된 언어코드 or 'original'
+    const [rawTranslations, setRawTranslations]               = useState([]);
+    const [translatedLangsByResource, setTranslatedLangsByResource] = useState({});
+    const [adminTransModal, setAdminTransModal]               = useState(null);
+    const [adminTransTarget, setAdminTransTarget]             = useState('');
     const [adminTransLoading, setAdminTransLoading]           = useState(false);
     const [adminTransError, setAdminTransError]               = useState('');
-    const [userTransDropdown, setUserTransDropdown]           = useState(null);        // lang string | null
-    const [userTransLang, setUserTransLang]                   = useState({});          // { [lang]: code | 'ko' }
+    const [adminTransMode, setAdminTransMode]                 = useState('select'); // 'select' | 'add'
+    const [adminTransAddLoading, setAdminTransAddLoading]     = useState(false);
+    const [adminTransAddPending, setAdminTransAddPending]     = useState('');
+    const [userTransModal, setUserTransModal]                 = useState(null);   // { lang, resourceId } | null
+    const [userTransMode, setUserTransMode]                   = useState('select'); // 'select' | 'add'
+    const [userTransPending, setUserTransPending]             = useState('');
+    const [userTransAddLoading, setUserTransAddLoading]       = useState(false);
+    const [userTransLang, setUserTransLang]                   = useState({});
 
     const addButtonRef = useRef(null);
     const langRefs = useRef({});
@@ -87,14 +93,14 @@ const StudyPage = () => {
             if (e.key !== 'Escape') return;
             if (confirmDialog) { setConfirmDialog(null); return; }
             if (adminTransModal) { setAdminTransModal(null); setAdminTransTarget(''); setAdminTransError(''); return; }
-            if (userTransDropdown) { setUserTransDropdown(null); return; }
+            if (userTransModal) { setUserTransModal(null); return; }
             if (editTarget) { setEditTarget(null); setEditError(""); return; }
             if (isDeletedListOpen) { setIsDeletedListOpen(false); return; }
             if (isModalOpen) { setIsModalOpen(false); setSelectedFile(null); setNewLangName(""); }
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [confirmDialog, adminTransModal, userTransDropdown, editTarget, isDeletedListOpen, isModalOpen]);
+    }, [confirmDialog, adminTransModal, userTransModal, editTarget, isDeletedListOpen, isModalOpen]);
 
     const checkAdminAccess = (callback) => {
         if (!isAdmin) { alert('권한이 없어 접속을 제한 합니다.'); return; }
@@ -169,17 +175,42 @@ const StudyPage = () => {
             setIncomingLanguages(resRaw.map(r => r.name).filter(Boolean));
             setIncomingChapters(chapters);
 
-            setRawTranslations(transRaw);
-
-            // resource_id별 번역 완료 언어 목록 (ko 제외)
-            const byResource = {};
-            transRaw.forEach(t => {
-                if (!t.resource_id || !t.language) return;
-                if (!byResource[t.resource_id]) byResource[t.resource_id] = new Set();
-                byResource[t.resource_id].add(t.language);
+            // 중복 제거 (original_id + language 기준, 첫 번째만 유지)
+            const seenTrans = new Set();
+            const dedupedTrans = transRaw.filter(t => {
+                const key = `${t.original_id}::${t.language}`;
+                if (seenTrans.has(key)) return false;
+                seenTrans.add(key);
+                return true;
             });
+            setRawTranslations(dedupedTrans);
+
+            // 리소스별 전체 챕터 수 계산
+            const chapCountByResource = {};
+            oriRaw.forEach(ori => {
+                if (!ori.resource_id) return;
+                chapCountByResource[ori.resource_id] = (chapCountByResource[ori.resource_id] || 0) + 1;
+            });
+
+            // 언어별로 번역된 original_id 집합 계산
+            const transSetByResourceLang = {};
+            transRaw.forEach(t => {
+                if (!t.resource_id || !t.language || !t.original_id) return;
+                const key = `${t.resource_id}::${t.language}`;
+                if (!transSetByResourceLang[key]) transSetByResourceLang[key] = new Set();
+                transSetByResourceLang[key].add(t.original_id);
+            });
+
+            // 모든 챕터가 번역된 언어만 포함
             const byResourceArr = {};
-            Object.entries(byResource).forEach(([rid, set]) => { byResourceArr[rid] = [...set]; });
+            Object.entries(chapCountByResource).forEach(([rid, total]) => {
+                const completedLangs = [];
+                Object.entries(transSetByResourceLang).forEach(([key, ids]) => {
+                    const [keyRid, lang] = key.split('::');
+                    if (keyRid === rid && ids.size >= total) completedLangs.push(lang);
+                });
+                if (completedLangs.length > 0) byResourceArr[rid] = completedLangs;
+            });
             setTranslatedLangsByResource(byResourceArr);
 
         } catch (err) {
@@ -561,22 +592,24 @@ const StudyPage = () => {
                                     >
                                         <span>{lang}</span>
                                         {isAdmin ? (
-                                            <div className="hidden group-hover:flex items-center gap-1">
+                                            <div className="hidden group-hover:flex items-center gap-1 bg-surface rounded-lg px-0.5">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setAdminTransModal({ lang, resourceId: languageIdMap[lang] });
                                                         setAdminTransTarget('');
                                                         setAdminTransError('');
+                                                        setAdminTransMode('select');
+                                                        setAdminTransAddPending(userTransLang[lang] || 'original');
                                                     }}
-                                                    className="text-muted-foreground hover:text-blue-500 transition-colors p-1 rounded cursor-pointer"
+                                                    className="text-foreground/70 hover:text-blue-400 hover:bg-blue-400/10 transition-colors p-1 rounded cursor-pointer"
                                                     title="번역 관리"
                                                 >
                                                     <TranslateIcon />
                                                 </button>
                                                 <button
                                                     onClick={(e) => handleOpenEdit(e, 'language', lang)}
-                                                    className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded cursor-pointer"
+                                                    className="text-foreground/70 hover:text-foreground hover:bg-foreground/10 transition-colors p-1 rounded cursor-pointer"
                                                     title="편집"
                                                 >
                                                     <SquarePenIcon />
@@ -596,43 +629,18 @@ const StudyPage = () => {
                                                 if (availLangs.length === 0) return null;
                                                 const activeLang = userTransLang[lang] || 'original';
                                                 return (
-                                                    <div className="relative flex items-center">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setUserTransDropdown(prev => prev === lang ? null : lang);
-                                                            }}
-                                                            className={`p-1 rounded transition-colors cursor-pointer ${activeLang !== 'original' ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'}`}
-                                                            title="번역 선택"
-                                                        >
-                                                            <TranslateIcon />
-                                                        </button>
-                                                        {userTransDropdown === lang && (
-                                                            <div
-                                                                className="absolute right-0 top-full mt-1 bg-surface border border-border rounded-xl shadow-xl z-50 overflow-hidden min-w-[150px]"
-                                                                onClick={e => e.stopPropagation()}
-                                                            >
-                                                                <button
-                                                                    onClick={() => { setUserTransLang(prev => ({ ...prev, [lang]: 'original' })); setUserTransDropdown(null); }}
-                                                                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${activeLang === 'original' ? 'text-primary font-semibold bg-primary/5' : 'text-foreground hover:bg-secondary'}`}
-                                                                >
-                                                                    원문
-                                                                </button>
-                                                                {availLangs.map(code => {
-                                                                    const found = TRANS_LANGUAGES.find(t => t.code === code);
-                                                                    return (
-                                                                        <button
-                                                                            key={code}
-                                                                            onClick={() => { setUserTransLang(prev => ({ ...prev, [lang]: code })); setUserTransDropdown(null); }}
-                                                                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${activeLang === code ? 'text-primary font-semibold bg-primary/5' : 'text-foreground hover:bg-secondary'}`}
-                                                                        >
-                                                                            {found ? found.label : code}
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setUserTransModal({ lang, resourceId });
+                                                            setUserTransMode('select');
+                                                            setUserTransPending(activeLang);
+                                                        }}
+                                                        className={`p-1 rounded transition-colors cursor-pointer ${activeLang !== 'original' ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'}`}
+                                                        title="번역 선택"
+                                                    >
+                                                        <TranslateIcon />
+                                                    </button>
                                                 );
                                             })()
                                         )}
@@ -662,7 +670,7 @@ const StudyPage = () => {
                                             <div className="hidden group-hover:flex shrink-0 items-center gap-1">
                                                 <button
                                                     onClick={(e) => handleOpenEdit(e, 'chapter', chapter)}
-                                                    className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded cursor-pointer"
+                                                    className="text-foreground/60 hover:text-foreground transition-colors p-1 rounded cursor-pointer"
                                                     title="편집"
                                                 >
                                                     <SquarePenIcon />
@@ -685,7 +693,7 @@ const StudyPage = () => {
             </aside>
 
             {/* 메인 콘텐츠 */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background transform-gpu" onClick={() => { setIsSearching(false); setUserTransDropdown(null); }}>
+            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background transform-gpu" onClick={() => { setIsSearching(false); }}>
                 {isAdmin && (
                     <div className="mb-6 flex justify-end gap-3">
                         <button
@@ -731,63 +739,218 @@ const StudyPage = () => {
                     <div className="bg-surface p-8 rounded-2xl w-full max-w-sm border border-border">
                         <h2 className="text-lg font-bold mb-5 text-foreground">번역</h2>
 
-                        {/* 드롭다운 */}
-                        <div className="mb-5">
-                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">번역 언어 선택</label>
-                            <select
-                                value={adminTransTarget}
-                                onChange={e => setAdminTransTarget(e.target.value)}
-                                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                        {/* 탭 버튼 */}
+                        <div className="flex gap-2 mb-5">
+                            <button
+                                onClick={() => setAdminTransMode('select')}
+                                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${adminTransMode === 'select' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary/80'}`}
                             >
-                                <option value="">-- 선택 --</option>
-                                <option value="original">원문</option>
-                                {TRANS_LANGUAGES.map(t => {
-                                    const resourceId = adminTransModal.resourceId;
-                                    const done = (translatedLangsByResource[resourceId] || []).includes(t.code);
-                                    return (
-                                        <option key={t.code} value={t.code}>
-                                            {t.label}{done ? ' ✓' : ''}
-                                        </option>
-                                    );
-                                })}
-                            </select>
+                                번역 언어 선택
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    setAdminTransMode('add');
+                                    setAdminTransAddLoading(true);
+                                    await fetchDBData();
+                                    setAdminTransAddLoading(false);
+                                    setAdminTransAddPending(userTransLang[adminTransModal.lang] || 'original');
+                                }}
+                                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${adminTransMode === 'add' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary/80'}`}
+                            >
+                                추가
+                            </button>
                         </div>
 
-                        {/* 원문 미리보기 */}
-                        {adminTransTarget === 'original' && (
-                            <div className="mb-4 p-3 bg-background border border-border rounded-xl max-h-40 overflow-y-auto">
-                                <p className="text-xs text-muted-foreground mb-1 font-semibold">원문 ({adminTransModal.lang})</p>
-                                <p className="text-sm text-foreground whitespace-pre-wrap">
-                                    {(() => {
-                                        const resourceId = adminTransModal.resourceId;
-                                        const firstChap = incomingChapters.find(c => languageIdMap[c.language] === resourceId);
-                                        return firstChap?.rawContent?.slice(0, 300) || '(내용 없음)';
-                                    })()}
-                                    ...
-                                </p>
-                            </div>
+                        {adminTransMode === 'select' ? (
+                            <>
+                                {/* 번역 요청 드롭다운 */}
+                                <div className="mb-5">
+                                    <select
+                                        value={adminTransTarget}
+                                        onChange={e => setAdminTransTarget(e.target.value)}
+                                        className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                                    >
+                                        <option value="">-- 선택 --</option>
+                                        <option value="original">원문</option>
+                                        {TRANS_LANGUAGES.map(t => {
+                                            const resourceId = adminTransModal.resourceId;
+                                            const done = (translatedLangsByResource[resourceId] || []).includes(t.code);
+                                            return (
+                                                <option key={t.code} value={t.code}>
+                                                    {t.label}{done ? ' ✓' : ''}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+
+                                {/* 원문 미리보기 */}
+                                {adminTransTarget === 'original' && (
+                                    <div className="mb-4 p-3 bg-background border border-border rounded-xl max-h-40 overflow-y-auto">
+                                        <p className="text-xs text-muted-foreground mb-1 font-semibold">원문 ({adminTransModal.lang})</p>
+                                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                                            {(() => {
+                                                const resourceId = adminTransModal.resourceId;
+                                                const firstChap = incomingChapters.find(c => languageIdMap[c.language] === resourceId);
+                                                return firstChap?.rawContent?.slice(0, 300) || '(내용 없음)';
+                                            })()}
+                                            ...
+                                        </p>
+                                    </div>
+                                )}
+
+                                {adminTransError && <p className="text-red-500 text-xs mb-3">{adminTransError}</p>}
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setAdminTransModal(null); setAdminTransTarget(''); setAdminTransError(''); }}
+                                        className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        onClick={handleAdminTranslate}
+                                        disabled={!adminTransTarget || adminTransTarget === 'original' || adminTransLoading}
+                                        className="flex-1 p-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                        {adminTransLoading ? '번역 중...' : '등록'}
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                {/* 추가 탭 - DB 완역본 선택 */}
+                                <div className="mb-5">
+                                    {adminTransAddLoading ? (
+                                        <div className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-muted-foreground text-sm text-center">
+                                            불러오는 중...
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={adminTransAddPending}
+                                            onChange={e => setAdminTransAddPending(e.target.value)}
+                                            className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                                        >
+                                            <option value="original">원문</option>
+                                            {(translatedLangsByResource[adminTransModal.resourceId] || []).map(code => {
+                                                const found = TRANS_LANGUAGES.find(t => t.code === code);
+                                                return (
+                                                    <option key={code} value={code}>
+                                                        {found ? found.label : code}
+                                                    </option>
+                                                );
+                                            })}
+                                        </select>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setAdminTransModal(null); setAdminTransTarget(''); setAdminTransError(''); }}
+                                        className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setUserTransLang(prev => ({ ...prev, [adminTransModal.lang]: adminTransAddPending }));
+                                            setAdminTransModal(null);
+                                            setAdminTransTarget('');
+                                            setAdminTransError('');
+                                        }}
+                                        disabled={adminTransAddLoading}
+                                        className="flex-1 p-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        적용
+                                    </button>
+                                </div>
+                            </>
                         )}
-
-                        {adminTransError && <p className="text-red-500 text-xs mb-3">{adminTransError}</p>}
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => { setAdminTransModal(null); setAdminTransTarget(''); setAdminTransError(''); }}
-                                className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
-                            >
-                                취소
-                            </button>
-                            <button
-                                onClick={handleAdminTranslate}
-                                disabled={!adminTransTarget || adminTransTarget === 'original' || adminTransLoading}
-                                className="flex-1 p-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                            >
-                                {adminTransLoading ? '번역 중...' : '등록'}
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
+
+            {/* ── 사용자 번역 선택 모달 ── */}
+            {userTransModal && !isAdmin && (() => {
+                const { lang, resourceId } = userTransModal;
+                const availLangs = translatedLangsByResource[resourceId] || [];
+                return (
+                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]" onClick={() => setUserTransModal(null)}>
+                        <div className="bg-surface p-8 rounded-2xl w-full max-w-sm border border-border" onClick={e => e.stopPropagation()}>
+                            <h2 className="text-lg font-bold mb-5 text-foreground">번역 선택</h2>
+
+                            {/* 탭 버튼 */}
+                            <div className="flex gap-2 mb-5">
+                                <button
+                                    onClick={() => {
+                                        setUserTransMode('select');
+                                        setUserTransPending(userTransLang[lang] || 'original');
+                                    }}
+                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${userTransMode === 'select' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary/80'}`}
+                                >
+                                    번역 언어 선택
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        setUserTransMode('add');
+                                        setUserTransAddLoading(true);
+                                        await fetchDBData();
+                                        setUserTransAddLoading(false);
+                                        setUserTransPending(userTransLang[lang] || 'original');
+                                    }}
+                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${userTransMode === 'add' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary/80'}`}
+                                >
+                                    추가
+                                </button>
+                            </div>
+
+                            {/* 드롭다운 영역 */}
+                            <div className="mb-5">
+                                {userTransAddLoading ? (
+                                    <div className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-muted-foreground text-sm text-center">
+                                        불러오는 중...
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={userTransPending}
+                                        onChange={e => setUserTransPending(e.target.value)}
+                                        className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                                    >
+                                        <option value="original">원문</option>
+                                        {availLangs.map(code => {
+                                            const found = TRANS_LANGUAGES.find(t => t.code === code);
+                                            return (
+                                                <option key={code} value={code}>
+                                                    {found ? found.label : code}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setUserTransModal(null)}
+                                    className="flex-1 p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors cursor-pointer"
+                                >
+                                    취소
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setUserTransLang(prev => ({ ...prev, [lang]: userTransPending }));
+                                        setUserTransModal(null);
+                                    }}
+                                    disabled={userTransAddLoading}
+                                    className="flex-1 p-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    적용
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* ── 커스텀 확인 다이얼로그 ── */}
             {confirmDialog && (

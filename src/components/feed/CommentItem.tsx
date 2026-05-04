@@ -21,6 +21,7 @@ interface CommentItemProps {
   onOptimisticDelete?: (commentId: number) => void;
   onCommentCountChange?: (delta: number) => void;
   onReportRequest?: (type: 'post' | 'comment' | 'user', id: number, authorUserId?: number | null) => void;
+  onStartChat?: (partner: { id: number; nickname: string; profilePicUrl?: string | null }) => void;
 }
 
 // Helper to get all descendants of a comment in a flat list (depth-first)
@@ -46,6 +47,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onOptimisticDelete,
   onCommentCountChange,
   onReportRequest,
+  onStartChat,
 }) => {
   const { openChatWith } = useChatStore();
   const [isReplying, setIsReplying] = useState(false);
@@ -106,6 +108,23 @@ const CommentItem: React.FC<CommentItemProps> = ({
     };
   }, []);
 
+  const [isLiked, setIsLiked] = useState(() => comment.isLiked ?? comment.liked ?? false);
+  const [isDisliked, setIsDisliked] = useState(() => comment.isDisliked ?? comment.disliked ?? false);
+  const [likeCount, setLikeCount] = useState(comment.likeCount);
+  const [dislikeCount, setDislikeCount] = useState(comment.dislikeCount);
+
+  // 진행 중인 좋아요/비추천 요청이 있을 때 서버 재조회가 낙관적 상태를 덮어쓰지 않도록 보호
+  const pendingReactionRef = useRef(false);
+
+  // fetchComments(onRefresh) 후 서버 상태로 동기화 — 요청 중이 아닐 때만 반영
+  useEffect(() => {
+    if (pendingReactionRef.current) return;
+    setLikeCount(comment.likeCount);
+    setDislikeCount(comment.dislikeCount);
+    setIsLiked(comment.isLiked ?? comment.liked ?? false);
+    setIsDisliked(comment.isDisliked ?? comment.disliked ?? false);
+  }, [comment.id, comment.likeCount, comment.dislikeCount, comment.isLiked, comment.liked, comment.isDisliked, comment.disliked]);
+
   // 대댓글 작성 처리
   const handleReplySubmit = async (content: string) => {
     if (!isRootComment) {
@@ -153,25 +172,63 @@ const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
-  // 좋아요 토글
+  // 좋아요 토글 (낙관적 업데이트)
   const handleLike = async () => {
     if (isDeleted) return;
+    const prevLiked = isLiked;
+    const prevDisliked = isDisliked;
+    const prevLikeCount = likeCount;
+    const prevDislikeCount = dislikeCount;
+
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+    setLikeCount(c => newLiked ? c + 1 : c - 1);
+    if (isDisliked && newLiked) {
+      setIsDisliked(false);
+      setDislikeCount(c => c - 1);
+    }
+
+    pendingReactionRef.current = true;
     try {
       await jwtAxios.post(`${resourcePath}/${postId}/comments/${comment.id}/like`);
-      onRefresh();
     } catch (error) {
+      setIsLiked(prevLiked);
+      setIsDisliked(prevDisliked);
+      setLikeCount(prevLikeCount);
+      setDislikeCount(prevDislikeCount);
       alert('오류가 발생했습니다.');
+    } finally {
+      pendingReactionRef.current = false;
     }
   };
 
-  // 비추천 토글
+  // 비추천 토글 (낙관적 업데이트)
   const handleDislike = async () => {
     if (isDeleted) return;
+    const prevLiked = isLiked;
+    const prevDisliked = isDisliked;
+    const prevLikeCount = likeCount;
+    const prevDislikeCount = dislikeCount;
+
+    const newDisliked = !isDisliked;
+    setIsDisliked(newDisliked);
+    setDislikeCount(c => newDisliked ? c + 1 : c - 1);
+    if (isLiked && newDisliked) {
+      setIsLiked(false);
+      setLikeCount(c => c - 1);
+    }
+
+    pendingReactionRef.current = true;
     try {
       await jwtAxios.post(`${resourcePath}/${postId}/comments/${comment.id}/dislike`);
-      onRefresh();
     } catch (error) {
+      setIsLiked(prevLiked);
+      setIsDisliked(prevDisliked);
+      setLikeCount(prevLikeCount);
+      setDislikeCount(prevDislikeCount);
       alert('오류가 발생했습니다.');
+    } finally {
+      pendingReactionRef.current = false;
     }
   };
 
@@ -310,15 +367,15 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   )
                 )}
 
-                <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-                  <button onClick={handleLike} className="relative group flex items-center gap-1 p-1.5 hover:bg-secondary rounded-full hover:text-blue-500 transition-colors">
-                    <FiThumbsUp size={16} />
-                    <span className="text-xs font-medium">{comment.likeCount}</span>
+                <div className="flex items-center gap-4 mt-2">
+                  <button onClick={handleLike} className={`relative group flex items-center gap-1 p-1.5 rounded-full transition-colors ${isLiked ? 'text-rose-500 bg-rose-500/10' : 'text-muted-foreground hover:bg-secondary hover:text-rose-500'}`}>
+                    <FiThumbsUp size={16} className={`${isLiked ? 'fill-current text-rose-500' : ''}`} />
+                    <span className={`text-xs font-medium ${isLiked ? 'text-rose-500' : ''}`}>{likeCount}</span>
                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">좋아요</span>
                   </button>
-                  <button onClick={handleDislike} className="relative group flex items-center gap-1 p-1.5 hover:bg-secondary rounded-full hover:text-red-500 transition-colors">
-                    <FiThumbsDown size={16} />
-                    <span className="text-xs font-medium">{comment.dislikeCount}</span>
+                  <button onClick={handleDislike} className={`relative group flex items-center gap-1 p-1.5 rounded-full transition-colors ${isDisliked ? 'text-purple-500 bg-purple-500/10' : 'text-muted-foreground hover:bg-secondary hover:text-purple-500'}`}>
+                    <FiThumbsDown size={16} className={`${isDisliked ? 'fill-current text-purple-500' : ''}`} />
+                    <span className={`text-xs font-medium ${isDisliked ? 'text-purple-500' : ''}`}>{dislikeCount}</span>
                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-foreground text-background text-[11px] font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-sm">비추천</span>
                   </button>
                   {isRootComment && (
@@ -390,7 +447,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         isOpen={profileModalUserId !== null}
         onClose={() => setProfileModalUserId(null)}
         userId={profileModalUserId}
-        onStartChat={(partner: any) => openChatWith(partner)}
+        onStartChat={onStartChat ?? ((partner: any) => openChatWith(partner))}
       />
 
       {/* Render replies only if it's a root comment */}
@@ -411,6 +468,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               onOptimisticDelete={onOptimisticDelete}
               onCommentCountChange={onCommentCountChange}
               onReportRequest={onReportRequest}
+              onStartChat={onStartChat}
             />
           ))}
           {/* Reply action buttons */}

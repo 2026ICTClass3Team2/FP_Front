@@ -19,6 +19,13 @@ const TranslateIcon = () => (
     </svg>
 );
 
+const TranslateIconLg = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>
+        <path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
+    </svg>
+);
+
 const TRANS_LANGUAGES = [
     { code: 'ko', label: '한국어 (Korean)' },
     { code: 'en', label: '영어 (English)' },
@@ -577,7 +584,7 @@ const StudyPage = () => {
                         )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6 space-y-10">
+                    <div className="flex-1 overflow-y-auto scrollbar-hide p-6 space-y-10">
                         {/* 언어 선택 섹션 */}
                         <section>
                             <h3 className="text-lg font-black mb-6 px-4 text-foreground">언어 선택</h3>
@@ -645,10 +652,16 @@ const StudyPage = () => {
                                                             setUserTransMode('select');
                                                             setUserTransPending(activeLang);
                                                         }}
-                                                        className={`p-1 rounded transition-colors cursor-pointer ${activeLang !== 'original' ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'}`}
+                                                        className={`p-1 rounded transition-colors cursor-pointer ${
+                                                            selectedLanguage === lang
+                                                                ? 'text-primary-foreground/70 hover:text-primary-foreground'
+                                                                : activeLang !== 'original'
+                                                                    ? 'text-blue-500 hover:text-blue-600 dark:hover:text-blue-400'
+                                                                    : 'text-foreground/50 hover:text-blue-500 dark:hover:text-blue-400'
+                                                        }`}
                                                         title="번역 선택"
                                                     >
-                                                        <TranslateIcon />
+                                                        <TranslateIconLg />
                                                     </button>
                                                 );
                                             })()
@@ -702,7 +715,7 @@ const StudyPage = () => {
             </aside>
 
             {/* 메인 콘텐츠 */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-10 lg:p-16 bg-background transform-gpu" onClick={() => { setIsSearching(false); }}>
+            <main className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-10 lg:p-16 bg-background transform-gpu" onClick={() => { setIsSearching(false); }}>
                 {isAdmin && (
                     <div className="mb-6 flex justify-end gap-3">
                         <button
@@ -889,31 +902,6 @@ const StudyPage = () => {
                     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]" onClick={() => setUserTransModal(null)}>
                         <div className="bg-surface p-8 rounded-2xl w-full max-w-sm border border-border" onClick={e => e.stopPropagation()}>
                             <h2 className="text-lg font-bold mb-5 text-foreground">번역 선택</h2>
-
-                            {/* 탭 버튼 */}
-                            <div className="flex gap-2 mb-5">
-                                <button
-                                    onClick={() => {
-                                        setUserTransMode('select');
-                                        setUserTransPending(userTransLang[lang] || 'original');
-                                    }}
-                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${userTransMode === 'select' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary/80'}`}
-                                >
-                                    번역 언어 선택
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        setUserTransMode('add');
-                                        setUserTransAddLoading(true);
-                                        await fetchDBData();
-                                        setUserTransAddLoading(false);
-                                        setUserTransPending(userTransLang[lang] || 'original');
-                                    }}
-                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${userTransMode === 'add' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary/80'}`}
-                                >
-                                    추가
-                                </button>
-                            </div>
 
                             {/* 드롭다운 영역 */}
                             <div className="mb-5">

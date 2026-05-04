@@ -480,14 +480,24 @@ const StudyPage = () => {
     const getDisplayedChapter = useCallback((chapter) => {
         if (!chapter) return chapter;
         const activeLangCode = userTransLang[chapter.language];
-        if (!activeLangCode || activeLangCode === 'original') {
+
+        // 명시적으로 원문 선택 시 → MD 파일 원래 언어
+        if (activeLangCode === 'original') {
             return { ...chapter, title: chapter.rawTitle || chapter.title, content: chapter.rawContent || chapter.content };
         }
-        const trans = rawTranslations.find(
-            t => t.original_id === chapter.id && t.language === activeLangCode
-        );
-        if (!trans) return chapter;
-        return { ...chapter, title: trans.title || chapter.title, content: trans.content || chapter.content };
+
+        // 특정 언어 선택 시 → rawTranslations에서 찾아서 반환
+        if (activeLangCode) {
+            const trans = rawTranslations.find(
+                t => t.original_id === chapter.id && t.language === activeLangCode
+            );
+            if (!trans) return chapter;
+            return { ...chapter, title: trans.title || chapter.title, content: trans.content || chapter.content };
+        }
+
+        // 아무것도 선택 안 한 기본 상태 → ko 번역본이 있으면 한국어, 없으면 원문
+        // chapter.title/content는 fetchDBData에서 이미 ko 번역이 있으면 한국어로 세팅됨
+        return chapter;
     }, [userTransLang, rawTranslations]);
 
     const handleAdminTranslate = async () => {
@@ -592,24 +602,26 @@ const StudyPage = () => {
                                     >
                                         <span>{lang}</span>
                                         {isAdmin ? (
-                                            <div className="hidden group-hover:flex items-center gap-1 bg-surface rounded-lg px-0.5">
+                                            <div className="hidden group-hover:flex items-center gap-1">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setAdminTransModal({ lang, resourceId: languageIdMap[lang] });
+                                                        const rid = languageIdMap[lang];
+                                                        setAdminTransModal({ lang, resourceId: rid });
                                                         setAdminTransTarget('');
                                                         setAdminTransError('');
                                                         setAdminTransMode('select');
-                                                        setAdminTransAddPending(userTransLang[lang] || 'original');
+                                                        const avail = translatedLangsByResource[rid] || [];
+                                                        setAdminTransAddPending(userTransLang[lang] ?? (avail.includes('ko') ? 'ko' : 'original'));
                                                     }}
-                                                    className="text-foreground/70 hover:text-blue-400 hover:bg-blue-400/10 transition-colors p-1 rounded cursor-pointer"
+                                                    className="text-foreground/60 hover:text-blue-600 dark:hover:text-foreground transition-colors p-1 rounded cursor-pointer"
                                                     title="번역 관리"
                                                 >
                                                     <TranslateIcon />
                                                 </button>
                                                 <button
                                                     onClick={(e) => handleOpenEdit(e, 'language', lang)}
-                                                    className="text-foreground/70 hover:text-foreground hover:bg-foreground/10 transition-colors p-1 rounded cursor-pointer"
+                                                    className="text-foreground/60 hover:text-foreground transition-colors p-1 rounded cursor-pointer"
                                                     title="편집"
                                                 >
                                                     <SquarePenIcon />
@@ -627,7 +639,9 @@ const StudyPage = () => {
                                                 const resourceId = languageIdMap[lang];
                                                 const availLangs = translatedLangsByResource[resourceId] || [];
                                                 if (availLangs.length === 0) return null;
-                                                const activeLang = userTransLang[lang] || 'original';
+                                                const selectedLang = userTransLang[lang];
+                                                const hasKo = availLangs.includes('ko');
+                                                const activeLang = selectedLang ?? (hasKo ? 'ko' : 'original');
                                                 return (
                                                     <button
                                                         onClick={(e) => {
@@ -753,7 +767,9 @@ const StudyPage = () => {
                                     setAdminTransAddLoading(true);
                                     await fetchDBData();
                                     setAdminTransAddLoading(false);
-                                    setAdminTransAddPending(userTransLang[adminTransModal.lang] || 'original');
+                                    const availForAdd = translatedLangsByResource[adminTransModal.resourceId] || [];
+                                    const hasKoForAdd = availForAdd.includes('ko');
+                                    setAdminTransAddPending(userTransLang[adminTransModal.lang] ?? (hasKoForAdd ? 'ko' : 'original'));
                                 }}
                                 className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${adminTransMode === 'add' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary/80'}`}
                             >

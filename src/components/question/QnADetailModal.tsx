@@ -282,8 +282,11 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
         backdropClickRef.current = false;
       }}
     >
-      <div className="relative w-full max-w-2xl bg-background rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto
-       [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" onClick={(e) => e.stopPropagation()}>
+      <div 
+        className="relative w-full max-w-2xl bg-background rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto overflow-x-auto scrollbar-hide" 
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         
         {/* 우측 상단: 작성자면 수정/삭제 메뉴, 타인이면 신고 + 닫기 버튼 */}
         <div className="absolute top-5 right-5 flex items-center gap-1">

@@ -9,6 +9,7 @@ const FavoritesFeedPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [autoScrollToComment, setAutoScrollToComment] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
 
@@ -101,7 +102,7 @@ const FavoritesFeedPage = () => {
               key={post.postId}
               post={post}
               onDetailClick={() => setSelectedPost(post)}
-              onComment={() => setSelectedPost(post)}
+              onComment={() => { setSelectedPost(post); setAutoScrollToComment(true); }}
               onDelete={handleDeletePost}
               onNotInterested={handleNotInterested}
               onReportSuccess={handleReportSuccess}
@@ -121,11 +122,13 @@ const FavoritesFeedPage = () => {
       {selectedPost && (
         <CommunityPostDetail
           post={selectedPost}
+          autoScrollToComment={autoScrollToComment}
           onClose={(updatedPost) => {
             if (updatedPost) {
               setPosts(prev => prev.map(p => p.postId === updatedPost.postId ? updatedPost : p));
             }
             setSelectedPost(null);
+            setAutoScrollToComment(false);
           }}
         />
       )}

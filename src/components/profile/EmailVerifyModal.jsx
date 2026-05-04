@@ -42,11 +42,12 @@ const EmailVerifyModal = ({ isOpen, onClose, onVerify, email, onResend }) => {
   };
 
   const handleResend = async () => {
-    if (timer > 0 || resending) return;
+    if (resending) return;
     setResending(true);
     setError('');
     try {
       await onResend();
+      clearInterval(timerRef.current);
       setTimer(RESEND_INTERVAL);
       timerRef.current = setInterval(() => {
         setTimer((prev) => {
@@ -79,8 +80,8 @@ const EmailVerifyModal = ({ isOpen, onClose, onVerify, email, onResend }) => {
           <button
             type="button"
             onClick={handleResend}
-            disabled={timer > 0 || resending}
-            className={`text-xs font-semibold px-3 py-1 rounded-lg border ml-2 ${timer > 0 || resending ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-primary text-white border-primary hover:bg-primary-dark'}`}
+            disabled={resending}
+            className={`text-xs font-semibold px-3 py-1 rounded-lg border ml-2 ${resending ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-primary text-white border-primary hover:bg-primary-dark'}`}
           >
             {resending ? '재전송 중...' : '인증번호 재전송'}
           </button>

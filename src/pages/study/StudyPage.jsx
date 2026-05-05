@@ -29,7 +29,7 @@ const TranslateIconLg = () => (
 const TRANS_LANGUAGES = [
     { code: 'ko', label: '한국어 (Korean)' },
     { code: 'en', label: '영어 (English)' },
-    { code: 'ja', label: '일본어 (日本語)' },
+    { code: 'jp', label: '일본어 (日本語)' },
     { code: 'zh', label: '중국어 (中文)' },
     { code: 'es', label: '스페인어 (Español)' },
     { code: 'fr', label: '프랑스어 (Français)' },
@@ -606,22 +606,6 @@ const StudyPage = () => {
                                         {isAdmin ? (
                                             <div className="hidden group-hover:flex items-center gap-1">
                                                 <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        const rid = languageIdMap[lang];
-                                                        setAdminTransModal({ lang, resourceId: rid });
-                                                        setAdminTransTarget('');
-                                                        setAdminTransError('');
-                                                        setAdminTransMode('select');
-                                                        const avail = translatedLangsByResource[rid] || [];
-                                                        setAdminTransAddPending(userTransLang[lang] ?? (avail.includes('ko') ? 'ko' : 'original'));
-                                                    }}
-                                                    className="text-foreground/60 hover:text-blue-600 dark:hover:text-foreground transition-colors p-1 rounded cursor-pointer"
-                                                    title="번역 관리"
-                                                >
-                                                    <TranslateIcon />
-                                                </button>
-                                                <button
                                                     onClick={(e) => handleOpenEdit(e, 'language', lang)}
                                                     className="text-foreground/60 hover:text-foreground transition-colors p-1 rounded cursor-pointer"
                                                     title="편집"
@@ -636,36 +620,7 @@ const StudyPage = () => {
                                                     ✕
                                                 </button>
                                             </div>
-                                        ) : (
-                                            (() => {
-                                                const resourceId = languageIdMap[lang];
-                                                const availLangs = translatedLangsByResource[resourceId] || [];
-                                                if (availLangs.length === 0) return null;
-                                                const selectedLang = userTransLang[lang];
-                                                const hasKo = availLangs.includes('ko');
-                                                const activeLang = selectedLang ?? (hasKo ? 'ko' : 'original');
-                                                return (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setUserTransModal({ lang, resourceId });
-                                                            setUserTransMode('select');
-                                                            setUserTransPending(activeLang);
-                                                        }}
-                                                        className={`p-1 rounded transition-colors cursor-pointer ${
-                                                            selectedLanguage === lang
-                                                                ? 'text-primary-foreground/70 hover:text-primary-foreground'
-                                                                : activeLang !== 'original'
-                                                                    ? 'text-blue-500 hover:text-blue-600 dark:hover:text-blue-400'
-                                                                    : 'text-foreground/50 hover:text-blue-500 dark:hover:text-blue-400'
-                                                        }`}
-                                                        title="번역 선택"
-                                                    >
-                                                        <TranslateIconLg />
-                                                    </button>
-                                                );
-                                            })()
-                                        )}
+                                        ) : null}
                                     </div>
                                 ))}
                             </div>

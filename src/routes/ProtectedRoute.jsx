@@ -6,6 +6,11 @@ const ProtectedRoute = () => {
   const { currentUser, token } = useAuth();
   const location = useLocation();
 
+  // Suspended users are blocked from all protected routes; SuspensionModal renders on /login
+  if (currentUser?.status === 'suspended') {
+    return <Navigate to="/login" replace />;
+  }
+
   // 로그인 정보가 없으면
   if (!currentUser || !token) {
     // [핵심] 현재 접속하려던 주소(경로 + 쿼리스트링)를 가져옵니다.

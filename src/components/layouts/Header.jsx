@@ -163,10 +163,11 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
   };
 
   const handleNotificationClick = async (n) => {
-    // 1. Mark as read first
+    // 1. Mark as read first and immediately update local state
     if (!n.isRead) {
       try {
         await markAsRead([n.id]);
+        setNotifications(prev => prev.filter(notif => notif.id !== n.id));
       } catch (error) {
         console.error('Failed to mark as read on click:', error);
       }

@@ -32,6 +32,29 @@ class StyledImage extends BaseImage {
 
 Quill.register(StyledImage, true);
 
+const EmbedBlot = Quill.import('blots/embed') as any;
+class MentionEmbed extends EmbedBlot {
+  static blotName = 'mention';
+  static tagName = 'span';
+  static className = 'mention';
+
+  static create(value: { id: number | string; nickname: string }) {
+    const node = super.create();
+    node.setAttribute('data-id', String(value.id));
+    node.setAttribute('data-nickname', value.nickname);
+    node.textContent = `@${value.nickname}`;
+    return node;
+  }
+
+  static value(node: HTMLElement) {
+    return {
+      id: node.getAttribute('data-id') ?? '',
+      nickname: node.getAttribute('data-nickname') ?? '',
+    };
+  }
+}
+Quill.register(MentionEmbed);
+
 const STICKER_LIST = [
   { id: 1, name: '버그', url: 'https://cdn-icons-png.flaticon.com/512/826/826963.png' },
   { id: 2, name: '코딩중', url: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png' },
@@ -426,7 +449,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => clearTimeout(timer);
   }, [mentionQuery]);
 
-  const handleMentionSelect = (nickname: string) => {
+  const handleMentionSelect = (userId: number, nickname: string) => {
     const editor = quillRef.current?.getEditor();
     if (!editor || mentionQuery === null) return;
 
@@ -435,8 +458,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     const startIndex = range.index - mentionQuery.length - 1;
     editor.deleteText(startIndex, mentionQuery.length + 1);
-    editor.insertText(startIndex, `@${nickname} `);
-    editor.setSelection(startIndex + nickname.length + 2, 0);
+    editor.insertEmbed(startIndex, 'mention', { id: userId, nickname }, 'user');
+    editor.insertText(startIndex + 1, ' ', 'user');
+    editor.setSelection(startIndex + 2, 0, 'user');
 
     setMentionQuery(null);
     setSuggestions([]);
@@ -751,7 +775,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <button
               key={user.id}
               type="button"
-              onClick={() => handleMentionSelect(user.nickname)}
+              onClick={() => handleMentionSelect(user.id, user.nickname)}
               className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors border-b border-border last:border-0"
             >
               <img 

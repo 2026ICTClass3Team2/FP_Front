@@ -48,6 +48,23 @@ const refreshJWT = async (accessToken) => {
 
 const responseFail = async (err) => {
     const data = err.response?.data;
+
+    // Suspended user — preserve auth state so SuspensionModal can render, then send to /login
+    if (data && data.error === "SUSPENDED_USER") {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                user.status = 'suspended';
+                localStorage.setItem('user', JSON.stringify(user));
+            } catch (_) { /* ignore parse errors */ }
+        }
+        if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+        }
+        return Promise.reject(err);
+    }
+
     if (data && data.error === "ERROR_ACCESS_TOKEN") {
         try {
             const token = localStorage.getItem("token");
@@ -59,7 +76,7 @@ const responseFail = async (err) => {
         } catch (refreshErr) {
             localStorage.removeItem("token");
             localStorage.removeItem("user");
-            
+
             const isLoggingOut = sessionStorage.getItem('isLoggingOut');
             if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && !window.location.pathname.startsWith('/oauth/') && !isLoggingOut) {
                 sessionStorage.setItem('redirectUrl', window.location.pathname + window.location.search);

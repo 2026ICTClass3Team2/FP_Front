@@ -364,7 +364,10 @@ const RegisterPage = () => {
               {selectedTechStack.length > 0 ? (
                 <>
                   {selectedTechStack.map(tag => (
-                    <span key={tag} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">{tag}</span>
+                    <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">
+                      {tag}
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedTechStack(prev => prev.filter(t => t !== tag)); }} className="flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-primary/30 transition-colors shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg></button>
+                    </span>
                   ))}
                   <span className="text-xs text-muted-foreground ml-1">클릭하여 수정</span>
                 </>

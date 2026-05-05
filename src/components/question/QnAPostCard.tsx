@@ -193,7 +193,7 @@ const QnAPostCard: React.FC<QnAPostCardProps> = ({
   // Share (copy to clipboard)
   const handleShareClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/qna/${localPost.qnaId}`;
+    const url = `${window.location.origin}/qna?qnaId=${localPost.qnaId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('클립보드에 복사되었습니다.');

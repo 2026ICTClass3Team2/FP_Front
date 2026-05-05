@@ -68,6 +68,7 @@ const MyProfile = () => {
         >
           <ProfileEditForm
             initial={profile}
+            isLocal={profile.provider === 'local'}
             onPasswordChange={profile.provider === 'local' ? () => setShowPasswordModal(true) : undefined}
             onSubmit={async (form) => {
               // 이메일이 변경된 경우 인증 플로우로 분기

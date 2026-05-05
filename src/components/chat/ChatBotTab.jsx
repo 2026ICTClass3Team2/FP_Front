@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCpu, FiCode, FiMessageCircle, FiArrowLeft, FiSend, FiPlay } from 'react-icons/fi';
 import { reviewCode, chatWithBot } from '../../api/chatbot';
-import jwtAxios from '../../api/jwtAxios';
 import { markTypeAsRead } from '../../api/notification';
 
 const ChatBotTab = () => {

@@ -186,6 +186,8 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           openPost(n.postId, n.targetType !== 'post' ? n.targetId : null);
         }
         break;
+      case 'admin':
+        break;
       case 'user':
         if (n.message.includes('게시글을 올렸습니다')) {
           openPost(n.targetId);

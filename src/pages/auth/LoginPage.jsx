@@ -50,7 +50,13 @@ const LoginPage = () => {
       setError('');
       setLoading(true);
       await login(email, password);
-      
+
+      // Suspended users stay on this page — SuspensionModal renders on top
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (storedUser.status === 'suspended') {
+        return;
+      }
+
       const redirectUrl = sessionStorage.getItem('redirectUrl');
       sessionStorage.removeItem('redirectUrl');
       if (redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.startsWith('/oauth/')) {

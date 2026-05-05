@@ -4,6 +4,8 @@ import { FiSettings, FiCheckCircle } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import PointShopModal from '../shop/PointShopModal';
 import NotificationList from '../../components/profile/NotificationList';
+import Modal from '../../components/common/Modal';
+import { usePostModalStore } from '../../stores/postModalStore';
 
 const MyNotifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -13,6 +15,7 @@ const MyNotifications = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPointShopOpen, setIsPointShopOpen] = useState(false);
   const navigate = useNavigate();
+  const { openPost, openQna } = usePostModalStore();
 
   useEffect(() => {
     fetchNotifications();
@@ -97,18 +100,18 @@ const MyNotifications = () => {
       case 'comment':
       case 'mention':
         if (n.qnaId) {
-          navigate(`/qna?qnaId=${n.qnaId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`);
+          openQna(n.qnaId, n.targetType !== 'post' ? n.targetId : null);
         } else if (n.postId) {
-          navigate(`/?postId=${n.postId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`);
+          openPost(n.postId, n.targetType !== 'post' ? n.targetId : null);
         }
         break;
-      case 'user': 
+      case 'user':
         if (n.message.includes('게시글을 올렸습니다')) {
-          navigate(`/?postId=${n.targetId}`);
+          openPost(n.targetId);
         } else if (n.message.includes('팔로우')) {
-          window.location.href = `/profile/${n.targetId}`;
+          navigate(`/profile/${n.targetId}`);
         } else {
-          window.location.href = '/mypage';
+          navigate('/mypage');
         }
         break;
       case 'system':
@@ -118,9 +121,9 @@ const MyNotifications = () => {
         break;
       case 'channel':
         if (n.message.includes('게시글이 올라왔습니다')) {
-          navigate(`/?postId=${n.targetId}`);
+          openPost(n.targetId);
         } else {
-          window.location.href = `/channel/${n.targetId}`;
+          navigate(`/channels/${n.targetId}`);
         }
         break;
       default:
@@ -170,76 +173,56 @@ const MyNotifications = () => {
         onMarkAsRead={handleIndividualMarkAsRead}
       />
 
-      {isModalOpen && settings && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-card w-full max-w-md rounded-[2.5rem] shadow-2xl border border-border/50 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-300">
-            <div className="p-8 border-b border-border/40 bg-muted/20">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-black flex items-center gap-3 text-foreground">
-                  <div className="p-2 bg-primary/10 rounded-xl">
-                    <FiSettings className="text-primary" />
-                  </div>
-                  알림 설정
-                </h2>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-2 hover:bg-muted rounded-full transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+      <Modal
+        isOpen={isModalOpen && !!settings}
+        onClose={() => setIsModalOpen(false)}
+        title="알림 설정"
+        maxWidth="max-w-md"
+      >
+        <p className="text-sm text-muted-foreground mb-4 font-medium">관심 있는 활동에 대한 알림을 제어하세요.</p>
+        <div className="space-y-3">
+          {[
+            { key: 'followedChannel', label: '구독 채널 새 글', desc: '구독 중인 채널에 새로운 포스트가 올라오면 알림을 받습니다.' },
+            { key: 'followedUser', label: '팔로우 유저 새 글', desc: '팔로우 중인 유저가 새로운 포스트를 올리면 알림을 받습니다.' },
+            { key: 'postComment', label: '내 글의 새 댓글', desc: '내 포스트나 QnA에 새로운 댓글이 달리면 알림을 받습니다.' },
+            { key: 'commentReply', label: '내 댓글의 새 답글', desc: '내 댓글에 새로운 답글이 달리면 알림을 받습니다.' },
+            { key: 'qnaAnswer', label: 'QnA 답변 채택', desc: '내 댓글이 QnA 답변으로 채택되면 알림을 받습니다.' },
+            { key: 'pointTransaction', label: '포인트 변동', desc: '포인트 획득 및 사용 시 알림을 받습니다.' },
+            { key: 'mention', label: '멘션', desc: '다른 유저가 나를 @멘션하면 알림을 받습니다.' }
+          ].map((opt) => (
+            <div key={opt.key} className="flex items-center justify-between p-4 rounded-3xl hover:bg-muted/30 group transition-all">
+              <div className="flex-1 pr-6">
+                <p className="text-sm font-black text-foreground group-hover:text-primary transition-colors">{opt.label}</p>
+                <p className="text-[11px] text-muted-foreground font-semibold leading-snug mt-0.5">{opt.desc}</p>
               </div>
-              <p className="text-sm text-muted-foreground mt-2 font-medium">관심 있는 활동에 대한 알림을 제어하세요.</p>
-            </div>
-            
-            <div className="p-8 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
-              {[
-                { key: 'followedChannel', label: '구독 채널 새 글', desc: '구독 중인 채널에 새로운 포스트가 올라오면 알림을 받습니다.' },
-                { key: 'followedUser', label: '팔로우 유저 새 글', desc: '팔로우 중인 유저가 새로운 포스트를 올리면 알림을 받습니다.' },
-                { key: 'postComment', label: '내 글의 새 댓글', desc: '내 포스트나 QnA에 새로운 댓글이 달리면 알림을 받습니다.' },
-                { key: 'commentReply', label: '내 댓글의 새 답글', desc: '내 댓글에 새로운 답글이 달리면 알림을 받습니다.' },
-                { key: 'qnaAnswer', label: 'QnA 답변 채택', desc: '내 댓글이 QnA 답변으로 채택되면 알림을 받습니다.' },
-                { key: 'pointTransaction', label: '포인트 변동', desc: '포인트 획득 및 사용 시 알림을 받습니다.' },
-                { key: 'mention', label: '멘션', desc: '다른 유저가 나를 @멘션하면 알림을 받습니다.'}
-              ].map((opt) => (
-                <div key={opt.key} className={`flex items-center justify-between p-4 rounded-3xl transition-all ${opt.disabled ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:bg-muted/30 group'}`}>
-                  <div className="flex-1 pr-6">
-                    <p className="text-sm font-black text-foreground group-hover:text-primary transition-colors">{opt.label}</p>
-                    <p className="text-[11px] text-muted-foreground font-semibold leading-snug mt-0.5">{opt.desc}</p>
-                  </div>
-                  <button 
-                    disabled={opt.disabled}
-                    onClick={() => handleToggleSetting(opt.key)}
-                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring ${
-                      settings[opt.key] ? 'bg-primary' : 'bg-muted-foreground/20 hover:bg-muted-foreground/30'
-                    }`}
-                  >
-                    <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-lg ring-0 transition duration-300 ease-in-out ${
-                      settings[opt.key] 
-                        ? 'translate-x-5 bg-primary-foreground' 
-                        : 'translate-x-0 bg-white'
-                    }`} />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-8 bg-muted/20 flex gap-4">
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-4 px-6 rounded-2xl font-black bg-muted text-foreground hover:bg-muted/80 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              <button
+                onClick={() => handleToggleSetting(opt.key)}
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${
+                  settings?.[opt.key] ? 'bg-primary' : 'bg-muted-foreground/20 hover:bg-muted-foreground/30'
+                }`}
               >
-                닫기
-              </button>
-              <button 
-                onClick={saveSettings}
-                className="flex-1 py-4 px-6 rounded-2xl font-black bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                설정 저장
+                <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-lg ring-0 transition duration-300 ease-in-out ${
+                  settings?.[opt.key] ? 'translate-x-5 bg-primary-foreground' : 'translate-x-0 bg-white'
+                }`} />
               </button>
             </div>
-          </div>
+          ))}
         </div>
-      )}
+        <div className="flex gap-4 mt-6">
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="flex-1 py-3 px-6 rounded-2xl font-black bg-muted text-foreground hover:bg-muted/80 transition-all"
+          >
+            닫기
+          </button>
+          <button
+            onClick={saveSettings}
+            className="flex-1 py-3 px-6 rounded-2xl font-black bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all"
+          >
+            설정 저장
+          </button>
+        </div>
+      </Modal>
       <PointShopModal isOpen={isPointShopOpen} onClose={() => setIsPointShopOpen(false)} />
     </div>
   );

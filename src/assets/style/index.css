@@ -95,8 +95,25 @@
     --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.35);
   }
 
+  html, body, #root {
+    height: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
+    /* Prevent bounce-scroll showing background colour on iOS */
+    overscroll-behavior: none;
+    /* Safe area padding for notched phones */
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Remove tap highlight on mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* 전역 placeholder 스타일 - 실제 입력값과 구분되도록 투명도 및 굵기 조정 */
@@ -535,5 +552,12 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
-  
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }

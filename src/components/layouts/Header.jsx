@@ -228,7 +228,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           {/* 햄버거 토글 버튼 */}
           <button
             onClick={onToggleSidebar}
-            className="p-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all cursor-pointer"
+            className="p-2.5 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all cursor-pointer touch-target"
             title={sidebarOpen ? '사이드바 닫기' : '사이드바 열기'}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -267,16 +267,16 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
 
         {/* 중앙 탭 아이콘 (피드 네비게이션) */}
         <div className="flex items-center justify-center gap-1 flex-1">
-          <button onClick={() => handleTabChange('ALGORITHM')} className={`px-8 py-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'ALGORITHM' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="맞춤">
+          <button onClick={() => handleTabChange('ALGORITHM')} className={`px-3 sm:px-8 py-2.5 rounded-xl transition-all cursor-pointer touch-target ${activeTab === 'ALGORITHM' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="맞춤">
             <FiActivity size={22} className={activeTab === 'ALGORITHM' && location.pathname === '/' ? 'stroke-[2.5px]' : ''} />
           </button>
-          <button onClick={() => handleTabChange('POPULAR')} className={`px-8 py-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'POPULAR' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="인기">
+          <button onClick={() => handleTabChange('POPULAR')} className={`px-3 sm:px-8 py-2.5 rounded-xl transition-all cursor-pointer touch-target ${activeTab === 'POPULAR' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="인기">
             <FiTrendingUp size={22} className={activeTab === 'POPULAR' && location.pathname === '/' ? 'stroke-[2.5px]' : ''} />
           </button>
-          <button onClick={() => handleTabChange('LATEST')} className={`px-8 py-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'LATEST' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="최신">
+          <button onClick={() => handleTabChange('LATEST')} className={`px-3 sm:px-8 py-2.5 rounded-xl transition-all cursor-pointer touch-target ${activeTab === 'LATEST' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="최신">
             <FiClock size={22} className={activeTab === 'LATEST' && location.pathname === '/' ? 'stroke-[2.5px]' : ''} />
           </button>
-          <button onClick={() => handleTabChange('SUBSCRIBED')} className={`px-8 py-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'SUBSCRIBED' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="구독">
+          <button onClick={() => handleTabChange('SUBSCRIBED')} className={`px-3 sm:px-8 py-2.5 rounded-xl transition-all cursor-pointer touch-target ${activeTab === 'SUBSCRIBED' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="구독">
             <FiHeart size={22} className={activeTab === 'SUBSCRIBED' && location.pathname === '/' ? 'stroke-[2.5px]' : ''} />
           </button>
         </div>
@@ -411,7 +411,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           <div className="relative" ref={chatRef}>
             <button
               onClick={() => isChatOpen ? closeChat() : openChat()}
-              className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors cursor-pointer"
+              className="p-2.5 text-foreground hover:bg-foreground/10 rounded-xl transition-colors cursor-pointer touch-target"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
@@ -437,7 +437,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors relative cursor-pointer"
+              className="p-2.5 text-foreground hover:bg-foreground/10 rounded-xl transition-colors relative cursor-pointer touch-target"
             >
               <FiBell size={24} />
               {generalNotifications.length > 0 && (

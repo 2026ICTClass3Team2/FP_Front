@@ -65,10 +65,9 @@ const MyNotifications = () => {
   };
 
   const getFilterClass = (f) => (
-    `px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-      filter === f 
-        ? 'bg-primary text-primary-foreground' 
-        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+    `px-4 py-2 rounded-full text-sm font-medium transition-colors ${filter === f
+      ? 'bg-primary text-primary-foreground'
+      : 'bg-muted text-muted-foreground hover:bg-muted/80'
     }`
   );
 
@@ -104,6 +103,8 @@ const MyNotifications = () => {
         } else if (n.postId) {
           openPost(n.postId, n.targetType !== 'post' ? n.targetId : null);
         }
+        break;
+      case 'admin':
         break;
       case 'user':
         if (n.message.includes('게시글을 올렸습니다')) {
@@ -149,16 +150,16 @@ const MyNotifications = () => {
             </button>
           ))}
         </div>
-        
+
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={handleMarkAllAsRead}
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 rounded-xl transition-colors"
           >
             <FiCheckCircle />
             <span>전체 읽기</span>
           </button>
-          <button 
+          <button
             onClick={openSettings}
             className="p-2 text-muted-foreground hover:bg-foreground/10 rounded-xl transition-colors"
           >
@@ -167,7 +168,7 @@ const MyNotifications = () => {
         </div>
       </div>
 
-      <NotificationList 
+      <NotificationList
         notifications={generalNotifications}
         onNotificationClick={handleNotificationClick}
         onMarkAsRead={handleIndividualMarkAsRead}
@@ -197,13 +198,11 @@ const MyNotifications = () => {
               </div>
               <button
                 onClick={() => handleToggleSetting(opt.key)}
-                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${
-                  settings?.[opt.key] ? 'bg-primary' : 'bg-muted-foreground/20 hover:bg-muted-foreground/30'
-                }`}
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${settings?.[opt.key] ? 'bg-primary' : 'bg-muted-foreground/20 hover:bg-muted-foreground/30'
+                  }`}
               >
-                <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-lg ring-0 transition duration-300 ease-in-out ${
-                  settings?.[opt.key] ? 'translate-x-5 bg-primary-foreground' : 'translate-x-0 bg-white'
-                }`} />
+                <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-lg ring-0 transition duration-300 ease-in-out ${settings?.[opt.key] ? 'translate-x-5 bg-primary-foreground' : 'translate-x-0 bg-white'
+                  }`} />
               </button>
             </div>
           ))}

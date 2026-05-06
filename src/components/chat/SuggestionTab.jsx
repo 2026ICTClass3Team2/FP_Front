@@ -77,9 +77,13 @@ const SuggestionTab = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="제안의 제목을 입력하세요"
+            maxLength={100}
             className="w-full px-4 py-2.5 bg-muted/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
             required
           />
+          <div className={`text-right text-xs ${title.length >= 100 ? 'text-red-500 font-medium' : title.length >= 90 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {title.length} / 100
+          </div>
         </div>
 
         <div className="flex flex-col gap-2 flex-1">
@@ -88,9 +92,13 @@ const SuggestionTab = () => {
             value={details}
             onChange={(e) => setDetails(e.target.value)}
             placeholder="제안 내용을 상세히 입력해주세요..."
+            maxLength={1000}
             className="w-full flex-1 px-4 py-3 bg-muted/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm resize-none"
             required
           />
+          <div className={`text-right text-xs ${details.length >= 1000 ? 'text-red-500 font-medium' : details.length >= 900 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {details.length} / 1000
+          </div>
         </div>
 
         {message && (

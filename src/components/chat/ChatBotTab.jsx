@@ -188,7 +188,7 @@ const ChatBotTab = () => {
               value={faqInput}
               onChange={(e) => setFaqInput(e.target.value)}
               placeholder="AI에게 질문해보세요..."
-              maxLength={500}
+              maxLength={1000}
               disabled={faqLoading}
               className="flex-1 bg-muted/40 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
             />
@@ -200,8 +200,8 @@ const ChatBotTab = () => {
               <FiSend size={18} />
             </button>
           </div>
-          <div className={`text-right text-xs ${faqInput.length >= 500 ? 'text-red-500 font-medium' : faqInput.length >= 450 ? 'text-orange-400' : 'text-muted-foreground'}`}>
-            {faqInput.length} / 500
+          <div className={`text-right text-xs ${faqInput.length >= 1000 ? 'text-red-500 font-medium' : faqInput.length >= 950 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {faqInput.length} / 1000
           </div>
         </form>
       </div>
@@ -229,11 +229,11 @@ const ChatBotTab = () => {
             value={codeInput}
             onChange={(e) => setCodeInput(e.target.value)}
             placeholder="코드를 여기에 입력하세요..."
-            maxLength={10000}
+            maxLength={50000}
             className="w-full h-40 bg-muted/30 border border-border rounded-xl p-3 text-sm font-mono focus:ring-2 focus:ring-purple-500/30 outline-none resize-none"
           />
-          <div className={`text-right text-xs ${codeInput.length >= 10000 ? 'text-red-500 font-medium' : codeInput.length >= 9000 ? 'text-orange-400' : 'text-muted-foreground'}`}>
-            {codeInput.length} / 10000
+          <div className={`text-right text-xs ${codeInput.length >= 50000 ? 'text-red-500 font-medium' : codeInput.length >= 49000 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {codeInput.length} / 50000
           </div>
           
           <button

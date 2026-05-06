@@ -92,12 +92,12 @@ const SuggestionTab = () => {
             value={details}
             onChange={(e) => setDetails(e.target.value)}
             placeholder="제안 내용을 상세히 입력해주세요..."
-            maxLength={1000}
+            maxLength={10000}
             className="w-full flex-1 px-4 py-3 bg-muted/20 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm resize-none"
             required
           />
-          <div className={`text-right text-xs ${details.length >= 1000 ? 'text-red-500 font-medium' : details.length >= 900 ? 'text-orange-400' : 'text-muted-foreground'}`}>
-            {details.length} / 1000
+          <div className={`text-right text-xs ${details.length >= 10000 ? 'text-red-500 font-medium' : details.length >= 9500 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {details.length} / 10000
           </div>
         </div>
 

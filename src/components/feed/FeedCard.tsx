@@ -372,7 +372,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit,
             placeholder="내용을 입력하세요..."
             readOnly={loading}
             onImageUpload={uploadToS3}
-            maxChars={10000}
+            maxChars={50000}
             className="rounded-xl transition-shadow shadow-sm mt-1"
           />
         </div>

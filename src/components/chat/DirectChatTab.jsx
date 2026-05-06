@@ -393,7 +393,7 @@ const DirectChatTab = () => {
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Escape') cancelEdit(); }}
-                      maxLength={500}
+                      maxLength={1000}
                       className="flex-1 bg-muted/40 border border-primary/40 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                     />
                     <button
@@ -456,7 +456,7 @@ const DirectChatTab = () => {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="메시지를 입력하세요..."
-            maxLength={500}
+            maxLength={1000}
             className="flex-1 bg-muted/40 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
           />
           <button

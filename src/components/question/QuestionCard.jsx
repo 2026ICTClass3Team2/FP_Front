@@ -212,7 +212,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
           placeholder="문제 상황, 시도해본 방법, 에러 메시지 등을 상세히 적어주시면 더 좋은 답변을 받을 수 있습니다."
           readOnly={loading}
           onImageUpload={uploadToS3}
-          maxChars={5000}
+          maxChars={50000}
           className="rounded-xl transition-shadow"
         />
       </div>

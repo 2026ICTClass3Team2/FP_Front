@@ -385,9 +385,12 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="제목을 입력하세요 (최대 250자)"
-          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none hover:bg-muted/30 hover:border-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           maxLength={250}
+          className="px-4 py-2 border border-border rounded-xl bg-background text-foreground focus:outline-none hover:bg-muted/30 hover:border-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
         />
+        <div className={`text-right text-xs mt-0.5 ${title.length >= 250 ? 'text-red-500 font-medium' : title.length >= 225 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+          {title.length} / 250
+        </div>
       </div>
 
       <div ref={contentSectionRef} className="flex flex-col gap-2">
@@ -398,6 +401,7 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
           placeholder="내용을 입력하세요 (최대 10,000자)"
           readOnly={loading}
           onImageUpload={uploadToS3}
+          maxChars={10000}
           className="rounded-xl transition-all mt-1 hover:border-foreground/40"
         />
         {contentError && <div className="text-red-500 text-sm font-medium">{contentError}</div>}

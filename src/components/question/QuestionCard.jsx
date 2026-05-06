@@ -188,16 +188,20 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
       
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-foreground">제목</label>
-        <input 
-          type="text" 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
-          placeholder="궁금한 내용을 요약해서 적어주세요." 
-          className="px-4 py-2 border border-border rounded-xl 
-          bg-background text-foreground focus:outline-none 
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="궁금한 내용을 요약해서 적어주세요."
+          maxLength={250}
+          className="px-4 py-2 border border-border rounded-xl
+          bg-background text-foreground focus:outline-none
           focus:border-primary transition-colors"
-          required 
+          required
         />
+        <div className={`text-right text-xs mt-0.5 ${title.length >= 250 ? 'text-red-500 font-medium' : title.length >= 225 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+          {title.length} / 250
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -208,6 +212,7 @@ const QuestionCard = ({ onClose, onPostCreated, postToEdit }) => {
           placeholder="문제 상황, 시도해본 방법, 에러 메시지 등을 상세히 적어주시면 더 좋은 답변을 받을 수 있습니다."
           readOnly={loading}
           onImageUpload={uploadToS3}
+          maxChars={5000}
           className="rounded-xl transition-shadow"
         />
       </div>

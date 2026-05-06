@@ -54,23 +54,28 @@ const TagManagementTab = () => {
   return (
     <div className="space-y-6">
       {/* 추가 폼 */}
-      <form onSubmit={handleAdd} className="flex gap-2">
-        <input
-          type="text"
-          value={newTagName}
-          onChange={e => setNewTagName(e.target.value)}
-          placeholder="새 태그 이름 입력 (예: Flutter)"
-          maxLength={50}
-          className="flex-1 px-4 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
-        <button
-          type="submit"
-          disabled={isAdding || !newTagName.trim()}
-          className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          <FiPlus className="w-4 h-4" />
-          추가
-        </button>
+      <form onSubmit={handleAdd} className="flex flex-col gap-1">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newTagName}
+            onChange={e => setNewTagName(e.target.value)}
+            placeholder="새 태그 이름 입력 (예: Flutter)"
+            maxLength={50}
+            className="flex-1 px-4 py-2 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <button
+            type="submit"
+            disabled={isAdding || !newTagName.trim()}
+            className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            <FiPlus className="w-4 h-4" />
+            추가
+          </button>
+        </div>
+        <div className={`text-right text-xs ${newTagName.length >= 50 ? 'text-red-500 font-medium' : newTagName.length >= 45 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+          {newTagName.length} / 50
+        </div>
       </form>
 
       {/* 검색 */}

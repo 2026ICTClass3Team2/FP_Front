@@ -267,6 +267,9 @@ const FeedList = forwardRef<any, FeedListProps>(({ onEditClick }, ref) => {
           autoScrollToComment={autoScrollToComment}
           onEditClick={onEditClick}
           onDeleteClick={handleDeletePost}
+          onPostUpdate={(updatedPost) =>
+            setPosts(prev => prev.map(p => p.postId === updatedPost.postId ? updatedPost : p))
+          }
           onClose={(updatedPost?: Post, wasBlocked: boolean = false) => {
             if (updatedPost) {
               setPosts(prev =>

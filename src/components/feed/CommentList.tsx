@@ -8,6 +8,7 @@ interface CommentListProps {
   postId: number;
   commentCount?: number;
   onCommentCountChange?: (delta: number) => void;
+  onCommentCountSync?: (count: number) => void; // fetch 후 실제 보이는 댓글 수 절대값 동기화
   resourcePath?: string;
   postAuthorUserId?: number | null;
   postResolved?: boolean;
@@ -25,6 +26,7 @@ const CommentList = forwardRef<any, CommentListProps>(({
   postId,
   commentCount = 0,
   onCommentCountChange,
+  onCommentCountSync,
   resourcePath = 'posts',
   postAuthorUserId,
   postResolved = false,
@@ -50,8 +52,16 @@ const CommentList = forwardRef<any, CommentListProps>(({
   // 콜백을 ref로 관리 — fetchComments useCallback 의존성에서 제외해 무한 루프 방지
   const onHasNonAuthorCommentsChangeRef = useRef(onHasNonAuthorCommentsChange);
   const onResolvedChangedRef = useRef(onResolvedChanged);
+  const onCommentCountSyncRef = useRef(onCommentCountSync);
   useEffect(() => { onHasNonAuthorCommentsChangeRef.current = onHasNonAuthorCommentsChange; }, [onHasNonAuthorCommentsChange]);
   useEffect(() => { onResolvedChangedRef.current = onResolvedChanged; }, [onResolvedChanged]);
+  useEffect(() => { onCommentCountSyncRef.current = onCommentCountSync; }, [onCommentCountSync]);
+
+  // 실제 보이는 댓글 수 계산 (루트 active + 자식 active)
+  const calcVisibleCount = (list: CommentResponse[]) =>
+    list
+      .filter(c => c.status !== 'deleted')
+      .reduce((sum, c) => sum + 1 + (c.children || []).filter(ch => ch.status !== 'deleted').length, 0);
 
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
@@ -67,6 +77,7 @@ const CommentList = forwardRef<any, CommentListProps>(({
       });
 
       setComments(sortedComments);
+      onCommentCountSyncRef.current?.(calcVisibleCount(sortedComments));
 
       // Bug 4: 타인 댓글 존재 여부 → 수정/삭제 가능 여부 동기화
       if (onHasNonAuthorCommentsChangeRef.current) {
@@ -119,7 +130,11 @@ const CommentList = forwardRef<any, CommentListProps>(({
           children: filterRecursively(c.children || []),
         }));
     };
-    setComments(prev => filterRecursively(prev));
+    setComments(prev => {
+      const filtered = filterRecursively(prev);
+      onCommentCountSyncRef.current?.(calcVisibleCount(filtered));
+      return filtered;
+    });
     onBlockUser?.(blockedUserId);
   };
 
@@ -144,6 +159,10 @@ const CommentList = forwardRef<any, CommentListProps>(({
   // 댓글 렌더링을 위한 계산 로직 (백엔드가 deleted 상태로 반환하는 경우 필터링)
   const activeComments = comments.filter(c => c.status !== 'deleted');
   const totalComments = activeComments.length;
+  // 로딩 전에는 prop 값을, fetch 완료 후에는 실제 보이는 수를 표시
+  const displayCommentCount = isLoading && comments.length === 0
+    ? commentCount
+    : calcVisibleCount(comments);
   const commentsToRender = isExpanded
     ? activeComments.slice(0, visibleCommentsCount)
     : activeComments.slice(0, initialBriefCount);
@@ -170,7 +189,7 @@ const CommentList = forwardRef<any, CommentListProps>(({
       {currentUser.username ? ( <CommentForm onSubmit={handleMainCommentSubmit} /> ) : ( <div className="p-4 mb-6 text-center bg-surface border border-border rounded-xl"> <p className="text-sm text-muted-foreground"> 댓글을 작성하려면 <a href="/login" className="font-semibold text-primary hover:underline">로그인</a>이 필요합니다. </p> </div> )}
 
       <h3 className="text-lg font-bold text-foreground mt-8 mb-6 flex items-center gap-1.5">
-        댓글 <span className="text-primary">{commentCount}</span>
+        댓글 <span className="text-primary">{displayCommentCount}</span>
       </h3>
 
       {error && <div className="text-red-500 text-sm mb-4 p-4 bg-red-500/10 rounded-xl">{error}</div>}

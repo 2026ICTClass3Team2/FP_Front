@@ -64,10 +64,12 @@ const UserManagementTab = ({ fetchStats }) => {
       const days = parseInt(e.target.days.value);
       const releasedAt = new Date();
       releasedAt.setDate(releasedAt.getDate() + days);
+      const pad = n => String(n).padStart(2, '0');
+      const releasedAtLocal = `${releasedAt.getFullYear()}-${pad(releasedAt.getMonth() + 1)}-${pad(releasedAt.getDate())}T${pad(releasedAt.getHours())}:${pad(releasedAt.getMinutes())}:00`;
 
       await jwtAxios.post(`admin/users/${suspendModal.id}/suspend`, {
         reason: suspendReason,
-        releasedAt: releasedAt.toISOString()
+        releasedAt: releasedAtLocal
       });
       alert('정지 처리가 완료되었습니다.');
       setSuspendModal(null);

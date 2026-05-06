@@ -39,7 +39,10 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    const value = name === 'username'
+      ? e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '')
+      : e.target.value;
     setFormData({
       ...formData,
       [name]: value
@@ -57,9 +60,9 @@ const RegisterPage = () => {
 
     // 2. 아이디 실시간 검증
     if (name === 'username') {
-      const usernameRegex = /^\S{4,}$/;
+      const usernameRegex = /^[a-z0-9]{4,20}$/;
       if (value.length > 0 && !usernameRegex.test(value)) {
-        setUsernameError('❌ 아이디는 공백 없이 4자 이상이어야 합니다.');
+        setUsernameError('❌ 아이디는 소문자 영문과 숫자만 사용 가능하며, 4~20자여야 합니다.');
       } else {
         setUsernameError('');
       }
@@ -314,7 +317,7 @@ const RegisterPage = () => {
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-foreground">아이디</label>
             <div className="flex gap-2">
-              <input type="text" name="username" value={formData.username} onChange={(e) => { handleChange(e); setIsUsernameAvailable(false); }} required className={`flex-1 px-4 py-2 border rounded-xl bg-background text-foreground focus:outline-none transition-colors ${usernameError ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary'}`} placeholder="testuser123" />
+              <input type="text" name="username" value={formData.username} onChange={(e) => { handleChange(e); setIsUsernameAvailable(false); }} required className={`flex-1 px-4 py-2 border rounded-xl bg-background text-foreground focus:outline-none transition-colors ${usernameError ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary'}`} placeholder="소문자·숫자 4~20자" />
               <button type="button" onClick={handleCheckUsername} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap ${isUsernameAvailable ? 'bg-green-500 text-white' : 'bg-muted text-foreground hover:bg-muted/80'}`}>
                 {isUsernameAvailable ? '확인 완료' : '중복 확인'}
               </button>

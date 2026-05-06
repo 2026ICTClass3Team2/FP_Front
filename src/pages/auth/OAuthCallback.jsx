@@ -15,6 +15,8 @@ const OAuthCallback = () => {
     const userId = userIdParam ? Number(userIdParam) : null;
     const role = params.get('role') || 'user';
     const isNewUser = params.get('isNewUser') === 'true';
+    const status = params.get('status') || 'active';
+    const releasedAt = params.get('releasedAt') || null;
 
     if (token) {
       if (isNewUser) {
@@ -30,7 +32,7 @@ const OAuthCallback = () => {
         return;
       }
 
-      handleOAuthLogin(token, username, Number.isNaN(userId) ? null : userId, role);
+      handleOAuthLogin(token, username, Number.isNaN(userId) ? null : userId, role, status, releasedAt);
 
       const redirectUrl = sessionStorage.getItem('redirectUrl');
       if (redirectUrl) {

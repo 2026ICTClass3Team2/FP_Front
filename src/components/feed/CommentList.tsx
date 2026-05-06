@@ -77,8 +77,10 @@ const CommentList = forwardRef<any, CommentListProps>(({
       }
 
       // Bug 5: 채택된 답변 존재 여부로 resolved 상태 동기화
-      if (onResolvedChangedRef.current) {
-        onResolvedChangedRef.current(sortedComments.some((c: CommentResponse) => c.isAnswer));
+      // onResolvedChanged(false)는 절대 호출하지 않음 — 이벤트 QnA는 isAnswer 댓글 없이도
+      // solved 상태가 될 수 있으므로, false로 덮어쓰면 올바른 resolved:true를 지움
+      if (onResolvedChangedRef.current && sortedComments.some((c: CommentResponse) => c.isAnswer)) {
+        onResolvedChangedRef.current(true);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || '댓글을 불러오는 중 오류가 발생했습니다.');

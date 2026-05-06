@@ -398,10 +398,10 @@ const FeedCard = ({ postToEdit, onClose, onPostCreated, initialChannel }) => {
         <RichTextEditor
           value={content}
           onChange={setContent}
-          placeholder="내용을 입력하세요 (최대 10,000자)"
+          placeholder="내용을 입력하세요"
           readOnly={loading}
           onImageUpload={uploadToS3}
-          maxChars={10000}
+          maxChars={50000}
           className="rounded-xl transition-all mt-1 hover:border-foreground/40"
         />
         {contentError && <div className="text-red-500 text-sm font-medium">{contentError}</div>}

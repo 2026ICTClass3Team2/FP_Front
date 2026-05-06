@@ -77,7 +77,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
           placeholder={placeholder}
           readOnly={isLoading}
           compact
-          maxChars={1000}
+          maxChars={10000}
         />
       </div>
 

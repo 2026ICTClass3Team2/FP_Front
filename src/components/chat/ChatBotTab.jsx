@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiCpu, FiCode, FiMessageCircle, FiArrowLeft, FiSend, FiPlay } from 'react-icons/fi';
 import { reviewCode, chatWithBot } from '../../api/chatbot';
-import jwtAxios from '../../api/jwtAxios';
 import { markTypeAsRead } from '../../api/notification';
 
 const ChatBotTab = () => {
@@ -26,12 +25,20 @@ const ChatBotTab = () => {
     { q: "신고 기능은 어떻게 작동하나요?", a: "부적절한 게시물이나 댓글의 우측 메뉴에서 '신고'를 누르면 관리자에게 전달되며, 검토 후 적절한 조치가 이루어집니다." }
   ];
 
-  const handleFixedQuestionClick = (faq) => {
-    setFaqHistory(prev => [
-      ...prev,
-      { role: 'user', text: faq.q },
-      { role: 'bot', text: faq.a }
-    ]);
+  const handleFixedQuestionClick = async (faq) => {
+    const updatedHistory = [...faqHistory, { role: 'user', text: faq.q }];
+    setFaqHistory(updatedHistory);
+    setFaqLoading(true);
+    try {
+      const historyStrings = updatedHistory.map(h => `${h.role}: ${h.text}`);
+      const data = await chatWithBot(faq.q, historyStrings);
+      setFaqHistory(prev => [...prev, { role: 'bot', text: data.response }]);
+    } catch (err) {
+      console.error(err);
+      setFaqHistory(prev => [...prev, { role: 'bot', text: faq.a }]);
+    } finally {
+      setFaqLoading(false);
+    }
   };
 
   const handleFaqSubmit = async (e) => {

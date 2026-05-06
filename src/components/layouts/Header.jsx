@@ -10,6 +10,7 @@ import { globalSearch } from '../../api/search';
 import UserProfileModal from '../common/UserProfileModal';
 import PointShopModal from '../../pages/shop/PointShopModal';
 import { useChatStore } from '../../stores/chatStore';
+import { usePostModalStore } from '../../stores/postModalStore';
 
 
 const Header = ({ onToggleSidebar, sidebarOpen }) => {
@@ -51,6 +52,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   const { isChatOpen, openChat, closeChat, openChatWith, notificationVersion } = useChatStore();
+  const { openPost, openQna } = usePostModalStore();
 
   const handleStartChatFromModal = (partner) => {
     openChatWith(partner);
@@ -161,10 +163,11 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
   };
 
   const handleNotificationClick = async (n) => {
-    // 1. Mark as read first
+    // 1. Mark as read first and immediately update local state
     if (!n.isRead) {
       try {
         await markAsRead([n.id]);
+        setNotifications(prev => prev.filter(notif => notif.id !== n.id));
       } catch (error) {
         console.error('Failed to mark as read on click:', error);
       }
@@ -178,18 +181,18 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
       case 'comment':
       case 'mention':
         if (n.qnaId) {
-          window.location.href = `/qna?qnaId=${n.qnaId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`;
+          openQna(n.qnaId, n.targetType !== 'post' ? n.targetId : null);
         } else if (n.postId) {
-          window.location.href = `/?postId=${n.postId}${n.targetType !== 'post' ? `&commentId=${n.targetId}` : ''}`;
+          openPost(n.postId, n.targetType !== 'post' ? n.targetId : null);
         }
         break;
       case 'user':
         if (n.message.includes('게시글을 올렸습니다')) {
-          navigate(`/?postId=${n.targetId}`);
+          openPost(n.targetId);
         } else if (n.message.includes('팔로우')) {
-          window.location.href = `/profile/${n.targetId}`;
+          navigate(`/profile/${n.targetId}`);
         } else {
-          window.location.href = '/mypage';
+          navigate('/mypage');
         }
         break;
       case 'system':
@@ -199,9 +202,9 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
         break;
       case 'channel':
         if (n.message.includes('게시글이 올라왔습니다')) {
-          navigate(`/?postId=${n.targetId}`);
+          openPost(n.targetId);
         } else {
-          window.location.href = `/channel/${n.targetId}`;
+          navigate(`/channels/${n.targetId}`);
         }
         break;
       default:

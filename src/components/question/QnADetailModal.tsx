@@ -31,6 +31,12 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
   // 댓글 목록이 로드되기 전까지 false로 초기화 (수정/삭제 가능 상태 유지)
   const [hasNonAuthorComments, setHasNonAuthorComments] = useState<boolean>(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ type: string; id: number } | null>(null);
+
+  const handleReportRequest = (type: 'post' | 'comment' | 'user', id: number) => {
+    setReportTarget({ type, id });
+    setIsReportModalOpen(true);
+  };
   const [profileModalUserId, setProfileModalUserId] = useState<number | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -345,7 +351,7 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
             </div>
           ) : (
             <button
-              onClick={() => setIsReportModalOpen(true)}
+              onClick={() => handleReportRequest('qna' as any, localPost.qnaId)}
               className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
               aria-label="게시글 신고"
             >
@@ -504,18 +510,20 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
             onHasNonAuthorCommentsChange={setHasNonAuthorComments}
             onResolvedChanged={(isResolved) => setLocalPost(prev => ({ ...prev, resolved: isResolved }))}
             onStartChat={handleStartChat}
+            onReportRequest={handleReportRequest}
           />
         </div>
 
-        {isReportModalOpen && (
+        {isReportModalOpen && reportTarget && (
           <ReportModal
             isOpen={isReportModalOpen}
-            onClose={() => setIsReportModalOpen(false)}
-            targetType="qna"
-            targetId={localPost.qnaId}
+            onClose={() => { setIsReportModalOpen(false); setReportTarget(null); }}
+            targetType={reportTarget.type as any}
+            targetId={reportTarget.id}
             onSuccess={() => {
               setIsReportModalOpen(false);
-              onClose();
+              setReportTarget(null);
+              if (reportTarget.type === 'qna') onClose();
             }}
           />
         )}

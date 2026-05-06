@@ -7,11 +7,15 @@ import AdminNavBar from '../sidebar/AdminNavBar'
 import GlobalWriteButton from '../common/GlobalWriteButton'
 import { useAuth } from '../sidebar/AuthContext'
 import useThemeStore from '../../../useThemeStore'
+import { usePostModalStore } from '../../stores/postModalStore'
+import CommunityPostDetail from '../feed/CommunityPostDetail'
+import QnADetailModal from '../question/QnADetailModal'
 
 function MainLayout() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { postId, qnaId, commentId, close } = usePostModalStore();
 
   useEffect(() => {
     const html = document.documentElement;
@@ -37,6 +41,21 @@ function MainLayout() {
       
       {/* Global write button with popup options */}
       <GlobalWriteButton />
+
+      {postId && (
+        <CommunityPostDetail
+          post={{ postId }}
+          autoScrollToComment={!!commentId}
+          onClose={close}
+        />
+      )}
+      {qnaId && (
+        <QnADetailModal
+          post={{ qnaId }}
+          autoScrollToComment={!!commentId}
+          onClose={close}
+        />
+      )}
     </div>
   )
 }

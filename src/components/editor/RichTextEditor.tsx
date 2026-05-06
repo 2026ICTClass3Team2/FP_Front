@@ -38,18 +38,18 @@ class MentionEmbed extends EmbedBlot {
   static tagName = 'span';
   static className = 'mention';
 
-  static create(value: { id: number | string; nickname: string }) {
+  static create(value: { id: number | string; username: string }) {
     const node = super.create();
     node.setAttribute('data-id', String(value.id));
-    node.setAttribute('data-nickname', value.nickname);
-    node.textContent = `@${value.nickname}`;
+    node.setAttribute('data-username', value.username);
+    node.textContent = `@${value.username}`;
     return node;
   }
 
   static value(node: HTMLElement) {
     return {
       id: node.getAttribute('data-id') ?? '',
-      nickname: node.getAttribute('data-nickname') ?? '',
+      username: node.getAttribute('data-username') ?? '',
     };
   }
 }
@@ -90,6 +90,7 @@ interface RichTextEditorProps {
   readOnly?: boolean;
   compact?: boolean;
   onImageUpload?: (file: File) => Promise<string>;
+  maxChars?: number;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -100,10 +101,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   readOnly = false,
   compact = false,
   onImageUpload,
+  maxChars,
 }) => {
   const quillRef = useRef<ReactQuill>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageUploadRef = useRef<() => void>(() => { });
+  const maxCharsRef = useRef(maxChars);
+  useEffect(() => { maxCharsRef.current = maxChars; }, [maxChars]);
 
   const [isStickerOpen, setIsStickerOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -247,12 +251,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, 10);
   };
 
-  // Character count
+  // Character count + optional hard cap
   useEffect(() => {
     try {
       const quill = quillRef.current?.getEditor();
       if (!quill) return;
-      const update = () => setCharCount(quill.getText().replace(/\n$/, '').length);
+      const update = () => {
+        const length = quill.getLength() - 1;
+        const cap = maxCharsRef.current;
+        if (cap && length > cap) {
+          quill.deleteText(cap, quill.getLength());
+          setCharCount(cap);
+        } else {
+          setCharCount(length);
+        }
+      };
       quill.on('text-change', update);
       return () => { quill.off('text-change', update); };
     } catch { return; }
@@ -449,7 +462,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => clearTimeout(timer);
   }, [mentionQuery]);
 
-  const handleMentionSelect = (userId: number, nickname: string) => {
+  const handleMentionSelect = (userId: number, username: string) => {
     const editor = quillRef.current?.getEditor();
     if (!editor || mentionQuery === null) return;
 
@@ -458,7 +471,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     const startIndex = range.index - mentionQuery.length - 1;
     editor.deleteText(startIndex, mentionQuery.length + 1);
-    editor.insertEmbed(startIndex, 'mention', { id: userId, nickname }, 'user');
+    editor.insertEmbed(startIndex, 'mention', { id: userId, username }, 'user');
     editor.insertText(startIndex + 1, ' ', 'user');
     editor.setSelection(startIndex + 2, 0, 'user');
 
@@ -678,7 +691,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           ) : (
             <span />
           )}
-          <span className="text-[11px] text-muted-foreground tabular-nums">{charCount}자</span>
+          <span className={`text-[11px] tabular-nums ${
+            maxChars
+              ? charCount >= maxChars ? 'text-red-500 font-semibold'
+                : charCount >= maxChars * 0.9 ? 'text-orange-400'
+                : 'text-muted-foreground'
+              : 'text-muted-foreground'
+          }`}>
+            {maxChars ? `${charCount} / ${maxChars}자` : `${charCount}자`}
+          </span>
         </div>
       )}
 
@@ -775,17 +796,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <button
               key={user.id}
               type="button"
-              onClick={() => handleMentionSelect(user.id, user.nickname)}
+              onClick={() => handleMentionSelect(user.id, user.username)}
               className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors border-b border-border last:border-0"
             >
-              <img 
-                src={user.profilePicUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
-                alt={user.nickname} 
+              <img
+                src={user.profilePicUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
+                alt={user.username}
                 className="w-6 h-6 rounded-full object-cover"
               />
               <div className="text-left">
-                <p className="text-xs font-bold text-foreground">{user.nickname}</p>
-                <p className="text-[10px] text-muted-foreground">@{user.username}</p>
+                <p className="text-xs font-bold text-foreground">@{user.username}</p>
+                <p className="text-[10px] text-muted-foreground">{user.nickname}</p>
               </div>
             </button>
           ))}

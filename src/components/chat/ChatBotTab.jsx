@@ -181,22 +181,28 @@ const ChatBotTab = () => {
         </div>
 
         {/* FAQ Input Form */}
-        <form onSubmit={handleFaqSubmit} className="p-3 bg-surface border-t border-border flex gap-2">
-          <input 
-            type="text"
-            value={faqInput}
-            onChange={(e) => setFaqInput(e.target.value)}
-            placeholder="AI에게 질문해보세요..."
-            disabled={faqLoading}
-            className="flex-1 bg-muted/40 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
-          />
-          <button 
-            type="submit"
-            disabled={!faqInput.trim() || faqLoading}
-            className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50 transition-all shadow-sm"
-          >
-            <FiSend size={18} />
-          </button>
+        <form onSubmit={handleFaqSubmit} className="p-3 bg-surface border-t border-border flex flex-col gap-1">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={faqInput}
+              onChange={(e) => setFaqInput(e.target.value)}
+              placeholder="AI에게 질문해보세요..."
+              maxLength={1000}
+              disabled={faqLoading}
+              className="flex-1 bg-muted/40 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+            />
+            <button
+              type="submit"
+              disabled={!faqInput.trim() || faqLoading}
+              className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50 transition-all shadow-sm"
+            >
+              <FiSend size={18} />
+            </button>
+          </div>
+          <div className={`text-right text-xs ${faqInput.length >= 1000 ? 'text-red-500 font-medium' : faqInput.length >= 950 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {faqInput.length} / 1000
+          </div>
         </form>
       </div>
     );
@@ -223,8 +229,12 @@ const ChatBotTab = () => {
             value={codeInput}
             onChange={(e) => setCodeInput(e.target.value)}
             placeholder="코드를 여기에 입력하세요..."
+            maxLength={50000}
             className="w-full h-40 bg-muted/30 border border-border rounded-xl p-3 text-sm font-mono focus:ring-2 focus:ring-purple-500/30 outline-none resize-none"
           />
+          <div className={`text-right text-xs ${codeInput.length >= 50000 ? 'text-red-500 font-medium' : codeInput.length >= 49000 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {codeInput.length} / 50000
+          </div>
           
           <button
             onClick={handleCodeSubmit}

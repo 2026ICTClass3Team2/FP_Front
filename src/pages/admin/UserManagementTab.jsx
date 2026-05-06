@@ -15,6 +15,9 @@ const UserManagementTab = ({ fetchStats }) => {
   const [warningModal, setWarningModal] = useState(null);
   const [revertWarningModal, setRevertWarningModal] = useState(null);
   const [revertSuspendModal, setRevertSuspendModal] = useState(null);
+  const [suspendReason, setSuspendReason] = useState('');
+  const [revertWarningReason, setRevertWarningReason] = useState('I made a mistake');
+  const [revertSuspendReason, setRevertSuspendReason] = useState('I made a mistake');
 
   const fetchUsers = async () => {
     try {
@@ -58,17 +61,19 @@ const UserManagementTab = ({ fetchStats }) => {
   const handleSuspendSubmit = async (e) => {
     e.preventDefault();
     try {
-      const reason = e.target.reason.value;
       const days = parseInt(e.target.days.value);
       const releasedAt = new Date();
       releasedAt.setDate(releasedAt.getDate() + days);
+      const pad = n => String(n).padStart(2, '0');
+      const releasedAtLocal = `${releasedAt.getFullYear()}-${pad(releasedAt.getMonth() + 1)}-${pad(releasedAt.getDate())}T${pad(releasedAt.getHours())}:${pad(releasedAt.getMinutes())}:00`;
 
       await jwtAxios.post(`admin/users/${suspendModal.id}/suspend`, {
-        reason,
-        releasedAt: releasedAt.toISOString()
+        reason: suspendReason,
+        releasedAt: releasedAtLocal
       });
       alert('정지 처리가 완료되었습니다.');
       setSuspendModal(null);
+      setSuspendReason('');
       fetchUsers();
     } catch (error) {
       console.error('Suspend error:', error);
@@ -92,10 +97,10 @@ const UserManagementTab = ({ fetchStats }) => {
   const handleRevertSuspendSubmit = async (e) => {
     e.preventDefault();
     try {
-      const reason = e.target.reason.value;
-      await jwtAxios.post(`admin/users/${revertSuspendModal.id}/revert-suspend`, { reason });
+      await jwtAxios.post(`admin/users/${revertSuspendModal.id}/revert-suspend`, { reason: revertSuspendReason });
       alert('정지가 해제되었습니다.');
       setRevertSuspendModal(null);
+      setRevertSuspendReason('I made a mistake');
       fetchUsers();
     } catch (error) {
       console.error('Revert suspend error:', error);
@@ -260,13 +265,19 @@ const UserManagementTab = ({ fetchStats }) => {
             <form onSubmit={handleSuspendSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">정지 사유</label>
-                <textarea 
-                  name="reason" 
-                  required 
+                <textarea
+                  name="reason"
+                  value={suspendReason}
+                  onChange={e => setSuspendReason(e.target.value)}
+                  required
+                  maxLength={500}
                   className="w-full bg-background border border-border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows="3"
                   placeholder="정지 사유를 상세히 입력하세요."
                 ></textarea>
+                <div className={`text-right text-xs mt-1 ${suspendReason.length >= 500 ? 'text-red-500 font-medium' : suspendReason.length >= 450 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                  {suspendReason.length} / 500
+                </div>
               </div>
               
               <div>
@@ -282,7 +293,7 @@ const UserManagementTab = ({ fetchStats }) => {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setSuspendModal(null)} className="flex-1 py-2.5 rounded-xl border border-border hover:bg-muted/5 font-semibold">취소</button>
+                <button type="button" onClick={() => { setSuspendModal(null); setSuspendReason(''); }} className="flex-1 py-2.5 rounded-xl border border-border hover:bg-muted/5 font-semibold">취소</button>
                 <button type="submit" className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors">정지하기</button>
               </div>
             </form>
@@ -316,19 +327,24 @@ const UserManagementTab = ({ fetchStats }) => {
                 <span className="font-bold">{revertWarningModal.nickname}</span>님은 현재 3회 경고 누적으로 정지 상태입니다. 
                 경고를 철회하면 정지도 함께 해제됩니다.
               </p>
-              <form onSubmit={(e) => { e.preventDefault(); handleRevertWarning(e.target.reason.value); }} className="space-y-4">
+              <form onSubmit={(e) => { e.preventDefault(); handleRevertWarning(revertWarningReason); }} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">철회 사유 (정지 테이블 업데이트용)</label>
-                  <textarea 
-                    name="reason" 
-                    required 
-                    defaultValue="I made a mistake"
+                  <textarea
+                    name="reason"
+                    value={revertWarningReason}
+                    onChange={e => setRevertWarningReason(e.target.value)}
+                    required
+                    maxLength={500}
                     className="w-full bg-background border border-border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows="3"
                   ></textarea>
+                  <div className={`text-right text-xs mt-1 ${revertWarningReason.length >= 500 ? 'text-red-500 font-medium' : revertWarningReason.length >= 450 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                    {revertWarningReason.length} / 500
+                  </div>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setRevertWarningModal(null)} className="flex-1 py-2.5 rounded-xl border border-border hover:bg-muted/5 font-semibold">취소</button>
+                  <button type="button" onClick={() => { setRevertWarningModal(null); setRevertWarningReason('I made a mistake'); }} className="flex-1 py-2.5 rounded-xl border border-border hover:bg-muted/5 font-semibold">취소</button>
                   <button type="submit" className="flex-1 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors">철회 및 해제</button>
                 </div>
               </form>
@@ -363,16 +379,21 @@ const UserManagementTab = ({ fetchStats }) => {
             <form onSubmit={handleRevertSuspendSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">해제 사유 (정지 테이블 업데이트용)</label>
-                <textarea 
-                  name="reason" 
-                  required 
-                  defaultValue="I made a mistake"
+                <textarea
+                  name="reason"
+                  value={revertSuspendReason}
+                  onChange={e => setRevertSuspendReason(e.target.value)}
+                  required
+                  maxLength={500}
                   className="w-full bg-background border border-border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-500"
                   rows="3"
                 ></textarea>
+                <div className={`text-right text-xs mt-1 ${revertSuspendReason.length >= 500 ? 'text-red-500 font-medium' : revertSuspendReason.length >= 450 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                  {revertSuspendReason.length} / 500
+                </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setRevertSuspendModal(null)} className="flex-1 py-2.5 rounded-xl border border-border hover:bg-muted/5 font-semibold">취소</button>
+                <button type="button" onClick={() => { setRevertSuspendModal(null); setRevertSuspendReason('I made a mistake'); }} className="flex-1 py-2.5 rounded-xl border border-border hover:bg-muted/5 font-semibold">취소</button>
                 <button type="submit" className="flex-1 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors">해제하기</button>
               </div>
             </form>

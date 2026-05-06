@@ -90,6 +90,7 @@ interface RichTextEditorProps {
   readOnly?: boolean;
   compact?: boolean;
   onImageUpload?: (file: File) => Promise<string>;
+  maxChars?: number;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -100,10 +101,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   readOnly = false,
   compact = false,
   onImageUpload,
+  maxChars,
 }) => {
   const quillRef = useRef<ReactQuill>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageUploadRef = useRef<() => void>(() => { });
+  const maxCharsRef = useRef(maxChars);
+  useEffect(() => { maxCharsRef.current = maxChars; }, [maxChars]);
 
   const [isStickerOpen, setIsStickerOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -247,12 +251,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, 10);
   };
 
-  // Character count
+  // Character count + optional hard cap
   useEffect(() => {
     try {
       const quill = quillRef.current?.getEditor();
       if (!quill) return;
-      const update = () => setCharCount(quill.getText().replace(/\n$/, '').length);
+      const update = () => {
+        const length = quill.getLength() - 1;
+        const cap = maxCharsRef.current;
+        if (cap && length > cap) {
+          quill.deleteText(cap, quill.getLength());
+          setCharCount(cap);
+        } else {
+          setCharCount(length);
+        }
+      };
       quill.on('text-change', update);
       return () => { quill.off('text-change', update); };
     } catch { return; }
@@ -678,7 +691,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           ) : (
             <span />
           )}
-          <span className="text-[11px] text-muted-foreground tabular-nums">{charCount}자</span>
+          <span className={`text-[11px] tabular-nums ${
+            maxChars
+              ? charCount >= maxChars ? 'text-red-500 font-semibold'
+                : charCount >= maxChars * 0.9 ? 'text-orange-400'
+                : 'text-muted-foreground'
+              : 'text-muted-foreground'
+          }`}>
+            {maxChars ? `${charCount} / ${maxChars}자` : `${charCount}자`}
+          </span>
         </div>
       )}
 

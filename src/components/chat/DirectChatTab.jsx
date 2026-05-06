@@ -386,12 +386,14 @@ const DirectChatTab = () => {
                 )}
 
                 {isEditing ? (
-                  <form onSubmit={submitEdit} className="flex gap-1 w-full min-w-[200px]">
+                  <form onSubmit={submitEdit} className="flex flex-col gap-1 w-full min-w-[200px]">
+                    <div className="flex gap-1">
                     <input
                       ref={editInputRef}
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Escape') cancelEdit(); }}
+                      maxLength={500}
                       className="flex-1 bg-muted/40 border border-primary/40 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                     />
                     <button
@@ -408,6 +410,10 @@ const DirectChatTab = () => {
                     >
                       취소
                     </button>
+                    </div>
+                    <div className={`text-right text-xs ${editText.length >= 500 ? 'text-red-500 font-medium' : editText.length >= 450 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+                      {editText.length} / 500
+                    </div>
                   </form>
                 ) : (
                   <div
@@ -443,21 +449,27 @@ const DirectChatTab = () => {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSend} className="p-4 bg-surface border-t border-border flex gap-2">
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="메시지를 입력하세요..."
-          className="flex-1 bg-muted/40 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!inputText.trim()}
-          className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center disabled:opacity-50 disabled:grayscale transition-all hover:scale-105 active:scale-95 shadow-lg"
-        >
-          <FiSend size={18} />
-        </button>
+      <form onSubmit={handleSend} className="p-4 bg-surface border-t border-border flex flex-col gap-1">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="메시지를 입력하세요..."
+            maxLength={500}
+            className="flex-1 bg-muted/40 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!inputText.trim()}
+            className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center disabled:opacity-50 disabled:grayscale transition-all hover:scale-105 active:scale-95 shadow-lg"
+          >
+            <FiSend size={18} />
+          </button>
+        </div>
+        <div className={`text-right text-xs ${inputText.length >= 500 ? 'text-red-500 font-medium' : inputText.length >= 450 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+          {inputText.length} / 500
+        </div>
       </form>
     </div>
   );

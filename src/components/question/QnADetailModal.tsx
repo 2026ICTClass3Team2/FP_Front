@@ -496,6 +496,11 @@ const QnADetailModal: React.FC<QnADetailModalProps> = ({
               commentCount: Math.max(0, (prev.commentCount ?? 0) + delta),
               commentsCount: Math.max(0, (prev.commentsCount ?? 0) + delta)
             }))}
+            onCommentCountSync={(count) => setLocalPost(prev => ({
+              ...prev,
+              commentCount: count,
+              commentsCount: count
+            }))}
             onHasNonAuthorCommentsChange={setHasNonAuthorComments}
             onResolvedChanged={(isResolved) => setLocalPost(prev => ({ ...prev, resolved: isResolved }))}
             onStartChat={handleStartChat}

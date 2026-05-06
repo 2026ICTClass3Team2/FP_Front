@@ -22,13 +22,13 @@ const OAuthUsernameSetupPage = () => {
   }, [navigate]);
 
   const handleUsernameChange = (e) => {
-    const value = e.target.value;
+    const value = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '');
     setUsername(value);
     setIsUsernameAvailable(false);
     setNotification('');
-    const usernameRegex = /^\S{4,}$/;
+    const usernameRegex = /^[a-z0-9]{4,20}$/;
     if (value.length > 0 && !usernameRegex.test(value)) {
-      setUsernameError('❌ 아이디는 공백 없이 4자 이상이어야 합니다.');
+      setUsernameError('❌ 아이디는 소문자 영문과 숫자만 사용 가능하며, 4~20자여야 합니다.');
     } else {
       setUsernameError('');
     }
@@ -115,7 +115,7 @@ const OAuthUsernameSetupPage = () => {
                 onChange={handleUsernameChange}
                 required
                 className={`flex-1 px-4 py-2 border rounded-xl bg-background text-foreground focus:outline-none transition-colors ${usernameError ? 'border-red-500' : 'border-border focus:border-primary'}`}
-                placeholder="4자 이상 입력"
+                placeholder="소문자·숫자 4~20자"
               />
               <button
                 type="button"

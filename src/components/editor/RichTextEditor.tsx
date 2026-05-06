@@ -38,18 +38,18 @@ class MentionEmbed extends EmbedBlot {
   static tagName = 'span';
   static className = 'mention';
 
-  static create(value: { id: number | string; nickname: string }) {
+  static create(value: { id: number | string; username: string }) {
     const node = super.create();
     node.setAttribute('data-id', String(value.id));
-    node.setAttribute('data-nickname', value.nickname);
-    node.textContent = `@${value.nickname}`;
+    node.setAttribute('data-username', value.username);
+    node.textContent = `@${value.username}`;
     return node;
   }
 
   static value(node: HTMLElement) {
     return {
       id: node.getAttribute('data-id') ?? '',
-      nickname: node.getAttribute('data-nickname') ?? '',
+      username: node.getAttribute('data-username') ?? '',
     };
   }
 }
@@ -462,7 +462,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => clearTimeout(timer);
   }, [mentionQuery]);
 
-  const handleMentionSelect = (userId: number, nickname: string) => {
+  const handleMentionSelect = (userId: number, username: string) => {
     const editor = quillRef.current?.getEditor();
     if (!editor || mentionQuery === null) return;
 
@@ -471,7 +471,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     const startIndex = range.index - mentionQuery.length - 1;
     editor.deleteText(startIndex, mentionQuery.length + 1);
-    editor.insertEmbed(startIndex, 'mention', { id: userId, nickname }, 'user');
+    editor.insertEmbed(startIndex, 'mention', { id: userId, username }, 'user');
     editor.insertText(startIndex + 1, ' ', 'user');
     editor.setSelection(startIndex + 2, 0, 'user');
 
@@ -796,17 +796,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <button
               key={user.id}
               type="button"
-              onClick={() => handleMentionSelect(user.id, user.nickname)}
+              onClick={() => handleMentionSelect(user.id, user.username)}
               className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors border-b border-border last:border-0"
             >
-              <img 
-                src={user.profilePicUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
-                alt={user.nickname} 
+              <img
+                src={user.profilePicUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
+                alt={user.username}
                 className="w-6 h-6 rounded-full object-cover"
               />
               <div className="text-left">
-                <p className="text-xs font-bold text-foreground">{user.nickname}</p>
-                <p className="text-[10px] text-muted-foreground">@{user.username}</p>
+                <p className="text-xs font-bold text-foreground">@{user.username}</p>
+                <p className="text-[10px] text-muted-foreground">{user.nickname}</p>
               </div>
             </button>
           ))}

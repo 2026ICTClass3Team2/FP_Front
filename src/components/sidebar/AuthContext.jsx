@@ -70,14 +70,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 소셜 로그인 처리 로직 (OAuthCallback에서 호출)
-  const handleOAuthLogin = useCallback((token, username, userId = null, role = 'user') => {
+  const handleOAuthLogin = useCallback((token, username, userId = null, role = 'user', status = 'active', releasedAt = null) => {
     const userProfile = {
       userId,
       username: username,
       nickname: username.split('@')[0],
       role,
-      status: 'active', // 소셜 로그인은 기본적으로 활성 상태로 시작한다고 가정 (실제로는 서버 연동 필요)
-      releasedAt: null,
+      status,
+      releasedAt,
     };
     setCurrentUser(userProfile);
     setToken(token);

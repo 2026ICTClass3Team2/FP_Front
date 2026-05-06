@@ -8,6 +8,7 @@ export interface CommentResponse {
   createdAt: string;
   authorUserId: number | null;
   authorNickname: string;
+  authorUsername: string;
   authorProfilePicUrl: string | null;
   parentId: number | null;
   isReported?: boolean;

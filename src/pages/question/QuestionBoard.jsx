@@ -40,6 +40,7 @@ const QuestionBoard = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
+  const [globalStats, setGlobalStats] = useState({ total: 0, solved: 0, unsolved: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
   const [autoScrollToComment, setAutoScrollToComment] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -63,8 +64,12 @@ const QuestionBoard = () => {
         size: PAGE_SIZE,
       };
 
-      const response = await jwtAxios.get('qna', { params });
-      const data = response.data;
+      const [listResponse, statsResponse] = await Promise.all([
+        jwtAxios.get('qna', { params }),
+        jwtAxios.get('qna/stats')
+      ]);
+      const data = listResponse.data;
+      setGlobalStats(statsResponse.data);
       
       // Handle different response formats
       if (data.content) {
@@ -148,13 +153,8 @@ const QuestionBoard = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  // 통계 계산 (현재 페이지 기준)
-  const stats = useMemo(() => {
-    const total = items.length;
-    const solved = items.filter((item) => item.resolved).length;
-    const unsolved = total - solved;
-    return { total, solved, unsolved };
-  }, [items]);
+  // 통계는 이제 백엔드에서 전역으로 가져옴
+  const stats = globalStats;
 
   // 게시글 삭제 handler
   const handleDeletePost = (qnaId) => {
@@ -288,7 +288,7 @@ const QuestionBoard = () => {
         <div className="grid gap-4 md:grid-cols-3 mb-8">
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             <p className="text-sm text-muted-foreground">전체 질문</p>
-            <p className="mt-3 text-3xl font-bold text-foreground">{items.length}</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{stats.total}</p>
           </div>
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             <p className="text-sm text-muted-foreground">해결된 질문</p>

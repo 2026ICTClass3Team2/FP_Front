@@ -23,6 +23,7 @@ import BlockList from '../components/profile/BlockList';
 import ChannelDetail from '../pages/channel/ChannelDetail';
 import FavoritesFeedPage from '../pages/favorites/FavoritesFeedPage';
 import SuspensionModal from '../components/common/SuspensionModal';
+import SearchResultsPage from '../pages/search/SearchResultsPage';
 
 const AppRouter = () => {
   return (
@@ -66,6 +67,9 @@ const AppRouter = () => {
 
             {/* 채널 상세 페이지 */}
             <Route path="channels/:channelId" element={<ChannelDetail />} />
+
+            {/* 검색 결과 페이지 */}
+            <Route path="search" element={<SearchResultsPage />} />
           </Route>
 
           {/* 관리자 영역 - MainLayout과 분리된 AdminLayout 적용 */}

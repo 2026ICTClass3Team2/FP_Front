@@ -12,12 +12,13 @@ import UserProfileModal from '../common/UserProfileModal';
 interface CommunityPostDetailProps {
   post: Post;
   onClose: (updatedPost?: Post) => void;
+  onPostUpdate?: (updatedPost: Post) => void; // 모달 열린 채로 카드 실시간 동기화
   autoScrollToComment?: boolean;
   onEditClick?: (post: Post) => void;
   onDeleteClick?: (postId: number) => void;
 }
 
-const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose, autoScrollToComment = false, onEditClick, onDeleteClick }) => {
+const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose, onPostUpdate, autoScrollToComment = false, onEditClick, onDeleteClick }) => {
   const { openChatWith } = useChatStore();
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const currentUserId = currentUser?.userId ?? currentUser?.user_id ?? currentUser?.id ?? null;
@@ -65,6 +66,13 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
       window.removeEventListener('keydown', handleEscape);
     };
   }, [onClose, localPost, isReportModalOpen]);
+
+  // commentCount가 동기화될 때마다 FeedList의 카드도 실시간 업데이트
+  const onPostUpdateRef = useRef(onPostUpdate);
+  useEffect(() => { onPostUpdateRef.current = onPostUpdate; }, [onPostUpdate]);
+  useEffect(() => {
+    onPostUpdateRef.current?.(localPost);
+  }, [localPost.commentCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 모달이 열려있을 때 배경 스크롤 방지 (실제 스크롤 컨테이너는 <main>)
   useEffect(() => {
@@ -408,6 +416,9 @@ const CommunityPostDetail: React.FC<CommunityPostDetailProps> = ({ post, onClose
             commentCount={localPost.commentCount || 0}
             onCommentCountChange={(delta) =>
               setLocalPost(prev => ({ ...prev, commentCount: Math.max(0, (prev.commentCount || 0) + delta) }))
+            }
+            onCommentCountSync={(count) =>
+              setLocalPost(prev => ({ ...prev, commentCount: count }))
             }
             onReportRequest={openReportModal}
             onBlockUser={handleBlockUserFromComment}

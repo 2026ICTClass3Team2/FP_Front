@@ -1,12 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA / App meta -->
+    <meta name="application-name" content="DeadBug" />
+    <meta name="description" content="개발자 커뮤니티 플랫폼 — 질문, 코드 리뷰, 실시간 채팅" />
+    <meta name="theme-color" content="#6366f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#6366f1" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="DeadBug" />
+
+    <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>final_project</title>
+    <link rel="apple-touch-icon" href="/icons/pwa-192.svg" />
+
+    <title>DeadBug</title>
+
     <script>
-      // 페이지 로드 시 테마 깜빡임(FOUC) 방지를 위해 head에 인라인 스크립트로 추가합니다.
+      // 페이지 로드 시 테마 깜빡임(FOUC) 방지
       if (
         localStorage.theme === 'dark' ||
         (!('theme' in localStorage) &&

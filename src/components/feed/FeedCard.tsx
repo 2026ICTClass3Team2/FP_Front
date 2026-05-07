@@ -356,8 +356,12 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit,
           <input
             type="text" value={title} onChange={(e) => setTitle(e.target.value)}
             placeholder="게시글 제목을 입력하세요."
+            maxLength={250}
             className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
             required />
+          <div className={`text-right text-xs mt-0.5 ${title.length >= 250 ? 'text-red-500 font-medium' : title.length >= 225 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {title.length} / 250
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -368,6 +372,7 @@ const FeedCard: React.FC<FeedCardProps> = ({ onClose, onPostCreated, postToEdit,
             placeholder="내용을 입력하세요..."
             readOnly={loading}
             onImageUpload={uploadToS3}
+            maxChars={50000}
             className="rounded-xl transition-shadow shadow-sm mt-1"
           />
         </div>

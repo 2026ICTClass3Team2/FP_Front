@@ -27,7 +27,7 @@ jobs:
 
       # Step C: Install packages
       - name: Install Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       # Step D: Run the Vite build (This is what caught your bug last time!)
       - name: Build Project

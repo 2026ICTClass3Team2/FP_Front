@@ -43,7 +43,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
 
   // 검색 관련 상태
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState({ posts: [], users: [], channels: [] });
+  const [searchResults, setSearchResults] = useState({ posts: [], users: [], channels: [], tags: [] });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -114,23 +114,23 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
     }
 
     if (!searchQuery.trim()) {
-      setSearchResults({ posts: [], users: [], channels: [] });
+      setSearchResults({ posts: [], users: [], channels: [], tags: [] });
       setIsSearchOpen(false);
       return;
     }
 
+    setIsSearchOpen(true);
     setIsLoading(true);
     debounceTimer.current = setTimeout(async () => {
       try {
         const results = await globalSearch(searchQuery);
         setSearchResults(results);
-        setIsSearchOpen(true);
-      } catch (error) {
-        console.error('Search error:', error);
+      } catch {
+        // search errors are non-critical
       } finally {
         setIsLoading(false);
       }
-    }, 400); // 400ms 디바운스
+    }, 400);
 
     return () => {
       if (debounceTimer.current) {
@@ -138,6 +138,12 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
       }
     };
   }, [searchQuery]);
+
+  const handleGoToSearchPage = () => {
+    if (!searchQuery.trim()) return;
+    navigate('/search?q=' + encodeURIComponent(searchQuery.trim()));
+    setIsSearchOpen(false);
+  };
 
 
   const handleMarkAsRead = async () => {
@@ -186,6 +192,8 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           openPost(n.postId, n.targetType !== 'post' ? n.targetId : null);
         }
         break;
+      case 'admin':
+        break;
       case 'user':
         if (n.message.includes('게시글을 올렸습니다')) {
           openPost(n.targetId);
@@ -226,7 +234,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           {/* 햄버거 토글 버튼 */}
           <button
             onClick={onToggleSidebar}
-            className="p-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all cursor-pointer"
+            className="p-2.5 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all cursor-pointer touch-target"
             title={sidebarOpen ? '사이드바 닫기' : '사이드바 열기'}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -265,16 +273,16 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
 
         {/* 중앙 탭 아이콘 (피드 네비게이션) */}
         <div className="flex items-center justify-center gap-1 flex-1">
-          <button onClick={() => handleTabChange('ALGORITHM')} className={`px-8 py-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'ALGORITHM' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="맞춤">
+          <button onClick={() => handleTabChange('ALGORITHM')} className={`px-3 sm:px-8 py-2.5 rounded-xl transition-all cursor-pointer touch-target ${activeTab === 'ALGORITHM' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="맞춤">
             <FiActivity size={22} className={activeTab === 'ALGORITHM' && location.pathname === '/' ? 'stroke-[2.5px]' : ''} />
           </button>
-          <button onClick={() => handleTabChange('POPULAR')} className={`px-8 py-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'POPULAR' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="인기">
+          <button onClick={() => handleTabChange('POPULAR')} className={`px-3 sm:px-8 py-2.5 rounded-xl transition-all cursor-pointer touch-target ${activeTab === 'POPULAR' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="인기">
             <FiTrendingUp size={22} className={activeTab === 'POPULAR' && location.pathname === '/' ? 'stroke-[2.5px]' : ''} />
           </button>
-          <button onClick={() => handleTabChange('LATEST')} className={`px-8 py-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'LATEST' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="최신">
+          <button onClick={() => handleTabChange('LATEST')} className={`px-3 sm:px-8 py-2.5 rounded-xl transition-all cursor-pointer touch-target ${activeTab === 'LATEST' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="최신">
             <FiClock size={22} className={activeTab === 'LATEST' && location.pathname === '/' ? 'stroke-[2.5px]' : ''} />
           </button>
-          <button onClick={() => handleTabChange('SUBSCRIBED')} className={`px-8 py-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'SUBSCRIBED' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="구독">
+          <button onClick={() => handleTabChange('SUBSCRIBED')} className={`px-3 sm:px-8 py-2.5 rounded-xl transition-all cursor-pointer touch-target ${activeTab === 'SUBSCRIBED' && location.pathname === '/' ? 'text-primary bg-primary/10 shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`} title="구독">
             <FiHeart size={22} className={activeTab === 'SUBSCRIBED' && location.pathname === '/' ? 'stroke-[2.5px]' : ''} />
           </button>
         </div>
@@ -304,6 +312,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchQuery && setIsSearchOpen(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleGoToSearchPage(); }}
                 placeholder="무엇이든 검색하세요"
                 className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground text-base"
               />
@@ -314,9 +323,24 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
 
             {/* 검색 결과 드롭다운 */}
             {isSearchOpen && (
-
               <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2">
                 <div className="max-h-[480px] overflow-y-auto">
+                  {/* 검색 페이지로 이동 */}
+                  <div
+                    onClick={handleGoToSearchPage}
+                    className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border/50"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 01-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-semibold text-foreground truncate">"{searchQuery}" 검색하기</span>
+                      <span className="text-[10px] text-muted-foreground">전체 검색 결과 보기</span>
+                    </div>
+                  </div>
+
                   {/* 포스트 결과 */}
                   {searchResults.posts.length > 0 && (
                     <div className="p-2">
@@ -324,7 +348,10 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
                       {searchResults.posts.map(post => (
                         <div
                           key={post.id}
-                          onClick={() => { navigate(`/?postId=${post.id}`); setIsSearchOpen(false); }}
+                          onClick={() => {
+                            if (post.contentType === 'qna' && post.qnaId) { openQna(post.qnaId); } else { openPost(Number(post.id)); }
+                            setIsSearchOpen(false);
+                          }}
                           className="flex items-center gap-3 p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
                         >
                           {post.thumbnailUrl && (
@@ -395,8 +422,26 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
                     </div>
                   )}
 
+                  {/* 태그 결과 */}
+                  {(searchResults.tags || []).length > 0 && (
+                    <div className="p-2 border-t border-border/50">
+                      <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">태그</div>
+                      <div className="flex flex-wrap gap-1.5 px-3 pb-2">
+                        {(searchResults.tags || []).slice(0, 4).map(tag => (
+                          <button
+                            key={tag.id}
+                            onClick={() => { navigate('/search?q=' + encodeURIComponent(tag.name)); setIsSearchOpen(false); }}
+                            className="px-2.5 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
+                          >
+                            #{tag.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* 결과 없음 */}
-                  {searchResults.posts.length === 0 && searchResults.users.length === 0 && searchResults.channels.length === 0 && (
+                  {!isLoading && searchResults.posts.length === 0 && searchResults.users.length === 0 && searchResults.channels.length === 0 && (searchResults.tags || []).length === 0 && (
                     <div className="p-8 text-center text-muted-foreground">
                       <p className="text-sm">검색 결과가 없습니다</p>
                       <p className="text-[11px] mt-1 opacity-70">다른 검색어를 입력해 보세요</p>
@@ -409,7 +454,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           <div className="relative" ref={chatRef}>
             <button
               onClick={() => isChatOpen ? closeChat() : openChat()}
-              className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors cursor-pointer"
+              className="p-2.5 text-foreground hover:bg-foreground/10 rounded-xl transition-colors cursor-pointer touch-target"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
@@ -435,7 +480,7 @@ const Header = ({ onToggleSidebar, sidebarOpen }) => {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="p-2 text-foreground hover:bg-foreground/10 rounded transition-colors relative cursor-pointer"
+              className="p-2.5 text-foreground hover:bg-foreground/10 rounded-xl transition-colors relative cursor-pointer touch-target"
             >
               <FiBell size={24} />
               {generalNotifications.length > 0 && (

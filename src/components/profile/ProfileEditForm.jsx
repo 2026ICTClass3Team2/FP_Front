@@ -91,10 +91,14 @@ const ProfileEditForm = ({ initial, isLocal = false, onSubmit, onCancel, onDelet
             type="text"
             value={nickname}
             onChange={e => setNickname(e.target.value)}
+            maxLength={30}
             className="w-full border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="닉네임을 입력하세요."
             required
           />
+          <div className={`text-right text-xs mt-1 ${nickname.length >= 30 ? 'text-red-500 font-medium' : nickname.length >= 27 ? 'text-orange-400' : 'text-muted-foreground'}`}>
+            {nickname.length} / 30
+          </div>
         </div>
         {/* 이메일 — 로컬 계정만 표시 */}
         {isLocal && (

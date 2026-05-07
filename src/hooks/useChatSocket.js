@@ -57,9 +57,7 @@ const useChatSocket = ({ onNewMessage }) => {
         if (!isMountedRef.current) return;
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'NEW_MESSAGE') {
-            onNewMessageRef.current?.(data);
-          }
+          onNewMessageRef.current?.(data);
         } catch (err) {
           console.warn('[ChatWS] Message parsing error:', err);
         }
@@ -101,24 +99,25 @@ const useChatSocket = ({ onNewMessage }) => {
     };
   }, []);
 
-  /**
-   * 메시지를 서버로 전송합니다.
-   */
   const sendMessage = (receiverId, content) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      const payload = JSON.stringify({
-        type: 'SEND',
-        receiverId,
-        content
-      });
-      socketRef.current.send(payload);
+      socketRef.current.send(JSON.stringify({ type: 'SEND', receiverId, content }));
       return true;
     }
     console.warn('[ChatWS] Socket not open. Message not sent.');
     return false;
   };
 
-  return { isConnected, sendMessage };
+  const sendRaw = (payload) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(payload));
+      return true;
+    }
+    console.warn('[ChatWS] Socket not open. Message not sent.');
+    return false;
+  };
+
+  return { isConnected, sendMessage, sendRaw };
 };
 
 export default useChatSocket;

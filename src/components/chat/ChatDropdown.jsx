@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiMessageSquare, FiCpu, FiFileText } from 'react-icons/fi';
+import { FiMessageSquare, FiCpu, FiFileText, FiX } from 'react-icons/fi';
 import ChatBotTab from './ChatBotTab';
 import DirectChatTab from './DirectChatTab';
 import SuggestionTab from './SuggestionTab';
@@ -10,7 +10,7 @@ const ChatDropdown = () => {
     return localStorage.getItem('lastChatTab') || 'bot';
   });
 
-  const { pendingPartner } = useChatStore();
+  const { pendingPartner, closeChat } = useChatStore();
 
   useEffect(() => {
     localStorage.setItem('lastChatTab', activeTab);
@@ -22,10 +22,18 @@ const ChatDropdown = () => {
   }, [pendingPartner]);
 
   return (
-    <div className="absolute right-0 mt-2 w-[520px] h-[600px] bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden flex z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-      
+    <div className="fixed inset-0 sm:absolute sm:inset-auto sm:right-0 sm:mt-2 w-full sm:w-[520px] h-full sm:h-[600px] bg-surface border-0 sm:border border-border sm:rounded-2xl shadow-2xl overflow-hidden flex z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+
       {/* 왼쪽 사이드바 (내비게이션) */}
-      <div className="w-20 bg-muted/40 border-r border-border flex flex-col items-center py-6 gap-6">
+      <div className="w-16 sm:w-20 bg-muted/40 border-r border-border flex flex-col items-center py-4 sm:py-6 gap-4 sm:gap-6">
+        {/* Mobile close button */}
+        <button
+          onClick={closeChat}
+          className="sm:hidden p-3 rounded-2xl text-muted-foreground hover:bg-muted hover:text-foreground touch-target"
+          title="닫기"
+        >
+          <FiX size={22} />
+        </button>
         <button
           onClick={() => setActiveTab('bot')}
           className={`p-3 rounded-2xl transition-all cursor-pointer ${

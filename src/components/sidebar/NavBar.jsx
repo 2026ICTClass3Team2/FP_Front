@@ -116,7 +116,7 @@ const NavBar = ({ collapsed = false }) => {
 
   return (
     <aside
-      className={`border-r border-border flex flex-col h-full bg-surface shrink-0 select-none overflow-hidden transition-all duration-300 ease-in-out shadow-[4px_0_20px_rgba(0,0,0,0.08)] ${collapsed ? 'w-0 border-r-0 shadow-none' : 'w-64'}`}
+      className={`border-r border-border flex flex-col bg-surface shrink-0 select-none overflow-hidden transition-all duration-300 ease-in-out shadow-[4px_0_20px_rgba(0,0,0,0.08)] fixed top-0 left-0 z-50 h-dvh w-64 lg:relative lg:h-full lg:z-auto ${collapsed ? '-translate-x-full lg:translate-x-0 lg:w-0 lg:border-r-0 lg:shadow-none' : 'translate-x-0'}`}
     >
 
       {/* 1. 상단 프로필 구역 */}

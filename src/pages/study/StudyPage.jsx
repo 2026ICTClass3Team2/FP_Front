@@ -161,6 +161,8 @@ const StudyPage = () => {
             }).filter(ch =>
                 ch.title && ch.title.trim() !== "" && ch.title.trim() !== "/" &&
                 ch.content && ch.content.trim() !== ""
+            ).filter((ch, idx, arr) =>
+                arr.findIndex(c => c.language === ch.language && c.title === ch.title) === idx
             );
 
             const idMap = {};

@@ -11,7 +11,7 @@ import Modal from '../../components/common/Modal';
 import EditChannelModal from '../../components/channel/EditChannelModal';
 import FeedCard from '../../components/feed/FeedCard';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
-import useWriteChannelStore from '../../../useWriteChannelStore';
+import useWriteChannelStore from '../../stores/useWriteChannelStore';
 
 const ChannelDetail = () => {
   const { channelId } = useParams();

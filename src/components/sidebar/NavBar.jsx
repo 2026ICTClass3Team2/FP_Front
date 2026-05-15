@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import useThemeStore from '../../../useThemeStore';
+import useThemeStore from '../../stores/useThemeStore';
 import CreateChannelModal from '../channel/CreateChannelModal';
 import PointShopModal from '../../pages/shop/PointShopModal';
 import jwtAxios from '../../api/jwtAxios';

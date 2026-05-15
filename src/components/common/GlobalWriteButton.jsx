@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useWriteChannelStore from '../../../useWriteChannelStore';
+import useWriteChannelStore from '../../stores/useWriteChannelStore';
 
 const GlobalWriteButton = () => {
   const [isOpen, setIsOpen] = useState(false);

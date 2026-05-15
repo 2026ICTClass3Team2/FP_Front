@@ -219,7 +219,7 @@ const ReportManagementTab = ({ fetchStats }) => {
                 {targetDetails ? (
                   <div className="space-y-2">
                     {targetDetails.title && <p className="font-bold text-lg">{targetDetails.title}</p>}
-                    {targetDetails.content && <p className="text-muted-foreground line-clamp-3">{targetDetails.content}</p>}
+                    {targetDetails.content && <p className="text-muted-foreground whitespace-pre-wrap">{targetDetails.content}</p>}
                     {!targetDetails.title && !targetDetails.content && <p className="text-muted-foreground">상세 정보를 불러올 수 없거나 삭제된 콘텐츠입니다.</p>}
                   </div>
                 ) : (

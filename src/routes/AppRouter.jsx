@@ -7,7 +7,6 @@ import MyProfile from '../pages/profile/MyProfile';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import MainFeed from '../pages/feed/MainFeed';
 import MyPageLayout from '../components/layouts/MyPageLayout';
-import ProfileCard from '../components/profile/ProfileCard';
 import QuestionBoard from '../pages/question/QuestionBoard';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';

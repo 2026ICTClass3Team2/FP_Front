@@ -3,7 +3,7 @@ import Header from './Header'
 import { Outlet } from 'react-router-dom'
 import AdminNavBar from '../sidebar/AdminNavBar'
 import GlobalWriteButton from '../common/GlobalWriteButton'
-import useThemeStore from '../../../useThemeStore'
+import useThemeStore from '../../stores/useThemeStore'
 
 function AdminLayout() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);

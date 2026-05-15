@@ -47,6 +47,11 @@ const ReportModal = ({ isOpen, onClose, targetType, targetId, onSuccess }) => {
 
   if (!isOpen) return null;
 
+  const isPostType = ['post', 'feed', 'qna'].includes(targetType);
+  const isCommentType = targetType === 'comment';
+  const isChannelType = targetType === 'channel';
+  const isUserType = targetType === 'user';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -63,7 +68,6 @@ const ReportModal = ({ isOpen, onClose, targetType, targetId, onSuccess }) => {
     setError('');
 
     const getApiTargetType = (type) => {
-      if (type === 'comment') return 'comments';
       if (type === 'feed' || type === 'qna') return 'post';
       return type;
     };
@@ -75,13 +79,10 @@ const ReportModal = ({ isOpen, onClose, targetType, targetId, onSuccess }) => {
       reasonDetail,
     };
 
-    const isPostType = ['post', 'feed', 'qna'].includes(targetType);
-    const isChannelType = targetType === 'channel';
-
     if (isPostType) {
       payload.blockPost = true;
       payload.blockUser = additionalAction;
-    } else if (targetType === 'comment') {
+    } else if (isCommentType) {
       payload.blockUser = additionalAction;
     } else if (isChannelType) {
       payload.blockChannel = additionalAction;
@@ -107,11 +108,6 @@ const ReportModal = ({ isOpen, onClose, targetType, targetId, onSuccess }) => {
   const handleBackdropClick = (e) => {
     if (e.target === backdropRef.current) onClose();
   };
-
-  const isPostType = ['post', 'feed', 'qna'].includes(targetType);
-  const isCommentType = targetType === 'comment';
-  const isChannelType = targetType === 'channel';
-  const isUserType = targetType === 'user';
 
   const checkboxLabel = isPostType
     ? '이 작성자의 모든 게시글 차단하기'

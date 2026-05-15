@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import useThemeStore from '../../../useThemeStore';
+import useThemeStore from '../../stores/useThemeStore';
 import { FiHome, FiMessageCircle, FiBookOpen, FiPlus, FiLogOut, FiMoon, FiSun } from 'react-icons/fi';
 import CreateChannelModal from '../channel/CreateChannelModal';
 import PointShopAdminModal from '../../pages/shop/PointShopAdminModal';
